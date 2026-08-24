@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using IndustryTycoon.Core;
 using IndustryTycoon.ResourceSystem;
 using UnityEngine;
 
@@ -10,6 +11,7 @@ namespace IndustryTycoon.Player
         private sealed class Attraction
         {
             public ResourcePickup Pickup;
+            public ResourceClaimHandle Claim;
             public int ReservedAmount;
             public float Delay;
         }
@@ -74,11 +76,14 @@ namespace IndustryTycoon.Player
         {
             for (int i = 0; i < _activeAttractions.Count; i++)
             {
-                ResourcePickup pickup = _activeAttractions[i].Pickup;
+                Attraction attraction = _activeAttractions[i];
+                ResourcePickup pickup = attraction.Pickup;
                 if (pickup != null)
                 {
-                    pickup.CancelAttraction();
+                    pickup.CancelAttraction(attraction.Claim);
                 }
+
+                carryStack.ReleaseReservedCapacity(attraction.ReservedAmount);
             }
 
             _activeAttractions.Clear();
@@ -87,7 +92,7 @@ namespace IndustryTycoon.Player
 
         private void ScanForResources()
         {
-            int availableCapacity = carryStack.AvailableCapacity - _reservedCapacity;
+            int availableCapacity = carryStack.AvailableCapacity;
             if (availableCapacity <= 0)
             {
                 return;
@@ -116,14 +121,24 @@ namespace IndustryTycoon.Player
                     continue;
                 }
 
-                if (!pickup.TryBeginAttraction())
+                if (!carryStack.TryReserveCapacity(pickup.Amount))
                 {
+                    continue;
+                }
+
+                if (!pickup.TryBeginAttraction(
+                        this,
+                        ResourceClaimPriority.Player,
+                        out ResourceClaimHandle claim))
+                {
+                    carryStack.ReleaseReservedCapacity(pickup.Amount);
                     continue;
                 }
 
                 _activeAttractions.Add(new Attraction
                 {
                     Pickup = pickup,
+                    Claim = claim,
                     ReservedAmount = pickup.Amount,
                     Delay = Mathf.Min(maximumStagger, acceptedPickupCount * attractionStagger)
                 });
@@ -147,14 +162,16 @@ namespace IndustryTycoon.Player
                 ResourcePickup pickup = attraction.Pickup;
                 if (pickup == null)
                 {
+                    carryStack.ReleaseReservedCapacity(attraction.ReservedAmount);
                     _reservedCapacity = Mathf.Max(0, _reservedCapacity - attraction.ReservedAmount);
                     _activeAttractions.RemoveAt(i);
                     continue;
                 }
 
-                if (!pickup.IsAttracted)
+                if (!attraction.Claim.IsAttractionValid)
                 {
-                    pickup.CancelAttraction();
+                    pickup.CancelAttraction(attraction.Claim);
+                    carryStack.ReleaseReservedCapacity(attraction.ReservedAmount);
                     _reservedCapacity = Mathf.Max(0, _reservedCapacity - attraction.ReservedAmount);
                     _activeAttractions.RemoveAt(i);
                     continue;
@@ -167,6 +184,7 @@ namespace IndustryTycoon.Player
                 }
 
                 bool reachedTarget = pickup.AdvanceAttraction(
+                    attraction.Claim,
                     targetPosition,
                     Time.deltaTime,
                     attractionDuration,
@@ -179,13 +197,19 @@ namespace IndustryTycoon.Player
                 _reservedCapacity = Mathf.Max(0, _reservedCapacity - attraction.ReservedAmount);
                 _activeAttractions.RemoveAt(i);
 
-                if (carryStack.TryAdd(pickup.ResourceType, pickup.Amount))
+                ResourceType resourceType = pickup.ResourceType;
+                int amount = pickup.Amount;
+                if (pickup.TryCompleteAttraction(attraction.Claim))
                 {
-                    pickup.CompleteCollection();
+                    if (!carryStack.TryCommitReservedAdd(resourceType, amount))
+                    {
+                        carryStack.ReleaseReservedCapacity(attraction.ReservedAmount);
+                    }
                 }
                 else
                 {
-                    pickup.CancelAttraction();
+                    carryStack.ReleaseReservedCapacity(attraction.ReservedAmount);
+                    pickup.CancelAttraction(attraction.Claim);
                 }
             }
         }

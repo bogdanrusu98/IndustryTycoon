@@ -8,6 +8,7 @@ using IndustryTycoon.Interaction;
 using IndustryTycoon.Player;
 using IndustryTycoon.ResourceSystem;
 using IndustryTycoon.UI;
+using IndustryTycoon.Workers;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -149,6 +150,14 @@ namespace IndustryTycoon.Editor
                 MaterialFolder + "/Saw_Blade.mat",
                 new Color(0.68f, 0.72f, 0.76f),
                 0.65f);
+            Material workerMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Worker.mat",
+                new Color(0.10f, 0.68f, 0.80f),
+                0.32f);
+            Material stockpileMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Wood_Stockpile.mat",
+                new Color(0.52f, 0.27f, 0.08f),
+                0.18f);
             Material feedbackParticleMaterial = CreateOrUpdateParticleMaterial(
                 MaterialFolder + "/Feedback_Particle.mat");
 
@@ -207,6 +216,11 @@ namespace IndustryTycoon.Editor
                 feedbackServices.Audio);
             PurchasePad purchasePad = CreatePurchasePad(
                 scene,
+                "Purchase Pad",
+                "SECOND SAW",
+                new Vector3(4.25f, 0f, -4.5f),
+                120,
+                true,
                 wallet,
                 playerCollider,
                 purchaseMaterial,
@@ -216,13 +230,39 @@ namespace IndustryTycoon.Editor
                 cashCollectionTarget,
                 feedbackParticleMaterial,
                 feedbackServices.Audio);
-            CreateProductionStation(
+            WoodProductionUpgrade productionUpgrade = CreateProductionStation(
                 scene,
                 purchasePad,
                 woodSpawner,
                 sawBaseMaterial,
                 sawBladeMaterial,
                 playerAccentMaterial,
+                feedbackParticleMaterial,
+                feedbackServices,
+                followCamera);
+            WoodStockpile stockpile = CreateWoodStockpile(
+                scene,
+                player.GetComponent<CarryStack>(),
+                playerCollider,
+                woodVisualPrefab,
+                stockpileMaterial,
+                cutMaterial,
+                feedbackParticleMaterial);
+            CreateWorkerAutomation(
+                scene,
+                productionUpgrade,
+                woodSpawner,
+                stockpile,
+                wallet,
+                playerCollider,
+                workerMaterial,
+                playerAccentMaterial,
+                purchaseMaterial,
+                purchaseCompleteMaterial,
+                cashAccentMaterial,
+                cashVisualPrefab,
+                cashCollectionTarget,
+                woodVisualPrefab,
                 feedbackParticleMaterial,
                 feedbackServices,
                 followCamera);
@@ -258,6 +298,7 @@ namespace IndustryTycoon.Editor
             EnsureFolder("Assets/Game/Feedback");
             EnsureFolder("Assets/Game/Camera");
             EnsureFolder("Assets/Game/UI");
+            EnsureFolder("Assets/Game/Workers");
             EnsureFolder(PrefabFolder);
             EnsureFolder("Assets/Game/Scenes");
             EnsureFolder("Assets/Game/Editor");
@@ -889,6 +930,11 @@ namespace IndustryTycoon.Editor
 
         private static PurchasePad CreatePurchasePad(
             Scene scene,
+            string rootName,
+            string purchaseLabel,
+            Vector3 position,
+            int totalCost,
+            bool startsAvailable,
             Wallet wallet,
             Collider playerCollider,
             Material availableMaterial,
@@ -899,9 +945,9 @@ namespace IndustryTycoon.Editor
             Material particleMaterial,
             AudioFeedback audioFeedback)
         {
-            GameObject root = new GameObject("Purchase Pad");
+            GameObject root = new GameObject(rootName);
             SceneManager.MoveGameObjectToScene(root, scene);
-            root.transform.position = new Vector3(4.25f, 0f, -4.5f);
+            root.transform.position = position;
 
             BoxCollider trigger = AddKinematicTrigger(root, new Vector3(3f, 2.4f, 3f));
             GameObject padVisual = CreateZoneDisc("Upgrade Area", root.transform, availableMaterial, 1.45f);
@@ -925,7 +971,7 @@ namespace IndustryTycoon.Editor
             TextMesh statusText = CreateWorldLabel(
                 "Purchase Status",
                 root.transform,
-                "SECOND SAW\n$120 / $120",
+                $"{purchaseLabel}\n${totalCost} / ${totalCost}",
                 new Vector3(0f, 1.55f, 0.15f),
                 Color.white);
 
@@ -969,7 +1015,9 @@ namespace IndustryTycoon.Editor
             SetObjectReference(purchasePad, "availableMaterial", availableMaterial);
             SetObjectReference(purchasePad, "completedMaterial", completedMaterial);
             SetObjectReference(purchasePad, "statusText", statusText);
-            SetInteger(purchasePad, "totalCost", 120);
+            SetString(purchasePad, "purchaseLabel", purchaseLabel);
+            SetBoolean(purchasePad, "startsAvailable", startsAvailable);
+            SetInteger(purchasePad, "totalCost", totalCost);
             SetInteger(purchasePad, "spendPerTick", 5);
             SetFloat(purchasePad, "spendInterval", 0.1f);
 
@@ -989,6 +1037,7 @@ namespace IndustryTycoon.Editor
             SetFloat(purchaseFeedback, "tickPulseDuration", 0.12f);
             SetFloat(purchaseFeedback, "emptyWalletDuration", 0.28f);
             SetFloat(purchaseFeedback, "completionDuration", 0.42f);
+            trigger.enabled = startsAvailable;
             return purchasePad;
         }
 
@@ -1065,6 +1114,217 @@ namespace IndustryTycoon.Editor
             SetObjectReference(unlockFeedback, "followCamera", followCamera);
             SetFloat(unlockFeedback, "unlockDuration", 0.65f);
             return upgrade;
+        }
+
+        private static WoodStockpile CreateWoodStockpile(
+            Scene scene,
+            CarryStack carryStack,
+            Collider playerCollider,
+            GameObject woodVisualPrefab,
+            Material stockpileMaterial,
+            Material accentMaterial,
+            Material particleMaterial)
+        {
+            GameObject root = new GameObject("Wood Stockpile");
+            SceneManager.MoveGameObjectToScene(root, scene);
+            root.transform.position = new Vector3(7.2f, 0f, 5.1f);
+
+            BoxCollider trigger = AddKinematicTrigger(root, new Vector3(3f, 2.4f, 2.8f));
+            CreateZoneDisc("Stockpile Collection Area", root.transform, stockpileMaterial, 1.42f);
+
+            GameObject platform = CreatePrimitiveChild(
+                "Stockpile Platform",
+                PrimitiveType.Cube,
+                root.transform,
+                stockpileMaterial);
+            platform.transform.localPosition = new Vector3(0f, 0.18f, 0f);
+            platform.transform.localScale = new Vector3(2.75f, 0.32f, 1.95f);
+
+            GameObject leftRail = CreatePrimitiveChild(
+                "Left Rail",
+                PrimitiveType.Cube,
+                root.transform,
+                accentMaterial);
+            leftRail.transform.localPosition = new Vector3(-1.26f, 0.46f, 0.28f);
+            leftRail.transform.localScale = new Vector3(0.16f, 0.62f, 1.45f);
+
+            GameObject rightRail = CreatePrimitiveChild(
+                "Right Rail",
+                PrimitiveType.Cube,
+                root.transform,
+                accentMaterial);
+            rightRail.transform.localPosition = new Vector3(1.26f, 0.46f, 0.28f);
+            rightRail.transform.localScale = new Vector3(0.16f, 0.62f, 1.45f);
+
+            GameObject visualRoot = new GameObject("Stockpile Wood Visuals");
+            visualRoot.transform.SetParent(root.transform, false);
+            visualRoot.transform.localPosition = new Vector3(0f, 0.45f, -0.24f);
+
+            GameObject depositPoint = new GameObject("Deposit Point");
+            depositPoint.transform.SetParent(root.transform, false);
+            depositPoint.transform.localPosition = new Vector3(0f, 0.92f, -0.18f);
+
+            TextMesh amountText = CreateWorldLabel(
+                "Stockpile Amount",
+                root.transform,
+                "WOOD 0 / 30",
+                new Vector3(0f, 1.72f, 0.18f),
+                new Color(1f, 0.88f, 0.50f));
+
+            ParticleSystem depositParticles = CreateFeedbackParticleSystem(
+                "Stockpile Deposit Burst",
+                depositPoint.transform,
+                Vector3.zero,
+                new Color(1f, 0.64f, 0.20f),
+                particleMaterial,
+                32,
+                0.32f,
+                1.25f,
+                0.11f);
+
+            WoodStockpile stockpile = root.AddComponent<WoodStockpile>();
+            SetInteger(stockpile, "capacity", 30);
+
+            WoodStockpileCollector collector = root.AddComponent<WoodStockpileCollector>();
+            SetObjectReference(collector, "stockpile", stockpile);
+            SetObjectReference(collector, "carryStack", carryStack);
+            SetObjectReference(collector, "playerCollider", playerCollider);
+            SetFloat(collector, "transferInterval", 0.10f);
+            Require(collector.GetComponent<Collider>() == trigger,
+                "Wood Stockpile collector must share its trigger collider.");
+
+            WoodStockpileFeedback feedback = root.AddComponent<WoodStockpileFeedback>();
+            SetObjectReference(feedback, "stockpile", stockpile);
+            SetObjectReference(feedback, "visualRoot", visualRoot.transform);
+            SetObjectReference(feedback, "woodVisualPrefab", woodVisualPrefab);
+            SetObjectReference(feedback, "amountText", amountText);
+            SetObjectReference(feedback, "depositParticles", depositParticles);
+            SetInteger(feedback, "maximumVisualItems", 10);
+            SetInteger(feedback, "woodPerVisual", 3);
+            SetInteger(feedback, "itemsPerRow", 5);
+            SetFloat(feedback, "visualScale", 0.68f);
+            SetFloat(feedback, "popDuration", 0.16f);
+            return stockpile;
+        }
+
+        private static FirstWorkerUnlock CreateWorkerAutomation(
+            Scene scene,
+            WoodProductionUpgrade productionUpgrade,
+            WoodSpawner woodSpawner,
+            WoodStockpile stockpile,
+            Wallet wallet,
+            Collider playerCollider,
+            Material workerMaterial,
+            Material workerAccentMaterial,
+            Material purchaseAvailableMaterial,
+            Material purchaseCompletedMaterial,
+            Material cashAccentMaterial,
+            GameObject cashVisualPrefab,
+            Transform tokenOrigin,
+            GameObject woodVisualPrefab,
+            Material particleMaterial,
+            FeedbackServices feedbackServices,
+            SmoothFollowCamera followCamera)
+        {
+            PurchasePad workerPurchasePad = CreatePurchasePad(
+                scene,
+                "Worker Purchase Pad",
+                "LUMBER WORKER",
+                new Vector3(4.25f, 0f, -8f),
+                240,
+                false,
+                wallet,
+                playerCollider,
+                purchaseAvailableMaterial,
+                purchaseCompletedMaterial,
+                cashAccentMaterial,
+                cashVisualPrefab,
+                tokenOrigin,
+                particleMaterial,
+                feedbackServices.Audio);
+
+            GameObject workerRoot = new GameObject("Lumber Worker");
+            SceneManager.MoveGameObjectToScene(workerRoot, scene);
+            workerRoot.transform.position = new Vector3(7.2f, 0f, 1.7f);
+
+            GameObject workerVisual = new GameObject("Worker Visual");
+            workerVisual.transform.SetParent(workerRoot.transform, false);
+
+            GameObject capsule = CreatePrimitiveChild(
+                "Worker Capsule",
+                PrimitiveType.Capsule,
+                workerVisual.transform,
+                workerMaterial);
+            capsule.transform.localPosition = new Vector3(0f, 0.86f, 0f);
+            capsule.transform.localScale = new Vector3(0.72f, 0.84f, 0.72f);
+
+            GameObject facingMarker = CreatePrimitiveChild(
+                "Worker Facing Marker",
+                PrimitiveType.Cube,
+                workerVisual.transform,
+                workerAccentMaterial);
+            facingMarker.transform.localPosition = new Vector3(0f, 1.02f, 0.37f);
+            facingMarker.transform.localScale = new Vector3(0.19f, 0.14f, 0.10f);
+
+            GameObject carriedWoodAnchor = new GameObject("Worker Carry Anchor");
+            carriedWoodAnchor.transform.SetParent(workerVisual.transform, false);
+            carriedWoodAnchor.transform.localPosition = new Vector3(0f, 1.52f, -0.36f);
+
+            Transform depositPoint = stockpile.transform.Find("Deposit Point");
+            Require(depositPoint != null, "Wood Stockpile requires a Deposit Point.");
+
+            LumberWorker worker = workerRoot.AddComponent<LumberWorker>();
+            SetObjectReference(worker, "woodSpawner", woodSpawner);
+            SetObjectReference(worker, "stockpile", stockpile);
+            SetObjectReference(worker, "depositPoint", depositPoint);
+            SetFloat(worker, "moveSpeed", 3.5f);
+            SetFloat(worker, "rotationSpeed", 540f);
+            SetFloat(worker, "stopDistance", 0.35f);
+            SetFloat(worker, "searchInterval", 0.35f);
+            SetFloat(worker, "pickupDelay", 0.12f);
+            SetFloat(worker, "depositDelay", 0.15f);
+
+            LumberWorkerFeedback workerFeedback = workerRoot.AddComponent<LumberWorkerFeedback>();
+            SetObjectReference(workerFeedback, "worker", worker);
+            SetObjectReference(workerFeedback, "carriedWoodAnchor", carriedWoodAnchor.transform);
+            SetObjectReference(workerFeedback, "depositTarget", depositPoint);
+            SetObjectReference(workerFeedback, "woodVisualPrefab", woodVisualPrefab);
+            SetFloat(workerFeedback, "cargoPopDuration", 0.16f);
+            SetFloat(workerFeedback, "depositFlightDuration", 0.20f);
+            SetFloat(workerFeedback, "depositArcHeight", 0.48f);
+
+            workerRoot.SetActive(false);
+            workerPurchasePad.gameObject.SetActive(false);
+
+            GameObject automationRoot = new GameObject("Worker Automation");
+            SceneManager.MoveGameObjectToScene(automationRoot, scene);
+
+            FirstWorkerUnlock workerUnlock = automationRoot.AddComponent<FirstWorkerUnlock>();
+            SetObjectReference(workerUnlock, "productionUpgrade", productionUpgrade);
+            SetObjectReference(workerUnlock, "workerPurchasePad", workerPurchasePad);
+            SetObjectReference(workerUnlock, "workerPurchasePadRoot", workerPurchasePad.gameObject);
+            SetObjectReference(workerUnlock, "workerRoot", workerRoot);
+
+            ParticleSystem unlockParticles = CreateFeedbackParticleSystem(
+                "Worker Unlock Burst",
+                automationRoot.transform,
+                workerRoot.transform.position + new Vector3(0f, 0.9f, 0f),
+                new Color(0.22f, 0.90f, 1f),
+                particleMaterial,
+                40,
+                0.58f,
+                1.85f,
+                0.14f);
+
+            WorkerUnlockFeedback unlockFeedback = automationRoot.AddComponent<WorkerUnlockFeedback>();
+            SetObjectReference(unlockFeedback, "workerUnlock", workerUnlock);
+            SetObjectReference(unlockFeedback, "workerVisual", workerVisual.transform);
+            SetObjectReference(unlockFeedback, "unlockParticles", unlockParticles);
+            SetObjectReference(unlockFeedback, "audioFeedback", feedbackServices.Audio);
+            SetObjectReference(unlockFeedback, "hapticFeedback", feedbackServices.Haptics);
+            SetObjectReference(unlockFeedback, "followCamera", followCamera);
+            SetFloat(unlockFeedback, "unlockDuration", 0.65f);
+            return workerUnlock;
         }
 
         private static GameObject CreateCutterVisual(
@@ -1324,6 +1584,22 @@ namespace IndustryTycoon.Editor
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        private static void SetString(Object target, string propertyName, string value)
+        {
+            var serializedObject = new SerializedObject(target);
+            SerializedProperty property = GetRequiredProperty(serializedObject, target, propertyName);
+            property.stringValue = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void SetBoolean(Object target, string propertyName, bool value)
+        {
+            var serializedObject = new SerializedObject(target);
+            SerializedProperty property = GetRequiredProperty(serializedObject, target, propertyName);
+            property.boolValue = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         private static void SetFloat(Object target, string propertyName, float value)
         {
             var serializedObject = new SerializedObject(target);
@@ -1394,6 +1670,10 @@ namespace IndustryTycoon.Editor
             GameObject purchaseObject = FindRoot(scene, "Purchase Pad");
             GameObject sawStationObject = FindRoot(scene, "Saw Station");
             GameObject feedbackServicesObject = FindRoot(scene, "Feedback Services");
+            GameObject workerPurchaseObject = FindRoot(scene, "Worker Purchase Pad");
+            GameObject stockpileObject = FindRoot(scene, "Wood Stockpile");
+            GameObject workerObject = FindRoot(scene, "Lumber Worker");
+            GameObject workerAutomationObject = FindRoot(scene, "Worker Automation");
 
             Require(player != null, "The prototype scene has no Player root.");
             CharacterController playerCollider = player.GetComponent<CharacterController>();
@@ -1500,16 +1780,34 @@ namespace IndustryTycoon.Editor
             Require(cashObject != null, "The prototype scene has no Cash Pile.");
             Require(purchaseObject != null, "The prototype scene has no Purchase Pad.");
             Require(sawStationObject != null, "The prototype scene has no Saw Station.");
+            Require(workerPurchaseObject != null,
+                "The prototype scene has no Worker Purchase Pad.");
+            Require(stockpileObject != null, "The prototype scene has no Wood Stockpile.");
+            Require(workerObject != null, "The prototype scene has no Lumber Worker.");
+            Require(workerAutomationObject != null,
+                "The prototype scene has no Worker Automation root.");
 
             BoxCollider saleTrigger = ValidateTriggerZone(saleObject, "Sale Point");
             BoxCollider cashTrigger = ValidateTriggerZone(cashObject, "Cash Pile");
             BoxCollider purchaseTrigger = ValidateTriggerZone(purchaseObject, "Purchase Pad");
+            BoxCollider workerPurchaseTrigger = ValidateTriggerZone(
+                workerPurchaseObject,
+                "Worker Purchase Pad");
+            BoxCollider stockpileTrigger = ValidateTriggerZone(stockpileObject, "Wood Stockpile");
             Require(!saleTrigger.bounds.Intersects(cashTrigger.bounds),
                 "Sale Point and Cash Pile triggers must not overlap.");
             Require(!saleTrigger.bounds.Intersects(purchaseTrigger.bounds),
                 "Sale Point and Purchase Pad triggers must not overlap.");
             Require(!cashTrigger.bounds.Intersects(purchaseTrigger.bounds),
                 "Cash Pile and Purchase Pad triggers must not overlap.");
+            Require(!stockpileTrigger.bounds.Intersects(saleTrigger.bounds)
+                    && !stockpileTrigger.bounds.Intersects(cashTrigger.bounds)
+                    && !stockpileTrigger.bounds.Intersects(purchaseTrigger.bounds),
+                "Wood Stockpile trigger must remain separate from the existing interaction zones.");
+            Require(Vector3.Distance(
+                        workerPurchaseObject.transform.position,
+                        purchaseObject.transform.position) >= 3.25f,
+                "Worker and production purchase pads are too close for reliable portrait controls.");
 
             CashPile cashPile = cashObject.GetComponent<CashPile>();
             CashPileCollector cashCollector = cashObject.GetComponent<CashPileCollector>();
@@ -1520,6 +1818,20 @@ namespace IndustryTycoon.Editor
             PurchasePadFeedback purchaseFeedback = purchaseObject.GetComponent<PurchasePadFeedback>();
             WoodProductionUpgrade productionUpgrade = sawStationObject.GetComponent<WoodProductionUpgrade>();
             ProductionUnlockFeedback unlockFeedback = sawStationObject.GetComponent<ProductionUnlockFeedback>();
+            PurchasePad workerPurchasePad = workerPurchaseObject.GetComponent<PurchasePad>();
+            PurchasePadFeedback workerPurchaseFeedback =
+                workerPurchaseObject.GetComponent<PurchasePadFeedback>();
+            WoodStockpile stockpile = stockpileObject.GetComponent<WoodStockpile>();
+            WoodStockpileCollector stockpileCollector =
+                stockpileObject.GetComponent<WoodStockpileCollector>();
+            WoodStockpileFeedback stockpileFeedback =
+                stockpileObject.GetComponent<WoodStockpileFeedback>();
+            LumberWorker worker = workerObject.GetComponent<LumberWorker>();
+            LumberWorkerFeedback workerFeedback = workerObject.GetComponent<LumberWorkerFeedback>();
+            FirstWorkerUnlock workerAutomation =
+                workerAutomationObject.GetComponent<FirstWorkerUnlock>();
+            WorkerUnlockFeedback workerUnlockFeedback =
+                workerAutomationObject.GetComponent<WorkerUnlockFeedback>();
 
             Require(cashPile != null, "Cash Pile requires its logical cash component.");
             Require(cashPile.MaximumVisualItems > 0 && cashPile.MaximumVisualItems <= 8,
@@ -1628,6 +1940,95 @@ namespace IndustryTycoon.Editor
                     && GetObjectReference(unlockFeedback, "followCamera") == followCamera,
                 "Production unlock feedback references are incomplete.");
 
+            Require(workerPurchasePad != null,
+                "Worker Purchase Pad requires its gameplay component.");
+            Require(workerPurchasePad.Wallet == wallet
+                    && workerPurchasePad.PlayerCollider == playerCollider
+                    && workerPurchasePad.InteractionCollider == workerPurchaseTrigger,
+                "Worker Purchase Pad gameplay references are incomplete.");
+            Require(workerPurchasePad.PurchaseLabel == "LUMBER WORKER"
+                    && workerPurchasePad.TotalCost == 240
+                    && workerPurchasePad.SpendPerTick == 5
+                    && Mathf.Approximately(workerPurchasePad.SpendInterval, 0.10f),
+                "Worker Purchase Pad must cost $240 and reuse the $5 / 0.10-second cadence.");
+            Require(!workerPurchasePad.StartsAvailable
+                    && !workerPurchasePad.IsAvailable
+                    && !workerPurchaseTrigger.enabled
+                    && !workerPurchaseObject.activeSelf,
+                "Worker Purchase Pad must begin locked, disabled, and hidden.");
+            Require(workerPurchaseFeedback != null
+                    && workerPurchaseFeedback.TokenPoolSize == 4
+                    && Mathf.Approximately(workerPurchaseFeedback.TokenFlightDuration, 0.22f),
+                "Worker Purchase Pad must reuse the capped M2 purchase feedback.");
+            Require(GetObjectReference(workerPurchaseFeedback, "purchasePad") == workerPurchasePad
+                    && GetObjectReference(workerPurchaseFeedback, "tokenVisualPrefab") != null
+                    && GetObjectReference(workerPurchaseFeedback, "purchaseParticles") != null
+                    && GetObjectReference(workerPurchaseFeedback, "audioFeedback") == audioFeedback,
+                "Worker Purchase Pad feedback references are incomplete.");
+
+            Require(stockpile != null && stockpile.Capacity == 30,
+                "Wood Stockpile requires an authoritative capacity of 30.");
+            Require(stockpile.StoredWood == 0 && stockpile.IncomingReservations == 0,
+                "Wood Stockpile must begin empty with no incoming reservation.");
+            Require(stockpileCollector != null
+                    && stockpileCollector.Stockpile == stockpile
+                    && stockpileCollector.CarryStack == carryStack
+                    && stockpileCollector.PlayerCollider == playerCollider
+                    && Mathf.Approximately(stockpileCollector.TransferInterval, 0.10f),
+                "Wood Stockpile collector references or transfer cadence are incorrect.");
+            Require(stockpileFeedback != null
+                    && stockpileFeedback.MaximumVisualItems == 10
+                    && stockpileFeedback.WoodPerVisual == 3
+                    && Mathf.Approximately(stockpileFeedback.VisualScale, 0.68f)
+                    && Mathf.Approximately(stockpileFeedback.PopDuration, 0.16f),
+                "Wood Stockpile feedback must use ten capped visuals at three wood each.");
+            Require(GetObjectReference(stockpileFeedback, "stockpile") == stockpile
+                    && GetObjectReference(stockpileFeedback, "visualRoot") != null
+                    && GetObjectReference(stockpileFeedback, "woodVisualPrefab") != null
+                    && GetObjectReference(stockpileFeedback, "amountText") != null
+                    && GetObjectReference(stockpileFeedback, "depositParticles") != null,
+                "Wood Stockpile feedback references are incomplete.");
+
+            Require(worker != null && !workerObject.activeSelf,
+                "The single Lumber Worker must begin inactive.");
+            Require(worker.WoodSpawner == woodSpawner
+                    && worker.Stockpile == stockpile
+                    && worker.DepositPoint == stockpileObject.transform.Find("Deposit Point"),
+                "Lumber Worker gameplay references are incomplete.");
+            Require(Mathf.Approximately(worker.MoveSpeed, 3.5f)
+                    && Mathf.Approximately(worker.SearchInterval, 0.35f)
+                    && Mathf.Approximately(worker.PickupDelay, 0.12f)
+                    && Mathf.Approximately(worker.DepositDelay, 0.15f),
+                "Lumber Worker tuning must remain 3.5 speed / 0.35 search / 0.12 pickup / 0.15 deposit.");
+            Require(workerFeedback != null
+                    && Mathf.Approximately(workerFeedback.CargoPopDuration, 0.16f)
+                    && Mathf.Approximately(workerFeedback.DepositFlightDuration, 0.20f),
+                "Lumber Worker presentation timing is incorrect.");
+            Require(GetObjectReference(workerFeedback, "worker") == worker
+                    && GetObjectReference(workerFeedback, "carriedWoodAnchor") != null
+                    && GetObjectReference(workerFeedback, "depositTarget") == worker.DepositPoint
+                    && GetObjectReference(workerFeedback, "woodVisualPrefab") != null,
+                "Lumber Worker feedback references are incomplete.");
+
+            Require(workerAutomation != null
+                    && workerAutomation.ProductionUpgrade == productionUpgrade
+                    && workerAutomation.WorkerPurchasePad == workerPurchasePad
+                    && workerAutomation.WorkerPurchasePadRoot == workerPurchaseObject
+                    && workerAutomation.WorkerRoot == workerObject,
+                "Worker Automation unlock gate references are incomplete.");
+            Require(!workerAutomation.IsPadUnlocked && !workerAutomation.IsWorkerActivated,
+                "Worker Automation must begin fully locked.");
+            Require(workerUnlockFeedback != null
+                    && Mathf.Approximately(workerUnlockFeedback.UnlockDuration, 0.65f),
+                "Worker unlock feedback is missing or incorrectly tuned.");
+            Require(GetObjectReference(workerUnlockFeedback, "workerUnlock") == workerAutomation
+                    && GetObjectReference(workerUnlockFeedback, "workerVisual") != null
+                    && GetObjectReference(workerUnlockFeedback, "unlockParticles") != null
+                    && GetObjectReference(workerUnlockFeedback, "audioFeedback") == audioFeedback
+                    && GetObjectReference(workerUnlockFeedback, "hapticFeedback") == hapticFeedback
+                    && GetObjectReference(workerUnlockFeedback, "followCamera") == followCamera,
+                "Worker unlock feedback references are incomplete.");
+
             ValidateFeedbackParticles(scene);
 
             ResourcePickup woodPrefab = AssetDatabase.LoadAssetAtPath<ResourcePickup>(WoodResourcePrefabPath);
@@ -1664,6 +2065,7 @@ namespace IndustryTycoon.Editor
             Require(PlayerSettings.defaultInterfaceOrientation == UIOrientation.Portrait,
                 "Default orientation must be Portrait.");
             ValidateCoreLoopLogic();
+            ValidateM3Logic();
         }
 
         private static BoxCollider ValidateTriggerZone(GameObject root, string label)
@@ -1687,8 +2089,8 @@ namespace IndustryTycoon.Editor
                 particleSystems.AddRange(rootParticles);
             }
 
-            Require(particleSystems.Count == 6,
-                $"The prototype requires six reusable feedback emitters; found {particleSystems.Count}.");
+            Require(particleSystems.Count == 9,
+                $"The prototype requires nine reusable feedback emitters; found {particleSystems.Count}.");
             for (int i = 0; i < particleSystems.Count; i++)
             {
                 ParticleSystem particles = particleSystems[i];
@@ -1905,6 +2307,210 @@ namespace IndustryTycoon.Editor
                 Object.DestroyImmediate(walletObject);
                 Object.DestroyImmediate(cashObject);
                 Object.DestroyImmediate(carryObject);
+            }
+        }
+
+        private static void ValidateM3Logic()
+        {
+            GameObject validationRoot = new GameObject("M3 Logic Validation");
+            try
+            {
+                GameObject workerOwner = new GameObject("Worker Claimant");
+                workerOwner.transform.SetParent(validationRoot.transform, false);
+                GameObject playerOwner = new GameObject("Player Claimant");
+                playerOwner.transform.SetParent(validationRoot.transform, false);
+                GameObject pickupObject = new GameObject("Claimed Wood");
+                pickupObject.transform.SetParent(validationRoot.transform, false);
+                pickupObject.AddComponent<BoxCollider>();
+                ResourcePickup pickup = pickupObject.AddComponent<ResourcePickup>();
+                pickup.Configure(ResourceType.Wood, 1);
+                pickup.PrepareForSpawn(Vector3.zero, Quaternion.identity);
+
+                Require(pickup.TryClaim(
+                            workerOwner,
+                            ResourceClaimPriority.Worker,
+                            out ResourceClaimHandle workerClaim)
+                        && workerClaim.IsValid
+                        && pickup.IsClaimedBy(workerOwner),
+                    "Worker could not establish one soft loose-wood claim.");
+                Require(pickup.TryBeginAttraction(
+                            playerOwner,
+                            ResourceClaimPriority.Player,
+                            out ResourceClaimHandle playerClaim)
+                        && playerClaim.IsAttractionValid
+                        && !workerClaim.IsValid,
+                    "Player did not atomically preempt the worker's soft claim.");
+                Require(!pickup.TryConsumeClaim(
+                            workerClaim,
+                            out ResourceType duplicateType,
+                            out int duplicateAmount)
+                        && duplicateAmount == 0,
+                    "A preempted worker claim consumed loose wood.");
+                Require(pickup.TryCompleteAttraction(playerClaim)
+                        && !playerClaim.IsAttractionValid
+                        && !pickupObject.activeSelf,
+                    "Player attraction did not consume loose wood exactly once.");
+
+                pickupObject.SetActive(true);
+                pickup.PrepareForSpawn(Vector3.one, Quaternion.identity);
+                Require(!workerClaim.IsValid && !playerClaim.IsAttractionValid,
+                    "A recycled ResourcePickup revived a stale ownership handle.");
+                Require(pickup.TryClaim(
+                            workerOwner,
+                            ResourceClaimPriority.Worker,
+                            out ResourceClaimHandle recycledClaim),
+                    "Recycled loose wood could not accept a fresh worker claim.");
+                pickup.MarkReleased();
+                Require(!recycledClaim.IsValid && !pickup.IsClaimed,
+                    "A despawned/released ResourcePickup retained stale ownership.");
+                pickup.PrepareForSpawn(Vector3.zero, Quaternion.identity);
+                Require(pickup.TryClaim(
+                            workerOwner,
+                            ResourceClaimPriority.Worker,
+                            out ResourceClaimHandle abortClaim)
+                        && pickup.TryReleaseClaim(abortClaim)
+                        && pickup.IsAvailable
+                        && !pickup.IsClaimed,
+                    "An aborted worker target did not release its loose-wood claim.");
+
+                GameObject carryObject = new GameObject("M3 CarryStack");
+                carryObject.transform.SetParent(validationRoot.transform, false);
+                CarryStack carryStack = carryObject.AddComponent<CarryStack>();
+                Require(carryStack.TryReserveCapacity(carryStack.Capacity)
+                        && carryStack.ReservedCapacity == carryStack.Capacity
+                        && carryStack.AvailableCapacity == 0
+                        && !carryStack.TryAdd(ResourceType.Wood, 1)
+                        && !carryStack.TryReserveCapacity(1),
+                    "CarryStack shared reservations did not protect the 12-item capacity.");
+                Require(carryStack.ReleaseReservedCapacity(carryStack.Capacity)
+                        && carryStack.ReservedCapacity == 0,
+                    "CarryStack failed to release a shared capacity reservation.");
+
+                GameObject stockpileObject = new GameObject("M3 WoodStockpile");
+                stockpileObject.transform.SetParent(validationRoot.transform, false);
+                WoodStockpile stockpile = stockpileObject.AddComponent<WoodStockpile>();
+                int depositEventCount = 0;
+                stockpile.WoodDeposited += storedWood =>
+                {
+                    depositEventCount++;
+                    Require(storedWood == stockpile.StoredWood,
+                        "Stockpile deposit feedback preceded authoritative state.");
+                };
+                Require(!stockpile.TryTransferOneTo(carryStack)
+                        && stockpile.StoredWood == 0,
+                    "Empty Wood Stockpile allowed a negative withdrawal.");
+                stockpile.enabled = false;
+                Require(!stockpile.TryReserveIncoming(out _)
+                        && !stockpile.TryTransferOneTo(carryStack),
+                    "Disabled Wood Stockpile accepted an incoming or outgoing transfer.");
+                stockpile.enabled = true;
+
+                for (int i = 0; i < stockpile.Capacity; i++)
+                {
+                    Require(stockpile.TryReserveIncoming(out WoodStockpileReservation reservation)
+                            && stockpile.StoredWood + stockpile.IncomingReservations
+                               <= stockpile.Capacity
+                            && stockpile.TryDepositReserved(reservation),
+                        "Wood Stockpile failed an in-capacity reserve/deposit cycle.");
+                }
+
+                Require(stockpile.StoredWood == stockpile.Capacity
+                        && stockpile.IncomingReservations == 0
+                        && stockpile.IsFull
+                        && depositEventCount == stockpile.Capacity
+                        && !stockpile.TryReserveIncoming(out _),
+                    "Wood Stockpile exceeded capacity or accepted work while full.");
+
+                for (int i = 0; i < carryStack.Capacity; i++)
+                {
+                    Require(stockpile.TryTransferOneTo(carryStack),
+                        "Stockpile withdrawal stopped before CarryStack reached 12/12.");
+                }
+
+                Require(carryStack.TotalAmount == carryStack.Capacity
+                        && stockpile.StoredWood == stockpile.Capacity - carryStack.Capacity
+                        && !stockpile.TryTransferOneTo(carryStack),
+                    "Stockpile withdrawal exceeded CarryStack capacity or mutated stock incorrectly.");
+                Require(carryStack.TryRemove(ResourceType.Wood, carryStack.Capacity),
+                    "M3 validation could not clear the full CarryStack.");
+
+                while (!stockpile.IsFull)
+                {
+                    Require(stockpile.TryReserveIncoming(out WoodStockpileReservation refill)
+                            && stockpile.TryDepositReserved(refill),
+                        "Wood Stockpile could not refill to capacity.");
+                }
+
+                Require(stockpile.TryTransferOneTo(carryStack)
+                        && stockpile.StoredWood == stockpile.Capacity - 1,
+                    "Withdrawing from a full stockpile did not free exactly one slot.");
+                Require(stockpile.TryReserveIncoming(out WoodStockpileReservation resumedReservation)
+                        && stockpile.StoredWood + stockpile.IncomingReservations
+                           == stockpile.Capacity,
+                    "Freeing one stockpile slot did not permit one incoming reservation.");
+                Require(stockpile.ReleaseIncoming(resumedReservation),
+                    "Stockpile failed to release a valid incoming reservation.");
+                Require(stockpile.TryReserveIncoming(out WoodStockpileReservation currentReservation),
+                    "Stockpile failed to replace a released incoming reservation.");
+                Require(!stockpile.TryDepositReserved(resumedReservation)
+                        && stockpile.TryDepositReserved(currentReservation)
+                        && stockpile.StoredWood == stockpile.Capacity
+                        && stockpile.IncomingReservations == 0,
+                    "Stockpile accepted a stale reservation or failed an exactly-once deposit.");
+
+                GameObject walletObject = new GameObject("M3 Wallet");
+                walletObject.transform.SetParent(validationRoot.transform, false);
+                Wallet wallet = walletObject.AddComponent<Wallet>();
+                GameObject padObject = new GameObject("M3 Worker Purchase Pad");
+                padObject.transform.SetParent(validationRoot.transform, false);
+                BoxCollider padCollider = padObject.AddComponent<BoxCollider>();
+                padCollider.isTrigger = true;
+                PurchasePad workerPad = padObject.AddComponent<PurchasePad>();
+                SetObjectReference(workerPad, "wallet", wallet);
+                SetObjectReference(workerPad, "interactionCollider", padCollider);
+                SetString(workerPad, "purchaseLabel", "LUMBER WORKER");
+                SetBoolean(workerPad, "startsAvailable", false);
+                SetInteger(workerPad, "totalCost", 240);
+                SetInteger(workerPad, "spendPerTick", 5);
+
+                wallet.Deposit(240);
+                Require(workerPad.ProcessPaymentStep() == 0
+                        && workerPad.RemainingCost == 240
+                        && wallet.Balance == 240,
+                    "Locked Worker Purchase Pad accepted payment.");
+                Require(workerPad.SetAvailable(true),
+                    "Worker Purchase Pad could not become available after its prerequisite.");
+                for (int i = 0; i < 13; i++)
+                {
+                    Require(workerPad.ProcessPaymentStep() == 5,
+                        "Worker Purchase Pad rejected valid partial funding.");
+                }
+
+                Require(workerPad.RemainingCost == 175 && wallet.Balance == 175,
+                    "Worker Purchase Pad partial progress is incorrect.");
+                workerPad.enabled = false;
+                workerPad.enabled = true;
+                Require(workerPad.RemainingCost == 175,
+                    "Worker Purchase Pad lost partial progress across lifecycle changes.");
+
+                int workerCompletionCount = 0;
+                workerPad.Completed += () => workerCompletionCount++;
+                int paymentGuard = 0;
+                while (!workerPad.IsCompleted && paymentGuard++ < 40)
+                {
+                    workerPad.ProcessPaymentStep();
+                }
+
+                Require(workerPad.IsCompleted
+                        && workerPad.RemainingCost == 0
+                        && wallet.Balance == 0
+                        && workerCompletionCount == 1
+                        && workerPad.ProcessPaymentStep() == 0,
+                    "Worker Purchase Pad did not complete exactly once without a negative wallet.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(validationRoot);
             }
         }
 

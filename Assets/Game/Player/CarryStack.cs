@@ -34,6 +34,7 @@ namespace IndustryTycoon.Player
         private readonly List<Quaternion> _visualTargetRotations = new List<Quaternion>();
         private readonly List<float> _visualAnimationElapsed = new List<float>();
         private int _totalAmount;
+        private int _reservedCapacity;
         private int _lastVisibleCount;
         private bool _hasVisualAnimations;
 
@@ -43,7 +44,8 @@ namespace IndustryTycoon.Player
 
         public int Capacity => capacity;
         public int TotalAmount => _totalAmount;
-        public int AvailableCapacity => Mathf.Max(0, capacity - _totalAmount);
+        public int ReservedCapacity => _reservedCapacity;
+        public int AvailableCapacity => Mathf.Max(0, capacity - _totalAmount - _reservedCapacity);
         public Transform VisualRoot => visualRoot != null ? visualRoot : transform;
         public float PlacementDuration => placementDuration;
         public float AddBounceDuration => addBounceDuration;
@@ -70,6 +72,42 @@ namespace IndustryTycoon.Player
             return amount > 0 && GetAmount(resourceType) >= amount;
         }
 
+        public bool TryReserveCapacity(int amount)
+        {
+            if (amount <= 0 || amount > AvailableCapacity)
+            {
+                return false;
+            }
+
+            _reservedCapacity += amount;
+            return true;
+        }
+
+        public bool ReleaseReservedCapacity(int amount)
+        {
+            if (amount <= 0 || amount > _reservedCapacity)
+            {
+                return false;
+            }
+
+            _reservedCapacity -= amount;
+            return true;
+        }
+
+        public bool TryCommitReservedAdd(ResourceType resourceType, int amount)
+        {
+            if (amount <= 0
+                || amount > _reservedCapacity
+                || amount > capacity - _totalAmount)
+            {
+                return false;
+            }
+
+            _reservedCapacity -= amount;
+            AddAmount(resourceType, amount);
+            return true;
+        }
+
         public bool TryAdd(ResourceType resourceType, int amount)
         {
             if (!CanAdd(amount))
@@ -77,12 +115,17 @@ namespace IndustryTycoon.Player
                 return false;
             }
 
+            AddAmount(resourceType, amount);
+            return true;
+        }
+
+        private void AddAmount(ResourceType resourceType, int amount)
+        {
             _amounts[resourceType] = GetAmount(resourceType) + amount;
             _totalAmount += amount;
             RefreshVisuals();
             Changed?.Invoke();
             ItemsAdded?.Invoke(resourceType, amount, _totalAmount);
-            return true;
         }
 
         public bool TryRemove(ResourceType resourceType, int amount)

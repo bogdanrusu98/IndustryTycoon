@@ -18,6 +18,8 @@ namespace IndustryTycoon.Interaction
         [SerializeField] private TextMesh statusText;
 
         [Header("Purchase")]
+        [SerializeField] private string purchaseLabel = "SECOND SAW";
+        [SerializeField] private bool startsAvailable = true;
         [SerializeField, Min(1)] private int totalCost = 120;
         [SerializeField, Min(1)] private int spendPerTick = 5;
         [SerializeField, Min(0.02f)] private float spendInterval = 0.1f;
@@ -28,6 +30,7 @@ namespace IndustryTycoon.Interaction
         private bool _isInitialized;
         private bool _isStartingSpend;
         private bool _isPlayerInside;
+        private bool _isAvailable;
         private bool _isCompleted;
         private bool _fundingPauseNotified;
 
@@ -43,6 +46,9 @@ namespace IndustryTycoon.Interaction
         public int SpendPerTick => spendPerTick;
         public float SpendInterval => spendInterval;
         public int RemainingCost => _isInitialized ? _remainingCost : totalCost;
+        public string PurchaseLabel => purchaseLabel;
+        public bool StartsAvailable => startsAvailable;
+        public bool IsAvailable => _isInitialized ? _isAvailable : startsAvailable;
         public bool IsPlayerInside => _isPlayerInside;
         public bool IsCompleted => _isCompleted;
 
@@ -74,7 +80,7 @@ namespace IndustryTycoon.Interaction
 
         private void OnTriggerEnter(Collider other)
         {
-            if (other != playerCollider || _isCompleted)
+            if (other != playerCollider || !_isAvailable || _isCompleted)
             {
                 return;
             }
@@ -104,7 +110,7 @@ namespace IndustryTycoon.Interaction
         public int ProcessPaymentStep()
         {
             EnsureInitialized();
-            if (_isCompleted || wallet == null || RemainingCost <= 0)
+            if (!_isAvailable || _isCompleted || wallet == null || RemainingCost <= 0)
             {
                 return 0;
             }
@@ -133,9 +139,27 @@ namespace IndustryTycoon.Interaction
             return spentAmount;
         }
 
+        public bool SetAvailable(bool isAvailable)
+        {
+            EnsureInitialized();
+            bool nextAvailability = isAvailable && !_isCompleted;
+            bool changed = _isAvailable != nextAvailability;
+            _isAvailable = nextAvailability;
+
+            if (!_isAvailable)
+            {
+                _isPlayerInside = false;
+                _fundingPauseNotified = false;
+                StopSpending();
+            }
+
+            ApplyVisualState();
+            return changed;
+        }
+
         private void HandleWalletBalanceChanged(int newBalance)
         {
-            if (_isPlayerInside && newBalance > 0)
+            if (_isAvailable && _isPlayerInside && newBalance > 0)
             {
                 _fundingPauseNotified = false;
                 TryStartSpending();
@@ -147,6 +171,7 @@ namespace IndustryTycoon.Interaction
             if (_spendCoroutine != null
                 || _isStartingSpend
                 || !_isPlayerInside
+                || !_isAvailable
                 || _isCompleted
                 || wallet == null
                 || wallet.Balance <= 0
@@ -212,14 +237,10 @@ namespace IndustryTycoon.Interaction
             }
 
             _isCompleted = true;
+            _isAvailable = false;
             _remainingCost = 0;
             _isPlayerInside = false;
             _fundingPauseNotified = false;
-
-            if (interactionCollider != null)
-            {
-                interactionCollider.enabled = false;
-            }
 
             ApplyVisualState();
             Completed?.Invoke();
@@ -234,6 +255,7 @@ namespace IndustryTycoon.Interaction
 
             _remainingCost = totalCost;
             _spendWait = new WaitForSeconds(spendInterval);
+            _isAvailable = startsAvailable;
             _isInitialized = true;
         }
 
@@ -248,6 +270,11 @@ namespace IndustryTycoon.Interaction
                 }
             }
 
+            if (interactionCollider != null)
+            {
+                interactionCollider.enabled = _isAvailable && !_isCompleted;
+            }
+
             RefreshStatusText();
         }
 
@@ -258,9 +285,12 @@ namespace IndustryTycoon.Interaction
                 return;
             }
 
+            string label = string.IsNullOrWhiteSpace(purchaseLabel) ? "PURCHASE" : purchaseLabel;
             statusText.text = _isCompleted
-                ? "SECOND SAW\nUNLOCKED"
-                : $"SECOND SAW\n${RemainingCost} / ${totalCost}";
+                ? $"{label}\nUNLOCKED"
+                : !_isAvailable
+                    ? $"{label}\nLOCKED"
+                    : $"{label}\n${RemainingCost} / ${totalCost}";
         }
 
         private void OnValidate()

@@ -1,7 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
+using IndustryTycoon.Core;
 using UnityEngine;
 using UnityEngine.Pool;
+using Object = UnityEngine.Object;
 
 namespace IndustryTycoon.ResourceSystem
 {
@@ -24,11 +26,13 @@ namespace IndustryTycoon.ResourceSystem
         private ObjectPool<ResourcePickup> _pool;
         private WaitForSeconds _spawnWait;
         private Coroutine _spawnCoroutine;
+        private readonly List<ResourcePickup> _activePickups = new List<ResourcePickup>(32);
         private int _activeCount;
         private bool _hasStarted;
         private bool _isShuttingDown;
 
         public int ActiveCount => _activeCount;
+        public int ActiveRegistryCount => _activePickups.Count;
         public ResourcePickup WoodPrefab => woodPrefab;
         public float BaseSpawnInterval => spawnInterval;
         public float ProductionRateMultiplier => productionRateMultiplier;
@@ -56,6 +60,47 @@ namespace IndustryTycoon.ResourceSystem
             {
                 StartSpawnRoutine();
             }
+        }
+
+        public bool TryClaimNearestAvailable(
+            Vector3 origin,
+            Object claimant,
+            out ResourceClaimHandle claim)
+        {
+            claim = default;
+            if (claimant == null)
+            {
+                return false;
+            }
+
+            ResourcePickup nearest = null;
+            float nearestDistanceSquared = float.PositiveInfinity;
+            for (int i = 0; i < _activePickups.Count; i++)
+            {
+                ResourcePickup pickup = _activePickups[i];
+                if (pickup == null
+                    || !pickup.IsAvailable
+                    || pickup.IsClaimed
+                    || pickup.ResourceType != ResourceType.Wood
+                    || pickup.Amount != 1)
+                {
+                    continue;
+                }
+
+                Vector3 offset = pickup.transform.position - origin;
+                offset.y = 0f;
+                float distanceSquared = offset.sqrMagnitude;
+                if (distanceSquared >= nearestDistanceSquared)
+                {
+                    continue;
+                }
+
+                nearest = pickup;
+                nearestDistanceSquared = distanceSquared;
+            }
+
+            return nearest != null
+                   && nearest.TryClaim(claimant, ResourceClaimPriority.Worker, out claim);
         }
 
         private void Awake()
@@ -114,6 +159,8 @@ namespace IndustryTycoon.ResourceSystem
         {
             _isShuttingDown = true;
             StopSpawnRoutine();
+            _activePickups.Clear();
+            _activeCount = 0;
             _pool?.Clear();
         }
 
@@ -178,7 +225,8 @@ namespace IndustryTycoon.ResourceSystem
                                     + new Vector3(randomPoint.x, spawnHeight, randomPoint.y);
             Quaternion spawnRotation = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
             pickup.PrepareForSpawn(spawnPosition, spawnRotation);
-            _activeCount++;
+            _activePickups.Add(pickup);
+            _activeCount = _activePickups.Count;
         }
 
         private ResourcePickup CreatePooledItem()
@@ -216,8 +264,25 @@ namespace IndustryTycoon.ResourceSystem
                 return;
             }
 
-            _activeCount = Mathf.Max(0, _activeCount - 1);
+            UnregisterActive(pickup);
+            _activeCount = _activePickups.Count;
             _pool.Release(pickup);
+        }
+
+        private void UnregisterActive(ResourcePickup pickup)
+        {
+            for (int i = 0; i < _activePickups.Count; i++)
+            {
+                if (_activePickups[i] != pickup)
+                {
+                    continue;
+                }
+
+                int lastIndex = _activePickups.Count - 1;
+                _activePickups[i] = _activePickups[lastIndex];
+                _activePickups.RemoveAt(lastIndex);
+                return;
+            }
         }
 
         private void OnDrawGizmosSelected()
