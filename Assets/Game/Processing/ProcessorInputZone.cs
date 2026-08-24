@@ -102,7 +102,7 @@ namespace IndustryTycoon.Processing
             }
 
             if (!processor.isActiveAndEnabled
-                || processor.InputWood >= processor.InputCapacity
+                || processor.AvailableInputCapacity <= 0
                 || !carryStack.CanRemove(ResourceType.Wood, 1))
             {
                 return;

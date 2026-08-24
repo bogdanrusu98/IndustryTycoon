@@ -6,6 +6,24 @@ using UnityEngine;
 
 namespace IndustryTycoon.Processing
 {
+    public readonly struct ProcessorInputReservation
+    {
+        private readonly WoodProcessor _processor;
+        private readonly uint _token;
+
+        internal ProcessorInputReservation(WoodProcessor processor, uint token)
+        {
+            _processor = processor;
+            _token = token;
+        }
+
+        public bool IsValid => _processor != null
+                               && _processor.IsInputReservationValid(this);
+
+        internal WoodProcessor Processor => _processor;
+        internal uint Token => _token;
+    }
+
     public sealed class WoodProcessor : MonoBehaviour
     {
         private const int WoodRequiredPerRecipe = 2;
@@ -21,8 +39,11 @@ namespace IndustryTycoon.Processing
         private WaitForSeconds _processingWait;
         private Coroutine _processingCoroutine;
         private int _inputWood;
+        private int _reservedInputCapacity;
         private int _outputPlanks;
         private int _reservedOutputCapacity;
+        private uint _activeInputReservationToken;
+        private uint _nextInputReservationToken;
         private int _completedRecipeCount;
         private bool _isProcessing;
         private bool _isStartingProcessing;
@@ -34,6 +55,10 @@ namespace IndustryTycoon.Processing
         public event Action<int, int> RecipeCompleted;
 
         public int InputWood => _inputWood;
+        public int ReservedInputCapacity => _reservedInputCapacity;
+        public int AvailableInputCapacity => Mathf.Max(
+            0,
+            inputCapacity - _inputWood - _reservedInputCapacity);
         public int OutputPlanks => _outputPlanks;
         public int ReservedOutputCapacity => _reservedOutputCapacity;
         public int InputCapacity => inputCapacity;
@@ -56,7 +81,86 @@ namespace IndustryTycoon.Processing
 
         private void OnDisable()
         {
+            bool hadInputReservation = _reservedInputCapacity > 0;
+            InvalidateInputReservation();
             StopProcessingAndReleaseReservation();
+            if (hadInputReservation)
+            {
+                NotifyBufferChanged();
+            }
+        }
+
+        public bool TryReserveInput(out ProcessorInputReservation reservation)
+        {
+            reservation = default;
+            if (!isActiveAndEnabled
+                || _reservedInputCapacity != 0
+                || AvailableInputCapacity <= 0)
+            {
+                return false;
+            }
+
+            _nextInputReservationToken++;
+            if (_nextInputReservationToken == 0)
+            {
+                _nextInputReservationToken = 1;
+            }
+
+            _activeInputReservationToken = _nextInputReservationToken;
+            _reservedInputCapacity = 1;
+            reservation = new ProcessorInputReservation(
+                this,
+                _activeInputReservationToken);
+            NotifyBufferChanged();
+            return true;
+        }
+
+        public bool IsInputReservationValid(ProcessorInputReservation reservation)
+        {
+            return isActiveAndEnabled
+                   && reservation.Processor == this
+                   && reservation.Token != 0
+                   && reservation.Token == _activeInputReservationToken
+                   && _reservedInputCapacity == 1
+                   && _inputWood + _reservedInputCapacity <= inputCapacity;
+        }
+
+        public bool ReleaseReservedInput(ProcessorInputReservation reservation)
+        {
+            if (!IsInputReservationValid(reservation))
+            {
+                return false;
+            }
+
+            InvalidateInputReservation();
+            NotifyBufferChanged();
+            return true;
+        }
+
+        public bool TryCommitReservedInput(ProcessorInputReservation reservation)
+        {
+            if (!IsInputReservationValid(reservation))
+            {
+                return false;
+            }
+
+            CommitReservedInputForTransfer(reservation);
+            PublishInputTransferCommitted();
+            return true;
+        }
+
+        internal void CommitReservedInputForTransfer(
+            ProcessorInputReservation reservation)
+        {
+            Debug.Assert(IsInputReservationValid(reservation));
+            _inputWood++;
+            InvalidateInputReservation();
+        }
+
+        internal void PublishInputTransferCommitted()
+        {
+            NotifyBufferChanged();
+            TryStartProcessing();
         }
 
         public bool TryTransferInputFrom(CarryStack carryStack)
@@ -64,7 +168,7 @@ namespace IndustryTycoon.Processing
             if (!isActiveAndEnabled
                 || _isInputTransferInProgress
                 || carryStack == null
-                || _inputWood >= inputCapacity
+                || AvailableInputCapacity <= 0
                 || carryStack.GetAmount(ResourceType.Wood) <= 0)
             {
                 return false;
@@ -229,6 +333,12 @@ namespace IndustryTycoon.Processing
             {
                 NotifyBufferChanged();
             }
+        }
+
+        private void InvalidateInputReservation()
+        {
+            _reservedInputCapacity = 0;
+            _activeInputReservationToken = 0;
         }
 
         private void NotifyBufferChanged()

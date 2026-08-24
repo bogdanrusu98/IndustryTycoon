@@ -5,6 +5,7 @@ using IndustryTycoon.Core;
 using IndustryTycoon.Economy;
 using IndustryTycoon.Feedback;
 using IndustryTycoon.Interaction;
+using IndustryTycoon.Logistics;
 using IndustryTycoon.Player;
 using IndustryTycoon.Processing;
 using IndustryTycoon.ResourceSystem;
@@ -286,6 +287,7 @@ namespace IndustryTycoon.Editor
             CreateWoodProcessing(
                 scene,
                 workerUnlock,
+                stockpile,
                 wallet,
                 player.GetComponent<CarryStack>(),
                 playerCollider,
@@ -1403,6 +1405,7 @@ namespace IndustryTycoon.Editor
         private static FirstProcessorUnlock CreateWoodProcessing(
             Scene scene,
             FirstWorkerUnlock workerUnlock,
+            WoodStockpile stockpile,
             Wallet wallet,
             CarryStack carryStack,
             Collider playerCollider,
@@ -1582,7 +1585,318 @@ namespace IndustryTycoon.Editor
             SetObjectReference(unlockFeedback, "hapticFeedback", feedbackServices.Haptics);
             SetObjectReference(unlockFeedback, "followCamera", followCamera);
             SetFloat(unlockFeedback, "unlockDuration", 0.65f);
+
+            CreateFirstInputLogistics(
+                scene,
+                processorUnlock,
+                stockpile,
+                processor,
+                wallet,
+                playerCollider,
+                purchaseAvailableMaterial,
+                purchaseCompletedMaterial,
+                cashAccentMaterial,
+                cashVisualPrefab,
+                tokenOrigin,
+                resourceVisualPrefab,
+                processorMaterial,
+                bladeMaterial,
+                particleMaterial,
+                feedbackServices,
+                followCamera);
             return processorUnlock;
+        }
+
+        private static FirstAutoFeederUnlock CreateFirstInputLogistics(
+            Scene scene,
+            FirstProcessorUnlock processorUnlock,
+            WoodStockpile stockpile,
+            WoodProcessor processor,
+            Wallet wallet,
+            Collider playerCollider,
+            Material purchaseAvailableMaterial,
+            Material purchaseCompletedMaterial,
+            Material cashAccentMaterial,
+            GameObject cashVisualPrefab,
+            Transform tokenOrigin,
+            GameObject woodVisualPrefab,
+            Material conveyorMaterial,
+            Material rollerMaterial,
+            Material particleMaterial,
+            FeedbackServices feedbackServices,
+            SmoothFollowCamera followCamera)
+        {
+            PurchasePad purchasePad = CreatePurchasePad(
+                scene,
+                "Auto Feeder Purchase Pad",
+                "AUTO FEEDER",
+                new Vector3(-8.2f, 0f, -8f),
+                600,
+                false,
+                wallet,
+                playerCollider,
+                purchaseAvailableMaterial,
+                purchaseCompletedMaterial,
+                cashAccentMaterial,
+                cashVisualPrefab,
+                tokenOrigin,
+                particleMaterial,
+                feedbackServices.Audio);
+
+            GameObject feederRoot = new GameObject("Wood Auto Feeder");
+            SceneManager.MoveGameObjectToScene(feederRoot, scene);
+
+            GameObject feederVisual = new GameObject("Auto Feeder Visual");
+            feederVisual.transform.SetParent(feederRoot.transform, false);
+
+            GameObject routeStartObject = new GameObject("Route Start");
+            routeStartObject.transform.SetParent(feederVisual.transform, false);
+            routeStartObject.transform.position = new Vector3(5.45f, 1.02f, 5.15f);
+
+            GameObject routeControlObject = new GameObject("Route Control");
+            routeControlObject.transform.SetParent(feederVisual.transform, false);
+            routeControlObject.transform.position = new Vector3(-1.6f, 1.18f, 7.25f);
+
+            GameObject routeEndObject = new GameObject("Route End");
+            routeEndObject.transform.SetParent(feederVisual.transform, false);
+            routeEndObject.transform.position = new Vector3(-9.75f, 1.02f, 3.72f);
+
+            Transform routeStart = routeStartObject.transform;
+            Transform routeControl = routeControlObject.transform;
+            Transform routeEnd = routeEndObject.transform;
+
+            CreateConveyorRail(
+                "Source Left Rail",
+                feederVisual.transform,
+                routeStart.position,
+                routeControl.position,
+                -0.48f,
+                conveyorMaterial);
+            CreateConveyorRail(
+                "Source Right Rail",
+                feederVisual.transform,
+                routeStart.position,
+                routeControl.position,
+                0.48f,
+                conveyorMaterial);
+            CreateConveyorRail(
+                "Destination Left Rail",
+                feederVisual.transform,
+                routeControl.position,
+                routeEnd.position,
+                -0.48f,
+                conveyorMaterial);
+            CreateConveyorRail(
+                "Destination Right Rail",
+                feederVisual.transform,
+                routeControl.position,
+                routeEnd.position,
+                0.48f,
+                conveyorMaterial);
+
+            const int SlatCount = 19;
+            for (int i = 0; i < SlatCount; i++)
+            {
+                float progress = i / (float)(SlatCount - 1);
+                Vector3 position = EvaluateQuadraticRoute(
+                    routeStart.position,
+                    routeControl.position,
+                    routeEnd.position,
+                    progress);
+                Vector3 direction = EvaluateQuadraticRouteDirection(
+                    routeStart.position,
+                    routeControl.position,
+                    routeEnd.position,
+                    progress);
+                GameObject slat = CreatePrimitiveChild(
+                    $"Belt Slat {i + 1:00}",
+                    PrimitiveType.Cube,
+                    feederVisual.transform,
+                    conveyorMaterial);
+                slat.transform.position = position + new Vector3(0f, -0.42f, 0f);
+                slat.transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
+                slat.transform.localScale = new Vector3(0.88f, 0.12f, 0.78f);
+            }
+
+            GameObject sourceRoller = CreateConveyorRoller(
+                "Source Roller",
+                feederVisual.transform,
+                routeStart.position + new Vector3(0f, -0.34f, 0f),
+                EvaluateQuadraticRouteDirection(
+                    routeStart.position,
+                    routeControl.position,
+                    routeEnd.position,
+                    0f),
+                rollerMaterial);
+            GameObject destinationRoller = CreateConveyorRoller(
+                "Destination Roller",
+                feederVisual.transform,
+                routeEnd.position + new Vector3(0f, -0.34f, 0f),
+                EvaluateQuadraticRouteDirection(
+                    routeStart.position,
+                    routeControl.position,
+                    routeEnd.position,
+                    1f),
+                rollerMaterial);
+
+            GameObject transferVisualRoot = new GameObject("Transfer Visual Pool");
+            transferVisualRoot.transform.SetParent(feederVisual.transform, false);
+
+            GameObject statusIndicator = CreatePrimitiveChild(
+                "Auto Feeder Status Indicator",
+                PrimitiveType.Cube,
+                feederVisual.transform,
+                conveyorMaterial);
+            statusIndicator.transform.position = routeControl.position
+                                                 + new Vector3(0f, 0.35f, 0f);
+            statusIndicator.transform.localScale = new Vector3(0.74f, 0.20f, 0.74f);
+
+            TextMesh statusText = CreateWorldLabel(
+                "Auto Feeder Status",
+                feederVisual.transform,
+                "AUTO FEEDER  OFFLINE",
+                routeControl.position + new Vector3(0f, 1.02f, 0f),
+                Color.white);
+
+            WoodAutoFeeder feeder = feederRoot.AddComponent<WoodAutoFeeder>();
+            WoodAutoFeederFeedback feederFeedback =
+                feederRoot.AddComponent<WoodAutoFeederFeedback>();
+            SetObjectReference(feeder, "stockpile", stockpile);
+            SetObjectReference(feeder, "processor", processor);
+            SetObjectReference(feeder, "presentation", feederFeedback);
+            SetFloat(feeder, "launchInterval", 0.75f);
+            SetFloat(feeder, "travelDuration", 0.55f);
+
+            SetObjectReference(feederFeedback, "autoFeeder", feeder);
+            SetObjectReference(
+                feederFeedback,
+                "transferVisualRoot",
+                transferVisualRoot.transform);
+            SetObjectReference(feederFeedback, "woodVisualPrefab", woodVisualPrefab);
+            SetObjectReference(feederFeedback, "routeStart", routeStart);
+            SetObjectReference(feederFeedback, "routeControl", routeControl);
+            SetObjectReference(feederFeedback, "routeEnd", routeEnd);
+            SetObjectReference(feederFeedback, "statusText", statusText);
+            SetObjectReference(
+                feederFeedback,
+                "statusIndicator",
+                statusIndicator.GetComponent<Renderer>());
+            SetObjectReference(feederFeedback, "idleMaterial", conveyorMaterial);
+            SetObjectReference(feederFeedback, "movingMaterial", purchaseCompletedMaterial);
+            SetObjectReference(feederFeedback, "destinationFullMaterial", rollerMaterial);
+            SetObjectReference(feederFeedback, "sourceRoller", sourceRoller.transform);
+            SetObjectReference(
+                feederFeedback,
+                "destinationRoller",
+                destinationRoller.transform);
+            SetInteger(feederFeedback, "visualPoolSize", 2);
+            SetFloat(feederFeedback, "transferVisualScale", 0.72f);
+            SetFloat(feederFeedback, "rollerSpeed", 260f);
+
+            feederRoot.SetActive(false);
+            purchasePad.gameObject.SetActive(false);
+
+            GameObject automationRoot = new GameObject("Auto Feeder Automation");
+            SceneManager.MoveGameObjectToScene(automationRoot, scene);
+
+            FirstAutoFeederUnlock unlock =
+                automationRoot.AddComponent<FirstAutoFeederUnlock>();
+            SetObjectReference(unlock, "processorUnlock", processorUnlock);
+            SetObjectReference(unlock, "autoFeederPurchasePad", purchasePad);
+            SetObjectReference(
+                unlock,
+                "autoFeederPurchasePadRoot",
+                purchasePad.gameObject);
+            SetObjectReference(unlock, "autoFeederRoot", feederRoot);
+
+            ParticleSystem unlockParticles = CreateFeedbackParticleSystem(
+                "Auto Feeder Unlock Burst",
+                automationRoot.transform,
+                routeControl.position + new Vector3(0f, 0.55f, 0f),
+                new Color(0.22f, 0.92f, 0.76f),
+                particleMaterial,
+                40,
+                0.58f,
+                1.85f,
+                0.14f);
+
+            AutoFeederUnlockFeedback unlockFeedback =
+                automationRoot.AddComponent<AutoFeederUnlockFeedback>();
+            SetObjectReference(unlockFeedback, "autoFeederUnlock", unlock);
+            SetObjectReference(unlockFeedback, "autoFeederVisual", feederVisual.transform);
+            SetObjectReference(unlockFeedback, "unlockParticles", unlockParticles);
+            SetObjectReference(unlockFeedback, "audioFeedback", feedbackServices.Audio);
+            SetObjectReference(unlockFeedback, "hapticFeedback", feedbackServices.Haptics);
+            SetObjectReference(unlockFeedback, "followCamera", followCamera);
+            SetFloat(unlockFeedback, "unlockDuration", 0.65f);
+            return unlock;
+        }
+
+        private static void CreateConveyorRail(
+            string name,
+            Transform parent,
+            Vector3 start,
+            Vector3 end,
+            float lateralOffset,
+            Material material)
+        {
+            Vector3 direction = end - start;
+            Vector3 flatDirection = new Vector3(direction.x, 0f, direction.z).normalized;
+            Vector3 side = Vector3.Cross(Vector3.up, flatDirection);
+            Vector3 offset = side * lateralOffset + new Vector3(0f, -0.34f, 0f);
+            GameObject rail = CreatePrimitiveChild(
+                name,
+                PrimitiveType.Cube,
+                parent,
+                material);
+            rail.transform.position = ((start + end) * 0.5f) + offset;
+            rail.transform.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+            rail.transform.localScale = new Vector3(0.12f, 0.18f, direction.magnitude);
+        }
+
+        private static GameObject CreateConveyorRoller(
+            string name,
+            Transform parent,
+            Vector3 position,
+            Vector3 routeDirection,
+            Material material)
+        {
+            GameObject roller = CreatePrimitiveChild(
+                name,
+                PrimitiveType.Cylinder,
+                parent,
+                material);
+            Vector3 side = Vector3.Cross(Vector3.up, routeDirection.normalized);
+            roller.transform.position = position;
+            roller.transform.rotation = Quaternion.FromToRotation(Vector3.up, side);
+            roller.transform.localScale = new Vector3(0.34f, 0.52f, 0.34f);
+            return roller;
+        }
+
+        private static Vector3 EvaluateQuadraticRoute(
+            Vector3 start,
+            Vector3 control,
+            Vector3 end,
+            float normalizedProgress)
+        {
+            float progress = Mathf.Clamp01(normalizedProgress);
+            Vector3 first = Vector3.Lerp(start, control, progress);
+            Vector3 second = Vector3.Lerp(control, end, progress);
+            return Vector3.Lerp(first, second, progress);
+        }
+
+        private static Vector3 EvaluateQuadraticRouteDirection(
+            Vector3 start,
+            Vector3 control,
+            Vector3 end,
+            float normalizedProgress)
+        {
+            float progress = Mathf.Clamp01(normalizedProgress);
+            Vector3 direction = (2f * (1f - progress) * (control - start))
+                                + (2f * progress * (end - control));
+            return direction.sqrMagnitude > 0.0001f
+                ? direction.normalized
+                : (end - start).normalized;
         }
 
         private static GameObject CreateCutterVisual(
@@ -2227,8 +2541,10 @@ namespace IndustryTycoon.Editor
 
             Require(stockpile != null && stockpile.Capacity == 30,
                 "Wood Stockpile requires an authoritative capacity of 30.");
-            Require(stockpile.StoredWood == 0 && stockpile.IncomingReservations == 0,
-                "Wood Stockpile must begin empty with no incoming reservation.");
+            Require(stockpile.StoredWood == 0
+                    && stockpile.IncomingReservations == 0
+                    && stockpile.OutgoingReservations == 0,
+                "Wood Stockpile must begin empty with no incoming or outgoing reservation.");
             Require(stockpileCollector != null
                     && stockpileCollector.Stockpile == stockpile
                     && stockpileCollector.CarryStack == carryStack
@@ -2328,6 +2644,21 @@ namespace IndustryTycoon.Editor
             Require(buildSceneFound, "The prototype scene is not enabled in Build Settings.");
             Require(PlayerSettings.defaultInterfaceOrientation == UIOrientation.Portrait,
                 "Default orientation must be Portrait.");
+            Require(PlayerSettings.defaultScreenWidth == 1080
+                    && PlayerSettings.defaultScreenHeight == 1920,
+                "Default standalone resolution must retain the 1080 x 1920 portrait target.");
+            GameObject portraitHudObject = FindRoot(scene, "HUD");
+            CanvasScaler hudScaler = portraitHudObject != null
+                ? portraitHudObject.GetComponent<CanvasScaler>()
+                : null;
+            SafeAreaFitter safeAreaFitter = portraitHudObject != null
+                ? portraitHudObject.GetComponentInChildren<SafeAreaFitter>(true)
+                : null;
+            Require(hudScaler != null
+                    && hudScaler.uiScaleMode == CanvasScaler.ScaleMode.ScaleWithScreenSize
+                    && hudScaler.referenceResolution == new Vector2(1080f, 1920f)
+                    && safeAreaFitter != null,
+                "Portrait HUD must retain its 1080 x 1920 scaler and Safe Area fitter.");
             ValidateM4Scene(
                 scene,
                 carryStack,
@@ -2337,9 +2668,17 @@ namespace IndustryTycoon.Editor
                 audioFeedback,
                 hapticFeedback,
                 followCamera);
+            ValidateM5Scene(
+                scene,
+                wallet,
+                playerCollider,
+                audioFeedback,
+                hapticFeedback,
+                followCamera);
             ValidateCoreLoopLogic();
             ValidateM3Logic();
             ValidateM4Logic();
+            ValidateM5Logic();
         }
 
         private static void ValidateM4Scene(
@@ -2421,6 +2760,8 @@ namespace IndustryTycoon.Editor
                     && Mathf.Approximately(processor.ProcessingDuration, 1.10f),
                 "Wood Processor must use 24 Wood input, 12 Plank output, 2:1 recipe, and 1.10 seconds.");
             Require(processor.InputWood == 0
+                    && processor.ReservedInputCapacity == 0
+                    && processor.AvailableInputCapacity == processor.InputCapacity
                     && processor.OutputPlanks == 0
                     && processor.ReservedOutputCapacity == 0,
                 "Wood Processor buffers must begin empty and unreserved.");
@@ -2474,6 +2815,141 @@ namespace IndustryTycoon.Editor
                 "Processor unlock feedback must reuse M2 presentation services.");
         }
 
+        private static void ValidateM5Scene(
+            Scene scene,
+            Wallet wallet,
+            Collider playerCollider,
+            AudioFeedback audioFeedback,
+            HapticFeedback hapticFeedback,
+            SmoothFollowCamera followCamera)
+        {
+            GameObject purchaseObject = FindRoot(scene, "Auto Feeder Purchase Pad");
+            GameObject feederObject = FindRoot(scene, "Wood Auto Feeder");
+            GameObject automationObject = FindRoot(scene, "Auto Feeder Automation");
+            GameObject processorAutomationObject = FindRoot(scene, "Processor Automation");
+            GameObject processorObject = FindRoot(scene, "Wood Processor");
+            GameObject stockpileObject = FindRoot(scene, "Wood Stockpile");
+            Require(purchaseObject != null,
+                "The prototype scene has no Auto Feeder Purchase Pad.");
+            Require(feederObject != null,
+                "The prototype scene has no fixed Wood Auto Feeder.");
+            Require(automationObject != null,
+                "The prototype scene has no Auto Feeder Automation root.");
+            Require(processorAutomationObject != null
+                    && processorObject != null
+                    && stockpileObject != null,
+                "M5 requires the accepted Processor and Wood Stockpile roots.");
+
+            BoxCollider purchaseTrigger = ValidateTriggerZone(
+                purchaseObject,
+                "Auto Feeder Purchase Pad");
+            PurchasePad purchasePad = purchaseObject.GetComponent<PurchasePad>();
+            PurchasePadFeedback purchaseFeedback =
+                purchaseObject.GetComponent<PurchasePadFeedback>();
+            WoodAutoFeeder feeder = feederObject.GetComponent<WoodAutoFeeder>();
+            WoodAutoFeederFeedback feederFeedback =
+                feederObject.GetComponent<WoodAutoFeederFeedback>();
+            FirstAutoFeederUnlock unlock =
+                automationObject.GetComponent<FirstAutoFeederUnlock>();
+            AutoFeederUnlockFeedback unlockFeedback =
+                automationObject.GetComponent<AutoFeederUnlockFeedback>();
+            FirstProcessorUnlock processorUnlock =
+                processorAutomationObject.GetComponent<FirstProcessorUnlock>();
+            WoodProcessor processor = processorObject.GetComponent<WoodProcessor>();
+            WoodStockpile stockpile = stockpileObject.GetComponent<WoodStockpile>();
+
+            Require(purchasePad != null
+                    && purchasePad.Wallet == wallet
+                    && purchasePad.PlayerCollider == playerCollider
+                    && purchasePad.InteractionCollider == purchaseTrigger,
+                "Auto Feeder Purchase Pad gameplay references are incomplete.");
+            Require(purchasePad.PurchaseLabel == "AUTO FEEDER"
+                    && purchasePad.TotalCost == 600
+                    && purchasePad.SpendPerTick == 5
+                    && Mathf.Approximately(purchasePad.SpendInterval, 0.10f),
+                "Auto Feeder Purchase Pad must cost $600 and reuse the $5 / 0.10-second cadence.");
+            Require(!purchasePad.StartsAvailable
+                    && !purchasePad.IsAvailable
+                    && !purchaseTrigger.enabled
+                    && !purchaseObject.activeSelf,
+                "Auto Feeder Purchase Pad must begin locked, disabled, and hidden.");
+            Require(purchaseFeedback != null
+                    && purchaseFeedback.TokenPoolSize == 4
+                    && Mathf.Approximately(purchaseFeedback.TokenFlightDuration, 0.22f)
+                    && GetObjectReference(purchaseFeedback, "tokenVisualPrefab") != null
+                    && GetObjectReference(purchaseFeedback, "purchaseParticles") != null
+                    && GetObjectReference(purchaseFeedback, "audioFeedback") == audioFeedback,
+                "Auto Feeder Purchase Pad must reuse the capped M2 purchase feedback.");
+
+            Require(feeder != null
+                    && feeder.Stockpile == stockpile
+                    && feeder.Processor == processor
+                    && feeder.Presentation == feederFeedback,
+                "The fixed Auto Feeder route references are incomplete.");
+            Require(Mathf.Approximately(feeder.LaunchInterval, 0.75f)
+                    && Mathf.Approximately(feeder.TravelDuration, 0.55f)
+                    && feeder.ActiveTransferCount == 0
+                    && feeder.CompletedTransferCount == 0
+                    && feeder.CancelledTransferCount == 0
+                    && !feederObject.activeSelf,
+                "Auto Feeder must start inactive with a 0.75 / 0.55-second cadence.");
+            Require(feederObject.GetComponentsInChildren<Rigidbody>(true).Length == 0
+                    && feederObject.GetComponentsInChildren<Collider>(true).Length == 0,
+                "Auto Feeder presentation must not use Rigidbody or collider physics.");
+
+            Require(feederFeedback != null
+                    && feederFeedback.ConfiguredVisualPoolSize == 2
+                    && Mathf.Approximately(feederFeedback.TransferVisualScale, 0.72f)
+                    && Mathf.Approximately(feederFeedback.RollerSpeed, 260f),
+                "Auto Feeder must use the configured two-item capped visual pool.");
+            Transform routeStart = GetObjectReference(feederFeedback, "routeStart") as Transform;
+            Transform routeControl = GetObjectReference(feederFeedback, "routeControl") as Transform;
+            Transform routeEnd = GetObjectReference(feederFeedback, "routeEnd") as Transform;
+            Require(GetObjectReference(feederFeedback, "autoFeeder") == feeder
+                    && GetObjectReference(feederFeedback, "transferVisualRoot") != null
+                    && GetObjectReference(feederFeedback, "woodVisualPrefab") != null
+                    && routeStart != null
+                    && routeControl != null
+                    && routeEnd != null
+                    && GetObjectReference(feederFeedback, "statusText") != null
+                    && GetObjectReference(feederFeedback, "statusIndicator") != null
+                    && GetObjectReference(feederFeedback, "sourceRoller") != null
+                    && GetObjectReference(feederFeedback, "destinationRoller") != null,
+                "Auto Feeder path, status, roller, or visual-pool references are incomplete.");
+            Require(Vector3.Distance(routeStart.position, routeEnd.position) >= 14f
+                    && routeControl.position.z > routeStart.position.z
+                    && routeControl.position.z > routeEnd.position.z,
+                "Auto Feeder must visibly connect the Stockpile to Processor along its fixed path.");
+
+            Require(unlock != null
+                    && unlock.ProcessorUnlock == processorUnlock
+                    && unlock.AutoFeederPurchasePad == purchasePad
+                    && unlock.AutoFeederPurchasePadRoot == purchaseObject
+                    && unlock.AutoFeederRoot == feederObject,
+                "Auto Feeder unlock-gate references are incomplete.");
+            Require(!unlock.IsPadUnlocked && !unlock.IsAutoFeederActivated,
+                "Auto Feeder must begin fully locked behind Processor activation.");
+            Require(unlockFeedback != null
+                    && Mathf.Approximately(unlockFeedback.UnlockDuration, 0.65f)
+                    && GetObjectReference(unlockFeedback, "autoFeederUnlock") == unlock
+                    && GetObjectReference(unlockFeedback, "autoFeederVisual") != null
+                    && GetObjectReference(unlockFeedback, "unlockParticles") != null
+                    && GetObjectReference(unlockFeedback, "audioFeedback") == audioFeedback
+                    && GetObjectReference(unlockFeedback, "hapticFeedback") == hapticFeedback
+                    && GetObjectReference(unlockFeedback, "followCamera") == followCamera,
+                "Auto Feeder unlock feedback must reuse M2 presentation services.");
+
+            GameObject saleObject = FindRoot(scene, "Sale Point");
+            GameObject workerPurchaseObject = FindRoot(scene, "Worker Purchase Pad");
+            Require(saleObject != null && workerPurchaseObject != null,
+                "M5 portrait separation checks require the existing interaction roots.");
+            Require(!purchaseTrigger.bounds.Intersects(
+                        saleObject.GetComponent<BoxCollider>().bounds)
+                    && !purchaseTrigger.bounds.Intersects(
+                        workerPurchaseObject.GetComponent<BoxCollider>().bounds),
+                "Auto Feeder purchase interaction overlaps an accepted portrait interaction zone.");
+        }
+
         private static BoxCollider ValidateTriggerZone(GameObject root, string label)
         {
             BoxCollider trigger = root.GetComponent<BoxCollider>();
@@ -2495,8 +2971,8 @@ namespace IndustryTycoon.Editor
                 particleSystems.AddRange(rootParticles);
             }
 
-            Require(particleSystems.Count == 12,
-                $"The prototype requires twelve reusable feedback emitters; found {particleSystems.Count}.");
+            Require(particleSystems.Count == 14,
+                $"The prototype requires fourteen reusable feedback emitters; found {particleSystems.Count}.");
             for (int i = 0; i < particleSystems.Count; i++)
             {
                 ParticleSystem particles = particleSystems[i];
@@ -3079,6 +3555,243 @@ namespace IndustryTycoon.Editor
             {
                 Object.DestroyImmediate(validationRoot);
             }
+        }
+
+        private static void ValidateM5Logic()
+        {
+            GameObject validationRoot = new GameObject("M5 Logic Validation");
+            try
+            {
+                GameObject walletObject = new GameObject("M5 Wallet");
+                walletObject.transform.SetParent(validationRoot.transform, false);
+                Wallet wallet = walletObject.AddComponent<Wallet>();
+
+                GameObject padObject = new GameObject("M5 Auto Feeder Purchase Pad");
+                padObject.transform.SetParent(validationRoot.transform, false);
+                BoxCollider padCollider = padObject.AddComponent<BoxCollider>();
+                padCollider.isTrigger = true;
+                PurchasePad purchasePad = padObject.AddComponent<PurchasePad>();
+                SetObjectReference(purchasePad, "wallet", wallet);
+                SetObjectReference(purchasePad, "interactionCollider", padCollider);
+                SetString(purchasePad, "purchaseLabel", "AUTO FEEDER");
+                SetBoolean(purchasePad, "startsAvailable", false);
+                SetInteger(purchasePad, "totalCost", 600);
+                SetInteger(purchasePad, "spendPerTick", 5);
+                wallet.Deposit(600);
+
+                Require(purchasePad.ProcessPaymentStep() == 0
+                        && purchasePad.RemainingCost == 600
+                        && wallet.Balance == 600,
+                    "Locked Auto Feeder Purchase Pad accepted payment.");
+                Require(purchasePad.SetAvailable(true),
+                    "Auto Feeder Purchase Pad could not unlock after its prerequisite.");
+                for (int i = 0; i < 13; i++)
+                {
+                    Require(purchasePad.ProcessPaymentStep() == 5,
+                        "Auto Feeder Purchase Pad rejected valid partial funding.");
+                }
+
+                Require(purchasePad.RemainingCost == 535 && wallet.Balance == 535,
+                    "Auto Feeder Purchase Pad did not retain its $65 partial payment.");
+                purchasePad.enabled = false;
+                purchasePad.enabled = true;
+                Require(purchasePad.RemainingCost == 535,
+                    "Auto Feeder Purchase Pad lost progress across lifecycle changes.");
+
+                int purchaseCompletionCount = 0;
+                purchasePad.Completed += () => purchaseCompletionCount++;
+                int paymentGuard = 0;
+                while (!purchasePad.IsCompleted && paymentGuard++ < 128)
+                {
+                    purchasePad.ProcessPaymentStep();
+                }
+
+                Require(purchasePad.IsCompleted
+                        && purchasePad.RemainingCost == 0
+                        && wallet.Balance == 0
+                        && purchaseCompletionCount == 1
+                        && purchasePad.ProcessPaymentStep() == 0,
+                    "Auto Feeder Purchase Pad did not complete exactly once at $600.");
+
+                GameObject stockpileObject = new GameObject("M5 WoodStockpile");
+                stockpileObject.transform.SetParent(validationRoot.transform, false);
+                WoodStockpile stockpile = stockpileObject.AddComponent<WoodStockpile>();
+                DepositValidationWood(stockpile);
+                DepositValidationWood(stockpile);
+
+                GameObject processorObject = new GameObject("M5 WoodProcessor");
+                processorObject.transform.SetParent(validationRoot.transform, false);
+                WoodProcessor processor = processorObject.AddComponent<WoodProcessor>();
+                GameObject carryObject = new GameObject("M5 CarryStack");
+                carryObject.transform.SetParent(validationRoot.transform, false);
+                CarryStack carryStack = carryObject.AddComponent<CarryStack>();
+
+                for (int i = 0; i < processor.InputCapacity - 1; i++)
+                {
+                    Require(carryStack.TryAdd(ResourceType.Wood, 1)
+                            && processor.TryTransferInputFrom(carryStack),
+                        "Manual input could not fill the unreserved Processor slots.");
+                }
+
+                Require(carryStack.TryAdd(ResourceType.Wood, 1),
+                    "M5 validation could not prepare manually carried Wood.");
+                Require(processor.TryReserveInput(
+                            out ProcessorInputReservation destinationReservation),
+                    "Auto Feeder could not reserve its Processor destination.");
+                Require(stockpile.TryReserveOutgoing(
+                            out WoodStockpileOutgoingReservation sourceReservation),
+                    "Auto Feeder could not claim its Stockpile source.");
+                Require(processor.InputWood == processor.InputCapacity - 1
+                        && processor.ReservedInputCapacity == 1
+                        && processor.AvailableInputCapacity == 0
+                        && stockpile.StoredWood == 1
+                        && stockpile.OutgoingReservations == 1
+                        && stockpile.TotalOwnedWood == 2,
+                    "M5 reservations did not preserve source ownership or destination capacity.");
+
+                Require(stockpile.TryTransferOneTo(carryStack)
+                        && stockpile.StoredWood == 0
+                        && stockpile.OutgoingReservations == 1
+                        && carryStack.GetAmount(ResourceType.Wood) == 2
+                        && !stockpile.TryTransferOneTo(carryStack),
+                    "Player/conveyor contention did not leave each Wood with exactly one owner.");
+                Require(!processor.TryTransferInputFrom(carryStack)
+                        && carryStack.GetAmount(ResourceType.Wood) == 2
+                        && processor.InputWood == processor.InputCapacity - 1,
+                    "Manual feed consumed a destination slot reserved by the Auto Feeder.");
+
+                Require(WoodInputTransferTransaction.TryCommit(
+                            stockpile,
+                            sourceReservation,
+                            processor,
+                            destinationReservation)
+                        && stockpile.StoredWood == 0
+                        && stockpile.OutgoingReservations == 0
+                        && processor.InputWood == processor.InputCapacity
+                        && processor.ReservedInputCapacity == 0
+                        && !sourceReservation.IsValid
+                        && !destinationReservation.IsValid,
+                    "One completed Auto Feeder transaction did not transfer exactly one Wood.");
+                Require(!WoodInputTransferTransaction.TryCommit(
+                            stockpile,
+                            sourceReservation,
+                            processor,
+                            destinationReservation),
+                    "Stale M5 reservation handles duplicated a completed transfer.");
+
+                GameObject cancellationStockpileObject =
+                    new GameObject("M5 Cancellation Stockpile");
+                cancellationStockpileObject.transform.SetParent(
+                    validationRoot.transform,
+                    false);
+                WoodStockpile cancellationStockpile =
+                    cancellationStockpileObject.AddComponent<WoodStockpile>();
+                GameObject cancellationProcessorObject =
+                    new GameObject("M5 Cancellation Processor");
+                cancellationProcessorObject.transform.SetParent(
+                    validationRoot.transform,
+                    false);
+                WoodProcessor cancellationProcessor =
+                    cancellationProcessorObject.AddComponent<WoodProcessor>();
+                DepositValidationWood(cancellationStockpile);
+
+                Require(cancellationProcessor.TryReserveInput(
+                            out ProcessorInputReservation cancelledDestination),
+                    "M5 cancellation validation could not reserve its destination.");
+                Require(cancellationStockpile.TryReserveOutgoing(
+                            out WoodStockpileOutgoingReservation cancelledSource)
+                        && cancellationStockpile.ReleaseOutgoing(cancelledSource)
+                        && cancellationProcessor.ReleaseReservedInput(cancelledDestination)
+                        && cancellationStockpile.StoredWood == 1
+                        && cancellationStockpile.OutgoingReservations == 0
+                        && cancellationProcessor.InputWood == 0
+                        && cancellationProcessor.ReservedInputCapacity == 0,
+                    "Explicit M5 cancellation did not refund/release both reservations.");
+
+                Require(cancellationProcessor.TryReserveInput(out cancelledDestination)
+                        && cancellationStockpile.TryReserveOutgoing(out cancelledSource),
+                    "M5 cancellation validation could not reacquire a transaction.");
+                cancellationProcessor.enabled = false;
+                Require(!cancelledDestination.IsValid,
+                    "A disabled Processor exposed its destination reservation as usable.");
+                cancellationProcessor.enabled = true;
+                Require(cancellationProcessor.ReleaseReservedInput(cancelledDestination)
+                        && cancellationStockpile.ReleaseOutgoing(cancelledSource)
+                        && cancellationStockpile.StoredWood == 1
+                        && cancellationStockpile.OutgoingReservations == 0
+                        && cancellationProcessor.InputWood == 0,
+                    "M5 could not explicitly resolve the disabled-Processor transaction.");
+
+                Require(cancellationProcessor.TryReserveInput(out cancelledDestination)
+                        && cancellationStockpile.TryReserveOutgoing(out cancelledSource),
+                    "M5 source-disable validation could not reacquire a transaction.");
+                cancellationStockpile.enabled = false;
+                Require(!cancelledSource.IsValid,
+                    "A disabled Stockpile exposed its source reservation as usable.");
+                cancellationStockpile.enabled = true;
+                Require(cancellationStockpile.ReleaseOutgoing(cancelledSource)
+                        && cancellationProcessor.ReleaseReservedInput(cancelledDestination)
+                        && cancellationStockpile.StoredWood == 1
+                        && cancellationStockpile.OutgoingReservations == 0
+                        && cancellationProcessor.ReservedInputCapacity == 0,
+                    "M5 could not explicitly resolve the disabled-Stockpile transaction.");
+
+                GameObject repeatedStockpileObject =
+                    new GameObject("M5 Repeated Stockpile");
+                repeatedStockpileObject.transform.SetParent(validationRoot.transform, false);
+                WoodStockpile repeatedStockpile =
+                    repeatedStockpileObject.AddComponent<WoodStockpile>();
+                GameObject repeatedProcessorObject =
+                    new GameObject("M5 Repeated Processor");
+                repeatedProcessorObject.transform.SetParent(validationRoot.transform, false);
+                WoodProcessor repeatedProcessor =
+                    repeatedProcessorObject.AddComponent<WoodProcessor>();
+
+                const int StableCycleCount = 20;
+                for (int i = 0; i < StableCycleCount; i++)
+                {
+                    DepositValidationWood(repeatedStockpile);
+                    Require(repeatedProcessor.TryReserveInput(
+                                out ProcessorInputReservation repeatedDestination)
+                            && repeatedStockpile.TryReserveOutgoing(
+                                out WoodStockpileOutgoingReservation repeatedSource)
+                            && WoodInputTransferTransaction.TryCommit(
+                                repeatedStockpile,
+                                repeatedSource,
+                                repeatedProcessor,
+                                repeatedDestination)
+                            && repeatedStockpile.TotalOwnedWood == 0
+                            && repeatedStockpile.OutgoingReservations == 0
+                            && repeatedProcessor.InputWood == i + 1
+                            && repeatedProcessor.ReservedInputCapacity == 0
+                            && repeatedProcessor.InputWood
+                               + repeatedProcessor.ReservedInputCapacity
+                               <= repeatedProcessor.InputCapacity,
+                        "Repeated M5 transfer cycles leaked, duplicated, or exceeded capacity.");
+                }
+
+                GameObject repeatedCarryObject = new GameObject("M5 Manual Feed CarryStack");
+                repeatedCarryObject.transform.SetParent(validationRoot.transform, false);
+                CarryStack repeatedCarry = repeatedCarryObject.AddComponent<CarryStack>();
+                Require(repeatedCarry.TryAdd(ResourceType.Wood, 1)
+                        && repeatedProcessor.TryTransferInputFrom(repeatedCarry)
+                        && repeatedProcessor.InputWood == StableCycleCount + 1
+                        && repeatedCarry.TotalAmount == 0,
+                    "Manual Processor feeding no longer works after repeated automation cycles.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(validationRoot);
+            }
+        }
+
+        private static void DepositValidationWood(WoodStockpile stockpile)
+        {
+            Require(stockpile != null
+                    && stockpile.TryReserveIncoming(
+                        out WoodStockpileReservation reservation)
+                    && stockpile.TryDepositReserved(reservation),
+                "M5 validation could not deposit one authoritative Stockpile Wood.");
         }
 
         private static GameObject FindRoot(Scene scene, string rootName)

@@ -178,7 +178,9 @@ namespace IndustryTycoon.Feedback
 
             if (inputText != null)
             {
-                inputText.text = $"WOOD IN  {processor.InputWood} / {processor.InputCapacity}";
+                inputText.text = processor.ReservedInputCapacity > 0
+                    ? $"WOOD IN  {processor.InputWood} + {processor.ReservedInputCapacity} / {processor.InputCapacity}"
+                    : $"WOOD IN  {processor.InputWood} / {processor.InputCapacity}";
             }
 
             if (outputText != null)
