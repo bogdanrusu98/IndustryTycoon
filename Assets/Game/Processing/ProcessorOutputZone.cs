@@ -3,12 +3,12 @@ using IndustryTycoon.Core;
 using IndustryTycoon.Player;
 using UnityEngine;
 
-namespace IndustryTycoon.Workers
+namespace IndustryTycoon.Processing
 {
     [RequireComponent(typeof(Collider))]
-    public sealed class WoodStockpileCollector : MonoBehaviour
+    public sealed class ProcessorOutputZone : MonoBehaviour
     {
-        [SerializeField] private WoodStockpile stockpile;
+        [SerializeField] private WoodProcessor processor;
         [SerializeField] private CarryStack carryStack;
         [SerializeField] private Collider playerCollider;
         [SerializeField, Min(0.02f)] private float transferInterval = 0.10f;
@@ -18,7 +18,7 @@ namespace IndustryTycoon.Workers
         private bool _isStartingTransfer;
         private bool _isPlayerInside;
 
-        public WoodStockpile Stockpile => stockpile;
+        public WoodProcessor Processor => processor;
         public CarryStack CarryStack => carryStack;
         public Collider PlayerCollider => playerCollider;
         public float TransferInterval => transferInterval;
@@ -32,9 +32,9 @@ namespace IndustryTycoon.Workers
 
         private void OnEnable()
         {
-            if (stockpile != null)
+            if (processor != null)
             {
-                stockpile.StateChanged += HandleStockpileChanged;
+                processor.BufferChanged += HandleBufferChanged;
             }
 
             if (carryStack != null)
@@ -45,9 +45,9 @@ namespace IndustryTycoon.Workers
 
         private void OnDisable()
         {
-            if (stockpile != null)
+            if (processor != null)
             {
-                stockpile.StateChanged -= HandleStockpileChanged;
+                processor.BufferChanged -= HandleBufferChanged;
             }
 
             if (carryStack != null)
@@ -85,9 +85,9 @@ namespace IndustryTycoon.Workers
         public bool TryTransferOne()
         {
             return _isPlayerInside
-                   && stockpile != null
+                   && processor != null
                    && carryStack != null
-                   && stockpile.TryTransferOneTo(carryStack);
+                   && processor.TryTransferOutputTo(carryStack);
         }
 
         private void TryStartTransfer()
@@ -95,10 +95,15 @@ namespace IndustryTycoon.Workers
             if (_transferCoroutine != null
                 || _isStartingTransfer
                 || !_isPlayerInside
-                || stockpile == null
-                || carryStack == null
-                || stockpile.StoredWood <= 0
-                || !carryStack.CanAccept(ResourceType.Wood, 1))
+                || processor == null
+                || carryStack == null)
+            {
+                return;
+            }
+
+            if (!processor.isActiveAndEnabled
+                || processor.OutputPlanks <= 0
+                || !carryStack.CanAccept(ResourceType.Plank, 1))
             {
                 return;
             }
@@ -116,9 +121,9 @@ namespace IndustryTycoon.Workers
 
         private IEnumerator TransferRoutine()
         {
-            while (_isPlayerInside && stockpile != null && carryStack != null)
+            while (_isPlayerInside && processor != null && carryStack != null)
             {
-                if (!stockpile.TryTransferOneTo(carryStack))
+                if (!processor.TryTransferOutputTo(carryStack))
                 {
                     break;
                 }
@@ -140,7 +145,7 @@ namespace IndustryTycoon.Workers
             _transferCoroutine = null;
         }
 
-        private void HandleStockpileChanged(int storedWood, int incomingReservations)
+        private void HandleBufferChanged(int inputWood, int outputPlanks, int reservedOutputCapacity)
         {
             TryStartTransfer();
         }

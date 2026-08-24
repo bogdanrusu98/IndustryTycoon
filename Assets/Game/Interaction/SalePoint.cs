@@ -14,17 +14,37 @@ namespace IndustryTycoon.Interaction
             Vector3 startPosition,
             Quaternion startRotation,
             Vector3 startScale)
+            : this(
+                ResourceType.Wood,
+                cashValue,
+                remainingWood,
+                startPosition,
+                startRotation,
+                startScale)
         {
+        }
+
+        public SaleFeedbackData(
+            ResourceType resourceType,
+            int cashValue,
+            int remainingAmount,
+            Vector3 startPosition,
+            Quaternion startRotation,
+            Vector3 startScale)
+        {
+            ResourceType = resourceType;
             CashValue = cashValue;
-            RemainingWood = remainingWood;
+            RemainingAmount = remainingAmount;
             StartPosition = startPosition;
             StartRotation = startRotation;
             StartScale = startScale;
         }
 
+        public ResourceType ResourceType { get; }
         public int CashValue { get; }
-        public int RemainingWood { get; }
-        public bool BecameEmpty => RemainingWood == 0;
+        public int RemainingAmount { get; }
+        public int RemainingWood => RemainingAmount;
+        public bool BecameEmpty => RemainingAmount == 0;
         public Vector3 StartPosition { get; }
         public Quaternion StartRotation { get; }
         public Vector3 StartScale { get; }
@@ -41,6 +61,7 @@ namespace IndustryTycoon.Interaction
         [Header("Sale")]
         [SerializeField] private ResourceType resourceType = ResourceType.Wood;
         [SerializeField, Min(1)] private int woodValue = 5;
+        [SerializeField, Min(1)] private int plankValue = 15;
         [SerializeField, Min(0.02f)] private float unloadInterval = 0.2f;
 
         private WaitForSeconds _unloadWait;
@@ -55,6 +76,7 @@ namespace IndustryTycoon.Interaction
         public Collider PlayerCollider => playerCollider;
         public ResourceType ResourceType => resourceType;
         public int WoodValue => woodValue;
+        public int PlankValue => plankValue;
         public float UnloadInterval => unloadInterval;
         public bool IsPlayerInside => _isPlayerInside;
 
@@ -98,26 +120,27 @@ namespace IndustryTycoon.Interaction
         {
             if (carryStack == null
                 || cashPile == null
-                || !cashPile.CanDeposit(woodValue)
-                || !carryStack.CanRemove(resourceType, 1))
+                || !TryResolveCurrentSale(out ResourceType soldResourceType, out int unitValue)
+                || !cashPile.CanDeposit(unitValue))
             {
                 return false;
             }
 
             carryStack.TryGetTopVisualPose(
-                resourceType,
+                soldResourceType,
                 out Vector3 startPosition,
                 out Quaternion startRotation,
                 out Vector3 startScale);
-            if (!carryStack.TryRemove(resourceType, 1))
+            if (!carryStack.TryRemove(soldResourceType, 1))
             {
                 return false;
             }
 
-            cashPile.Deposit(woodValue);
+            cashPile.Deposit(unitValue);
             UnitSold?.Invoke(new SaleFeedbackData(
-                woodValue,
-                carryStack.GetAmount(resourceType),
+                soldResourceType,
+                unitValue,
+                carryStack.GetAmount(soldResourceType),
                 startPosition,
                 startRotation,
                 startScale));
@@ -138,9 +161,13 @@ namespace IndustryTycoon.Interaction
                 || _isStartingUnload
                 || !_isPlayerInside
                 || carryStack == null
-                || cashPile == null
-                || carryStack.GetAmount(resourceType) <= 0
-                || !cashPile.CanDeposit(woodValue))
+                || cashPile == null)
+            {
+                return;
+            }
+
+            if (!TryResolveCurrentSale(out _, out int unitValue)
+                || !cashPile.CanDeposit(unitValue))
             {
                 return;
             }
@@ -189,9 +216,40 @@ namespace IndustryTycoon.Interaction
             _unloadWait = new WaitForSeconds(unloadInterval);
         }
 
+        public int GetUnitValue(ResourceType carriedResourceType)
+        {
+            switch (carriedResourceType)
+            {
+                case ResourceType.Wood:
+                    return woodValue;
+                case ResourceType.Plank:
+                    return plankValue;
+                default:
+                    return 0;
+            }
+        }
+
+        private bool TryResolveCurrentSale(
+            out ResourceType carriedResourceType,
+            out int unitValue)
+        {
+            carriedResourceType = resourceType;
+            unitValue = 0;
+            if (carryStack == null
+                || !carryStack.TryGetActiveResourceType(out carriedResourceType)
+                || !carryStack.CanRemove(carriedResourceType, 1))
+            {
+                return false;
+            }
+
+            unitValue = GetUnitValue(carriedResourceType);
+            return unitValue > 0;
+        }
+
         private void OnValidate()
         {
             woodValue = Mathf.Max(1, woodValue);
+            plankValue = Mathf.Max(1, plankValue);
             unloadInterval = Mathf.Max(0.02f, unloadInterval);
         }
     }

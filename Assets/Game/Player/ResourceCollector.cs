@@ -116,12 +116,15 @@ namespace IndustryTycoon.Player
                 }
 
                 ResourcePickup pickup = hit.GetComponentInParent<ResourcePickup>();
-                if (pickup == null || !pickup.IsAvailable || pickup.Amount > availableCapacity)
+                if (pickup == null
+                    || !pickup.IsAvailable
+                    || pickup.Amount > availableCapacity
+                    || !carryStack.CanAccept(pickup.ResourceType, pickup.Amount))
                 {
                     continue;
                 }
 
-                if (!carryStack.TryReserveCapacity(pickup.Amount))
+                if (!carryStack.TryReserveCapacity(pickup.ResourceType, pickup.Amount))
                 {
                     continue;
                 }

@@ -12,6 +12,7 @@ namespace IndustryTycoon.Feedback
             public Vector3 BaseScale;
             public Vector3 StartPosition;
             public Quaternion StartRotation;
+            public ResourceVisual ResourceVisual;
             public float Elapsed = -1f;
         }
 
@@ -102,12 +103,13 @@ namespace IndustryTycoon.Feedback
             while (_flightSlots.Count < poolSize)
             {
                 GameObject visual = Instantiate(woodVisualPrefab, transform);
-                visual.name = $"Sale Flight Log {_flightSlots.Count + 1:00}";
+                visual.name = $"Sale Flight Resource {_flightSlots.Count + 1:00}";
                 visual.SetActive(false);
                 _flightSlots.Add(new FlightSlot
                 {
                     Visual = visual,
-                    BaseScale = visual.transform.localScale
+                    BaseScale = visual.transform.localScale,
+                    ResourceVisual = visual.GetComponent<ResourceVisual>()
                 });
             }
         }
@@ -126,6 +128,7 @@ namespace IndustryTycoon.Feedback
             slot.StartPosition = feedback.StartPosition;
             slot.StartRotation = feedback.StartRotation;
             slot.Elapsed = 0f;
+            slot.ResourceVisual?.Show(feedback.ResourceType);
             slot.Visual.SetActive(true);
             slot.Visual.transform.SetPositionAndRotation(feedback.StartPosition, feedback.StartRotation);
             slot.Visual.transform.localScale = feedback.StartScale;

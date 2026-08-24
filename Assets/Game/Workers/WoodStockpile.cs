@@ -111,7 +111,7 @@ namespace IndustryTycoon.Workers
             if (!isActiveAndEnabled
                 || carryStack == null
                 || _storedWood <= 0
-                || !carryStack.TryReserveCapacity(1))
+                || !carryStack.TryReserveCapacity(ResourceType.Wood, 1))
             {
                 return false;
             }

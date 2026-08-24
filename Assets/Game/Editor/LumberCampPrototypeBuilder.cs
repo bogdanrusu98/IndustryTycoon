@@ -6,6 +6,7 @@ using IndustryTycoon.Economy;
 using IndustryTycoon.Feedback;
 using IndustryTycoon.Interaction;
 using IndustryTycoon.Player;
+using IndustryTycoon.Processing;
 using IndustryTycoon.ResourceSystem;
 using IndustryTycoon.UI;
 using IndustryTycoon.Workers;
@@ -158,10 +159,26 @@ namespace IndustryTycoon.Editor
                 MaterialFolder + "/Wood_Stockpile.mat",
                 new Color(0.52f, 0.27f, 0.08f),
                 0.18f);
+            Material plankMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Plank.mat",
+                new Color(0.86f, 0.61f, 0.29f),
+                0.24f);
+            Material plankAccentMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Plank_Accent.mat",
+                new Color(0.48f, 0.24f, 0.08f),
+                0.18f);
+            Material processorMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Processor.mat",
+                new Color(0.10f, 0.38f, 0.48f),
+                0.30f);
             Material feedbackParticleMaterial = CreateOrUpdateParticleMaterial(
                 MaterialFolder + "/Feedback_Particle.mat");
 
-            GameObject woodVisualPrefab = BuildWoodVisualPrefab(barkMaterial, cutMaterial);
+            GameObject woodVisualPrefab = BuildWoodVisualPrefab(
+                barkMaterial,
+                cutMaterial,
+                plankMaterial,
+                plankAccentMaterial);
             BuildWoodResourcePrefab(barkMaterial, cutMaterial);
             GameObject cashVisualPrefab = BuildCashVisualPrefab(cashMaterial, cashAccentMaterial);
             GameObject playerPrefab = BuildPlayerPrefab(
@@ -248,7 +265,7 @@ namespace IndustryTycoon.Editor
                 stockpileMaterial,
                 cutMaterial,
                 feedbackParticleMaterial);
-            CreateWorkerAutomation(
+            FirstWorkerUnlock workerUnlock = CreateWorkerAutomation(
                 scene,
                 productionUpgrade,
                 woodSpawner,
@@ -263,6 +280,24 @@ namespace IndustryTycoon.Editor
                 cashVisualPrefab,
                 cashCollectionTarget,
                 woodVisualPrefab,
+                feedbackParticleMaterial,
+                feedbackServices,
+                followCamera);
+            CreateWoodProcessing(
+                scene,
+                workerUnlock,
+                wallet,
+                player.GetComponent<CarryStack>(),
+                playerCollider,
+                purchaseMaterial,
+                purchaseCompleteMaterial,
+                cashAccentMaterial,
+                cashVisualPrefab,
+                cashCollectionTarget,
+                woodVisualPrefab,
+                processorMaterial,
+                sawBladeMaterial,
+                plankMaterial,
                 feedbackParticleMaterial,
                 feedbackServices,
                 followCamera);
@@ -296,6 +331,7 @@ namespace IndustryTycoon.Editor
             EnsureFolder("Assets/Game/Economy");
             EnsureFolder("Assets/Game/Interaction");
             EnsureFolder("Assets/Game/Feedback");
+            EnsureFolder("Assets/Game/Processing");
             EnsureFolder("Assets/Game/Camera");
             EnsureFolder("Assets/Game/UI");
             EnsureFolder("Assets/Game/Workers");
@@ -402,12 +438,27 @@ namespace IndustryTycoon.Editor
             return material;
         }
 
-        private static GameObject BuildWoodVisualPrefab(Material barkMaterial, Material cutMaterial)
+        private static GameObject BuildWoodVisualPrefab(
+            Material barkMaterial,
+            Material cutMaterial,
+            Material plankMaterial,
+            Material plankAccentMaterial)
         {
             GameObject root = new GameObject("WoodCarryVisual");
             try
             {
-                CreateWoodGeometry(root.transform, barkMaterial, cutMaterial);
+                GameObject woodVisual = new GameObject("Wood Visual");
+                woodVisual.transform.SetParent(root.transform, false);
+                CreateWoodGeometry(woodVisual.transform, barkMaterial, cutMaterial);
+
+                GameObject plankVisual = new GameObject("Plank Visual");
+                plankVisual.transform.SetParent(root.transform, false);
+                CreatePlankGeometry(plankVisual.transform, plankMaterial, plankAccentMaterial);
+                plankVisual.SetActive(false);
+
+                ResourceVisual resourceVisual = root.AddComponent<ResourceVisual>();
+                SetObjectReference(resourceVisual, "woodRoot", woodVisual);
+                SetObjectReference(resourceVisual, "plankRoot", plankVisual);
                 root.transform.localScale = Vector3.one * 0.7f;
                 return SavePrefabAndReload(root, WoodVisualPrefabPath);
             }
@@ -485,6 +536,27 @@ namespace IndustryTycoon.Editor
 
             CreateLogEnd("Cut End Left", parent, cutMaterial, -0.565f);
             CreateLogEnd("Cut End Right", parent, cutMaterial, 0.565f);
+        }
+
+        private static void CreatePlankGeometry(
+            Transform parent,
+            Material plankMaterial,
+            Material accentMaterial)
+        {
+            GameObject board = CreatePrimitiveChild(
+                "Plank Board",
+                PrimitiveType.Cube,
+                parent,
+                plankMaterial);
+            board.transform.localScale = new Vector3(1.12f, 0.16f, 0.36f);
+
+            GameObject stripe = CreatePrimitiveChild(
+                "Plank Grain",
+                PrimitiveType.Cube,
+                parent,
+                accentMaterial);
+            stripe.transform.localPosition = new Vector3(0f, 0.087f, 0f);
+            stripe.transform.localScale = new Vector3(0.90f, 0.025f, 0.055f);
         }
 
         private static void CreateLogEnd(string name, Transform parent, Material material, float xPosition)
@@ -888,7 +960,7 @@ namespace IndustryTycoon.Editor
             CreateWorldLabel(
                 "Sale Label",
                 root.transform,
-                "SELL WOOD\n$5 EACH",
+                "SELL MATERIALS\nWOOD $5  PLANK $15",
                 new Vector3(0f, 1.55f, 0.15f),
                 Color.white);
 
@@ -913,6 +985,7 @@ namespace IndustryTycoon.Editor
             SetObjectReference(salePoint, "playerCollider", playerCollider);
             SetEnum(salePoint, "resourceType", (int)ResourceType.Wood);
             SetInteger(salePoint, "woodValue", 5);
+            SetInteger(salePoint, "plankValue", 15);
             SetFloat(salePoint, "unloadInterval", 0.2f);
 
             SalePointFeedback saleFeedback = root.AddComponent<SalePointFeedback>();
@@ -1325,6 +1398,191 @@ namespace IndustryTycoon.Editor
             SetObjectReference(unlockFeedback, "followCamera", followCamera);
             SetFloat(unlockFeedback, "unlockDuration", 0.65f);
             return workerUnlock;
+        }
+
+        private static FirstProcessorUnlock CreateWoodProcessing(
+            Scene scene,
+            FirstWorkerUnlock workerUnlock,
+            Wallet wallet,
+            CarryStack carryStack,
+            Collider playerCollider,
+            Material purchaseAvailableMaterial,
+            Material purchaseCompletedMaterial,
+            Material cashAccentMaterial,
+            GameObject cashVisualPrefab,
+            Transform tokenOrigin,
+            GameObject resourceVisualPrefab,
+            Material processorMaterial,
+            Material bladeMaterial,
+            Material plankMaterial,
+            Material particleMaterial,
+            FeedbackServices feedbackServices,
+            SmoothFollowCamera followCamera)
+        {
+            PurchasePad processorPurchasePad = CreatePurchasePad(
+                scene,
+                "Processor Purchase Pad",
+                "WOOD PROCESSOR",
+                new Vector3(-8.2f, 0f, -0.25f),
+                360,
+                false,
+                wallet,
+                playerCollider,
+                purchaseAvailableMaterial,
+                purchaseCompletedMaterial,
+                cashAccentMaterial,
+                cashVisualPrefab,
+                tokenOrigin,
+                particleMaterial,
+                feedbackServices.Audio);
+
+            GameObject processorRoot = new GameObject("Wood Processor");
+            SceneManager.MoveGameObjectToScene(processorRoot, scene);
+            processorRoot.transform.position = new Vector3(-8.2f, 0f, 5.2f);
+
+            GameObject processorVisual = new GameObject("Processor Visual");
+            processorVisual.transform.SetParent(processorRoot.transform, false);
+
+            GameObject platform = CreatePrimitiveChild(
+                "Processor Platform",
+                PrimitiveType.Cube,
+                processorVisual.transform,
+                processorMaterial);
+            platform.transform.localPosition = new Vector3(0f, 0.20f, 0.30f);
+            platform.transform.localScale = new Vector3(3.8f, 0.34f, 2.35f);
+
+            GameObject housing = CreatePrimitiveChild(
+                "Processor Housing",
+                PrimitiveType.Cube,
+                processorVisual.transform,
+                processorMaterial);
+            housing.transform.localPosition = new Vector3(0f, 0.78f, 0.46f);
+            housing.transform.localScale = new Vector3(1.52f, 1.02f, 1.08f);
+
+            GameObject workingBlade = CreatePrimitiveChild(
+                "Working Blade",
+                PrimitiveType.Cylinder,
+                processorVisual.transform,
+                bladeMaterial);
+            workingBlade.transform.localPosition = new Vector3(0f, 1.35f, -0.14f);
+            workingBlade.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            workingBlade.transform.localScale = new Vector3(0.66f, 0.055f, 0.66f);
+
+            GameObject inputZone = new GameObject("Processor Input Zone");
+            inputZone.transform.SetParent(processorRoot.transform, false);
+            inputZone.transform.localPosition = new Vector3(-1.60f, 0f, -1.55f);
+            BoxCollider inputTrigger = AddKinematicTrigger(inputZone, new Vector3(2.2f, 2.4f, 2.2f));
+            CreateZoneDisc("Wood Input Area", inputZone.transform, processorMaterial, 1.08f);
+            TextMesh inputText = CreateWorldLabel(
+                "Input Amount",
+                inputZone.transform,
+                "WOOD IN  0 / 24",
+                new Vector3(0f, 1.38f, 0.08f),
+                new Color(1f, 0.78f, 0.34f));
+
+            GameObject outputZone = new GameObject("Processor Output Zone");
+            outputZone.transform.SetParent(processorRoot.transform, false);
+            outputZone.transform.localPosition = new Vector3(1.60f, 0f, -1.55f);
+            BoxCollider outputTrigger = AddKinematicTrigger(outputZone, new Vector3(2.2f, 2.4f, 2.2f));
+            CreateZoneDisc("Plank Output Area", outputZone.transform, plankMaterial, 1.08f);
+            TextMesh outputText = CreateWorldLabel(
+                "Output Amount",
+                outputZone.transform,
+                "PLANK OUT  0 / 12",
+                new Vector3(0f, 1.38f, 0.08f),
+                new Color(1f, 0.88f, 0.52f));
+
+            TextMesh statusText = CreateWorldLabel(
+                "Processor Status",
+                processorVisual.transform,
+                "SAWMILL  IDLE",
+                new Vector3(0f, 2.28f, 0.35f),
+                Color.white);
+
+            GameObject outputVisualRoot = new GameObject("Processor Output Visuals");
+            outputVisualRoot.transform.SetParent(processorVisual.transform, false);
+            outputVisualRoot.transform.localPosition = new Vector3(1.12f, 0.48f, 0.18f);
+
+            ParticleSystem completionParticles = CreateFeedbackParticleSystem(
+                "Processing Complete Burst",
+                outputVisualRoot.transform,
+                new Vector3(0f, 0.42f, 0f),
+                new Color(1f, 0.69f, 0.28f),
+                particleMaterial,
+                32,
+                0.34f,
+                1.28f,
+                0.11f);
+
+            WoodProcessor processor = processorRoot.AddComponent<WoodProcessor>();
+            SetInteger(processor, "inputCapacity", 24);
+            SetInteger(processor, "outputCapacity", 12);
+            SetFloat(processor, "processingDuration", 1.10f);
+
+            ProcessorInputZone inputCollector = inputZone.AddComponent<ProcessorInputZone>();
+            SetObjectReference(inputCollector, "processor", processor);
+            SetObjectReference(inputCollector, "carryStack", carryStack);
+            SetObjectReference(inputCollector, "playerCollider", playerCollider);
+            SetFloat(inputCollector, "transferInterval", 0.10f);
+            Require(inputCollector.GetComponent<Collider>() == inputTrigger,
+                "Processor input component must share its trigger collider.");
+
+            ProcessorOutputZone outputCollector = outputZone.AddComponent<ProcessorOutputZone>();
+            SetObjectReference(outputCollector, "processor", processor);
+            SetObjectReference(outputCollector, "carryStack", carryStack);
+            SetObjectReference(outputCollector, "playerCollider", playerCollider);
+            SetFloat(outputCollector, "transferInterval", 0.10f);
+            Require(outputCollector.GetComponent<Collider>() == outputTrigger,
+                "Processor output component must share its trigger collider.");
+
+            WoodProcessorFeedback processorFeedback = processorRoot.AddComponent<WoodProcessorFeedback>();
+            SetObjectReference(processorFeedback, "processor", processor);
+            SetObjectReference(processorFeedback, "workingBlade", workingBlade.transform);
+            SetObjectReference(processorFeedback, "outputVisualRoot", outputVisualRoot.transform);
+            SetObjectReference(processorFeedback, "resourceVisualPrefab", resourceVisualPrefab);
+            SetObjectReference(processorFeedback, "inputText", inputText);
+            SetObjectReference(processorFeedback, "outputText", outputText);
+            SetObjectReference(processorFeedback, "statusText", statusText);
+            SetObjectReference(processorFeedback, "completionParticles", completionParticles);
+            SetInteger(processorFeedback, "maximumOutputVisuals", 6);
+            SetInteger(processorFeedback, "planksPerVisual", 2);
+            SetInteger(processorFeedback, "itemsPerRow", 3);
+            SetFloat(processorFeedback, "visualScale", 0.82f);
+            SetFloat(processorFeedback, "bladeRotationSpeed", 280f);
+            SetFloat(processorFeedback, "outputPopDuration", 0.16f);
+
+            processorRoot.SetActive(false);
+            processorPurchasePad.gameObject.SetActive(false);
+
+            GameObject automationRoot = new GameObject("Processor Automation");
+            SceneManager.MoveGameObjectToScene(automationRoot, scene);
+
+            FirstProcessorUnlock processorUnlock = automationRoot.AddComponent<FirstProcessorUnlock>();
+            SetObjectReference(processorUnlock, "workerUnlock", workerUnlock);
+            SetObjectReference(processorUnlock, "processorPurchasePad", processorPurchasePad);
+            SetObjectReference(processorUnlock, "processorPurchasePadRoot", processorPurchasePad.gameObject);
+            SetObjectReference(processorUnlock, "processorRoot", processorRoot);
+
+            ParticleSystem unlockParticles = CreateFeedbackParticleSystem(
+                "Processor Unlock Burst",
+                automationRoot.transform,
+                processorRoot.transform.position + new Vector3(0f, 1.0f, 0f),
+                new Color(1f, 0.72f, 0.24f),
+                particleMaterial,
+                40,
+                0.58f,
+                1.85f,
+                0.14f);
+
+            ProcessorUnlockFeedback unlockFeedback = automationRoot.AddComponent<ProcessorUnlockFeedback>();
+            SetObjectReference(unlockFeedback, "processorUnlock", processorUnlock);
+            SetObjectReference(unlockFeedback, "processorVisual", processorVisual.transform);
+            SetObjectReference(unlockFeedback, "unlockParticles", unlockParticles);
+            SetObjectReference(unlockFeedback, "audioFeedback", feedbackServices.Audio);
+            SetObjectReference(unlockFeedback, "hapticFeedback", feedbackServices.Haptics);
+            SetObjectReference(unlockFeedback, "followCamera", followCamera);
+            SetFloat(unlockFeedback, "unlockDuration", 0.65f);
+            return processorUnlock;
         }
 
         private static GameObject CreateCutterVisual(
@@ -1875,6 +2133,7 @@ namespace IndustryTycoon.Editor
                 "Sale Point player collider is not assigned.");
             Require(salePoint.ResourceType == ResourceType.Wood, "Sale Point must unload Wood.");
             Require(salePoint.WoodValue == 5, "Sale Point wood value must be $5.");
+            Require(salePoint.PlankValue == 15, "Sale Point plank value must be $15.");
             Require(Mathf.Approximately(salePoint.UnloadInterval, 0.2f),
                 "Sale Point unload interval must be 0.2 seconds.");
             Require(saleFeedback != null
@@ -2042,6 +2301,11 @@ namespace IndustryTycoon.Editor
                 "Carried visuals must not use Rigidbody physics.");
             Require(carryVisualPrefab.GetComponentInChildren<Collider>(true) == null,
                 "Carried visuals must not contain colliders.");
+            ResourceVisual resourceVisual = carryVisualPrefab.GetComponent<ResourceVisual>();
+            Require(resourceVisual != null
+                    && resourceVisual.WoodRoot != null
+                    && resourceVisual.PlankRoot != null,
+                "Carried resource visuals must contain reusable Wood and Plank variants.");
 
             GameObject cashVisualPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CashVisualPrefabPath);
             Require(cashVisualPrefab != null, "CashBundleVisual prefab is missing.");
@@ -2064,8 +2328,150 @@ namespace IndustryTycoon.Editor
             Require(buildSceneFound, "The prototype scene is not enabled in Build Settings.");
             Require(PlayerSettings.defaultInterfaceOrientation == UIOrientation.Portrait,
                 "Default orientation must be Portrait.");
+            ValidateM4Scene(
+                scene,
+                carryStack,
+                wallet,
+                playerCollider,
+                workerAutomation,
+                audioFeedback,
+                hapticFeedback,
+                followCamera);
             ValidateCoreLoopLogic();
             ValidateM3Logic();
+            ValidateM4Logic();
+        }
+
+        private static void ValidateM4Scene(
+            Scene scene,
+            CarryStack carryStack,
+            Wallet wallet,
+            Collider playerCollider,
+            FirstWorkerUnlock workerUnlock,
+            AudioFeedback audioFeedback,
+            HapticFeedback hapticFeedback,
+            SmoothFollowCamera followCamera)
+        {
+            GameObject purchaseObject = FindRoot(scene, "Processor Purchase Pad");
+            GameObject processorObject = FindRoot(scene, "Wood Processor");
+            GameObject automationObject = FindRoot(scene, "Processor Automation");
+            Require(purchaseObject != null, "The prototype scene has no Processor Purchase Pad.");
+            Require(processorObject != null, "The prototype scene has no Wood Processor.");
+            Require(automationObject != null, "The prototype scene has no Processor Automation root.");
+
+            BoxCollider purchaseTrigger = ValidateTriggerZone(
+                purchaseObject,
+                "Processor Purchase Pad");
+            Transform inputTransform = processorObject.transform.Find("Processor Input Zone");
+            Transform outputTransform = processorObject.transform.Find("Processor Output Zone");
+            Require(inputTransform != null && outputTransform != null,
+                "Wood Processor requires separate input and output zones.");
+            BoxCollider inputTrigger = ValidateTriggerZone(
+                inputTransform.gameObject,
+                "Processor Input Zone");
+            BoxCollider outputTrigger = ValidateTriggerZone(
+                outputTransform.gameObject,
+                "Processor Output Zone");
+            Require(Vector3.Distance(inputTransform.position, outputTransform.position) >= 2.8f,
+                "Processor input and output interaction zones are too close.");
+            Require(Vector3.Distance(purchaseObject.transform.position, inputTransform.position) >= 3.0f,
+                "Processor purchase and input zones are too close for portrait controls.");
+
+            PurchasePad purchasePad = purchaseObject.GetComponent<PurchasePad>();
+            PurchasePadFeedback purchaseFeedback = purchaseObject.GetComponent<PurchasePadFeedback>();
+            WoodProcessor processor = processorObject.GetComponent<WoodProcessor>();
+            ProcessorInputZone inputZone = inputTransform.GetComponent<ProcessorInputZone>();
+            ProcessorOutputZone outputZone = outputTransform.GetComponent<ProcessorOutputZone>();
+            WoodProcessorFeedback processorFeedback =
+                processorObject.GetComponent<WoodProcessorFeedback>();
+            FirstProcessorUnlock processorUnlock =
+                automationObject.GetComponent<FirstProcessorUnlock>();
+            ProcessorUnlockFeedback unlockFeedback =
+                automationObject.GetComponent<ProcessorUnlockFeedback>();
+
+            Require(purchasePad != null
+                    && purchasePad.Wallet == wallet
+                    && purchasePad.PlayerCollider == playerCollider
+                    && purchasePad.InteractionCollider == purchaseTrigger,
+                "Processor Purchase Pad gameplay references are incomplete.");
+            Require(purchasePad.PurchaseLabel == "WOOD PROCESSOR"
+                    && purchasePad.TotalCost == 360
+                    && purchasePad.SpendPerTick == 5
+                    && Mathf.Approximately(purchasePad.SpendInterval, 0.10f),
+                "Processor Purchase Pad must cost $360 and spend $5 / 0.10 seconds.");
+            Require(!purchasePad.StartsAvailable
+                    && !purchasePad.IsAvailable
+                    && !purchaseTrigger.enabled
+                    && !purchaseObject.activeSelf,
+                "Processor Purchase Pad must begin locked, disabled, and hidden.");
+            Require(purchaseFeedback != null
+                    && purchaseFeedback.TokenPoolSize == 4
+                    && Mathf.Approximately(purchaseFeedback.TokenFlightDuration, 0.22f)
+                    && GetObjectReference(purchaseFeedback, "tokenVisualPrefab") != null
+                    && GetObjectReference(purchaseFeedback, "purchaseParticles") != null
+                    && GetObjectReference(purchaseFeedback, "audioFeedback") == audioFeedback,
+                "Processor Purchase Pad must reuse the capped M2 purchase feedback.");
+
+            Require(processor != null && !processorObject.activeSelf,
+                "Wood Processor must begin inactive.");
+            Require(processor.InputCapacity == 24
+                    && processor.OutputCapacity == 12
+                    && processor.RecipeInputWood == 2
+                    && processor.RecipeOutputPlanks == 1
+                    && Mathf.Approximately(processor.ProcessingDuration, 1.10f),
+                "Wood Processor must use 24 Wood input, 12 Plank output, 2:1 recipe, and 1.10 seconds.");
+            Require(processor.InputWood == 0
+                    && processor.OutputPlanks == 0
+                    && processor.ReservedOutputCapacity == 0,
+                "Wood Processor buffers must begin empty and unreserved.");
+            Require(inputZone != null
+                    && inputZone.Processor == processor
+                    && inputZone.CarryStack == carryStack
+                    && inputZone.PlayerCollider == playerCollider
+                    && Mathf.Approximately(inputZone.TransferInterval, 0.10f)
+                    && inputZone.GetComponent<Collider>() == inputTrigger,
+                "Processor input-zone references or cadence are incorrect.");
+            Require(outputZone != null
+                    && outputZone.Processor == processor
+                    && outputZone.CarryStack == carryStack
+                    && outputZone.PlayerCollider == playerCollider
+                    && Mathf.Approximately(outputZone.TransferInterval, 0.10f)
+                    && outputZone.GetComponent<Collider>() == outputTrigger,
+                "Processor output-zone references or cadence are incorrect.");
+
+            Require(processorFeedback != null
+                    && processorFeedback.MaximumOutputVisuals == 6
+                    && processorFeedback.PlanksPerVisual == 2
+                    && Mathf.Approximately(processorFeedback.BladeRotationSpeed, 280f)
+                    && Mathf.Approximately(processorFeedback.OutputPopDuration, 0.16f),
+                "Processor presentation pool or working feedback tuning is incorrect.");
+            Require(GetObjectReference(processorFeedback, "processor") == processor
+                    && GetObjectReference(processorFeedback, "workingBlade") != null
+                    && GetObjectReference(processorFeedback, "outputVisualRoot") != null
+                    && GetObjectReference(processorFeedback, "resourceVisualPrefab") != null
+                    && GetObjectReference(processorFeedback, "inputText") != null
+                    && GetObjectReference(processorFeedback, "outputText") != null
+                    && GetObjectReference(processorFeedback, "statusText") != null
+                    && GetObjectReference(processorFeedback, "completionParticles") != null,
+                "Processor presentation references are incomplete.");
+
+            Require(processorUnlock != null
+                    && processorUnlock.WorkerUnlock == workerUnlock
+                    && processorUnlock.ProcessorPurchasePad == purchasePad
+                    && processorUnlock.ProcessorPurchasePadRoot == purchaseObject
+                    && processorUnlock.ProcessorRoot == processorObject,
+                "Processor Automation unlock-gate references are incomplete.");
+            Require(!processorUnlock.IsPadUnlocked && !processorUnlock.IsProcessorActivated,
+                "Processor Automation must begin fully locked.");
+            Require(unlockFeedback != null
+                    && Mathf.Approximately(unlockFeedback.UnlockDuration, 0.65f)
+                    && GetObjectReference(unlockFeedback, "processorUnlock") == processorUnlock
+                    && GetObjectReference(unlockFeedback, "processorVisual") != null
+                    && GetObjectReference(unlockFeedback, "unlockParticles") != null
+                    && GetObjectReference(unlockFeedback, "audioFeedback") == audioFeedback
+                    && GetObjectReference(unlockFeedback, "hapticFeedback") == hapticFeedback
+                    && GetObjectReference(unlockFeedback, "followCamera") == followCamera,
+                "Processor unlock feedback must reuse M2 presentation services.");
         }
 
         private static BoxCollider ValidateTriggerZone(GameObject root, string label)
@@ -2089,8 +2495,8 @@ namespace IndustryTycoon.Editor
                 particleSystems.AddRange(rootParticles);
             }
 
-            Require(particleSystems.Count == 9,
-                $"The prototype requires nine reusable feedback emitters; found {particleSystems.Count}.");
+            Require(particleSystems.Count == 12,
+                $"The prototype requires twelve reusable feedback emitters; found {particleSystems.Count}.");
             for (int i = 0; i < particleSystems.Count; i++)
             {
                 ParticleSystem particles = particleSystems[i];
@@ -2507,6 +2913,167 @@ namespace IndustryTycoon.Editor
                         && workerCompletionCount == 1
                         && workerPad.ProcessPaymentStep() == 0,
                     "Worker Purchase Pad did not complete exactly once without a negative wallet.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(validationRoot);
+            }
+        }
+
+        private static void ValidateM4Logic()
+        {
+            GameObject validationRoot = new GameObject("M4 Logic Validation");
+            try
+            {
+                GameObject carryObject = new GameObject("M4 CarryStack");
+                carryObject.transform.SetParent(validationRoot.transform, false);
+                CarryStack carryStack = carryObject.AddComponent<CarryStack>();
+
+                Require(!carryStack.HasActiveResource
+                        && carryStack.ActiveResourceType == null
+                        && carryStack.ReservedResourceType == null,
+                    "An empty CarryStack retained an active or reserved resource type.");
+                Require(carryStack.TryReserveCapacity(ResourceType.Wood, 1)
+                        && carryStack.ReservedResourceType == ResourceType.Wood
+                        && !carryStack.TryReserveCapacity(ResourceType.Plank, 1)
+                        && !carryStack.TryAdd(ResourceType.Plank, 1)
+                        && carryStack.TryCommitReservedAdd(ResourceType.Wood, 1),
+                    "A pending Wood reservation did not prevent mixed Plank ownership.");
+                Require(carryStack.ActiveResourceType == ResourceType.Wood
+                        && !carryStack.TryAdd(ResourceType.Plank, 1)
+                        && carryStack.TryRemove(ResourceType.Wood, 1)
+                        && !carryStack.HasActiveResource,
+                    "CarryStack did not enforce or clear its Wood-only active type.");
+                Require(carryStack.TryReserveCapacity(ResourceType.Plank, 1)
+                        && carryStack.ReservedResourceType == ResourceType.Plank
+                        && !carryStack.TryReserveCapacity(ResourceType.Wood, 1)
+                        && !carryStack.TryAdd(ResourceType.Wood, 1)
+                        && carryStack.TryCommitReservedAdd(ResourceType.Plank, 1)
+                        && carryStack.ActiveResourceType == ResourceType.Plank
+                        && !carryStack.TryAdd(ResourceType.Wood, 1)
+                        && carryStack.TryRemove(ResourceType.Plank, 1)
+                        && carryStack.TotalAmount == 0,
+                    "CarryStack did not enforce or clear its Plank-only active type.");
+
+                GameObject processorObject = new GameObject("M4 WoodProcessor");
+                processorObject.transform.SetParent(validationRoot.transform, false);
+                WoodProcessor processor = processorObject.AddComponent<WoodProcessor>();
+                int bufferEventCount = 0;
+                processor.BufferChanged += (inputWood, outputPlanks, reservedOutput) =>
+                {
+                    bufferEventCount++;
+                    Require(inputWood == processor.InputWood
+                            && outputPlanks == processor.OutputPlanks
+                            && reservedOutput == processor.ReservedOutputCapacity,
+                        "Processor buffer feedback preceded authoritative state.");
+                };
+
+                Require(carryStack.TryAdd(ResourceType.Wood, 1)
+                        && processor.TryTransferInputFrom(carryStack)
+                        && processor.InputWood == 1
+                        && processor.OutputPlanks == 0
+                        && !processor.TryStartProcessing(),
+                    "One incomplete Wood recipe mutated output or started in Edit Mode.");
+                for (int i = 1; i < processor.InputCapacity; i++)
+                {
+                    Require(carryStack.TryAdd(ResourceType.Wood, 1)
+                            && processor.TryTransferInputFrom(carryStack),
+                        "Processor rejected an in-capacity Wood input transfer.");
+                }
+
+                Require(processor.InputWood == processor.InputCapacity
+                        && processor.OutputPlanks == 0
+                        && processor.ReservedOutputCapacity == 0
+                        && bufferEventCount == processor.InputCapacity,
+                    "Processor input buffer exceeded capacity or duplicated deposited Wood.");
+                Require(carryStack.TryAdd(ResourceType.Wood, 1)
+                        && !processor.TryTransferInputFrom(carryStack)
+                        && processor.InputWood == processor.InputCapacity
+                        && carryStack.GetAmount(ResourceType.Wood) == 1,
+                    "A full processor input consumed or duplicated carried Wood.");
+                Require(carryStack.TryRemove(ResourceType.Wood, 1)
+                        && carryStack.TryAdd(ResourceType.Plank, 1)
+                        && !processor.TryTransferInputFrom(carryStack)
+                        && processor.InputWood == processor.InputCapacity
+                        && carryStack.TryRemove(ResourceType.Plank, 1),
+                    "Processor input accepted Planks or corrupted its Wood buffer.");
+
+                GameObject cashObject = new GameObject("M4 CashPile");
+                cashObject.transform.SetParent(validationRoot.transform, false);
+                CashPile cashPile = cashObject.AddComponent<CashPile>();
+                GameObject saleObject = new GameObject("M4 SalePoint");
+                saleObject.transform.SetParent(validationRoot.transform, false);
+                saleObject.AddComponent<BoxCollider>().isTrigger = true;
+                SalePoint salePoint = saleObject.AddComponent<SalePoint>();
+                SetObjectReference(salePoint, "carryStack", carryStack);
+                SetObjectReference(salePoint, "cashPile", cashPile);
+                SetInteger(salePoint, "woodValue", 5);
+                SetInteger(salePoint, "plankValue", 15);
+                int saleEventCount = 0;
+                salePoint.UnitSold += feedback =>
+                {
+                    saleEventCount++;
+                    Require(feedback.RemainingAmount == carryStack.TotalAmount,
+                        "Typed sale feedback preceded authoritative CarryStack removal.");
+                };
+
+                Require(carryStack.TryAdd(ResourceType.Wood, 1)
+                        && salePoint.TryUnloadOne()
+                        && cashPile.StoredCash == 5,
+                    "Generic Sale Point did not sell one Wood for $5.");
+                Require(carryStack.TryAdd(ResourceType.Plank, 1)
+                        && salePoint.TryUnloadOne()
+                        && cashPile.StoredCash == 20
+                        && saleEventCount == 2,
+                    "Generic Sale Point did not sell one Plank for $15.");
+
+                GameObject walletObject = new GameObject("M4 Wallet");
+                walletObject.transform.SetParent(validationRoot.transform, false);
+                Wallet wallet = walletObject.AddComponent<Wallet>();
+                GameObject padObject = new GameObject("M4 Processor Purchase Pad");
+                padObject.transform.SetParent(validationRoot.transform, false);
+                BoxCollider padCollider = padObject.AddComponent<BoxCollider>();
+                padCollider.isTrigger = true;
+                PurchasePad processorPad = padObject.AddComponent<PurchasePad>();
+                SetObjectReference(processorPad, "wallet", wallet);
+                SetObjectReference(processorPad, "interactionCollider", padCollider);
+                SetString(processorPad, "purchaseLabel", "WOOD PROCESSOR");
+                SetBoolean(processorPad, "startsAvailable", false);
+                SetInteger(processorPad, "totalCost", 360);
+                SetInteger(processorPad, "spendPerTick", 5);
+                wallet.Deposit(360);
+                Require(processorPad.ProcessPaymentStep() == 0
+                        && processorPad.RemainingCost == 360
+                        && wallet.Balance == 360,
+                    "Locked Processor Purchase Pad accepted payment.");
+                Require(processorPad.SetAvailable(true),
+                    "Processor Purchase Pad could not unlock after its prerequisite.");
+                for (int i = 0; i < 13; i++)
+                {
+                    Require(processorPad.ProcessPaymentStep() == 5,
+                        "Processor Purchase Pad rejected valid partial funding.");
+                }
+
+                Require(processorPad.RemainingCost == 295 && wallet.Balance == 295,
+                    "Processor Purchase Pad did not preserve $65 partial progress.");
+                processorPad.enabled = false;
+                processorPad.enabled = true;
+                Require(processorPad.RemainingCost == 295,
+                    "Processor Purchase Pad lost partial progress across lifecycle changes.");
+                int completionCount = 0;
+                processorPad.Completed += () => completionCount++;
+                int paymentGuard = 0;
+                while (!processorPad.IsCompleted && paymentGuard++ < 80)
+                {
+                    processorPad.ProcessPaymentStep();
+                }
+
+                Require(processorPad.IsCompleted
+                        && processorPad.RemainingCost == 0
+                        && wallet.Balance == 0
+                        && completionCount == 1
+                        && processorPad.ProcessPaymentStep() == 0,
+                    "Processor Purchase Pad did not complete exactly once at $360.");
             }
             finally
             {

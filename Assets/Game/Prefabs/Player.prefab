@@ -4982,7 +4982,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::IndustryTycoon.Player.CarryStack
   capacity: 12
-  displayedResourceType: 0
   visualRoot: {fileID: 6701919876966761928}
   itemVisualPrefab: {fileID: 6102181035787442122, guid: c7f4ecc89fcfc7e4b9a3c5081cf6fb43, type: 3}
   itemsPerRow: 3

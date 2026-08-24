@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using IndustryTycoon.Core;
+using IndustryTycoon.Feedback;
 using UnityEngine;
 
 namespace IndustryTycoon.Player
@@ -11,7 +12,6 @@ namespace IndustryTycoon.Player
         [SerializeField, Min(1)] private int capacity = 12;
 
         [Header("Visuals")]
-        [SerializeField] private ResourceType displayedResourceType = ResourceType.Wood;
         [SerializeField] private Transform visualRoot;
         [SerializeField] private GameObject itemVisualPrefab;
         [SerializeField, Min(1)] private int itemsPerRow = 3;
@@ -27,6 +27,7 @@ namespace IndustryTycoon.Player
 
         private readonly Dictionary<ResourceType, int> _amounts = new Dictionary<ResourceType, int>();
         private readonly List<GameObject> _visualItems = new List<GameObject>();
+        private readonly List<ResourceVisual> _visualSelectors = new List<ResourceVisual>();
         private readonly List<Vector3> _visualBaseScales = new List<Vector3>();
         private readonly List<Vector3> _visualStartPositions = new List<Vector3>();
         private readonly List<Vector3> _visualTargetPositions = new List<Vector3>();
@@ -35,6 +36,10 @@ namespace IndustryTycoon.Player
         private readonly List<float> _visualAnimationElapsed = new List<float>();
         private int _totalAmount;
         private int _reservedCapacity;
+        private ResourceType _activeResourceType;
+        private ResourceType _reservedResourceType;
+        private bool _hasActiveResourceType;
+        private bool _hasReservedResourceType;
         private int _lastVisibleCount;
         private bool _hasVisualAnimations;
 
@@ -46,6 +51,11 @@ namespace IndustryTycoon.Player
         public int TotalAmount => _totalAmount;
         public int ReservedCapacity => _reservedCapacity;
         public int AvailableCapacity => Mathf.Max(0, capacity - _totalAmount - _reservedCapacity);
+        public bool HasActiveResource => _hasActiveResourceType && _totalAmount > 0;
+        public ResourceType? ActiveResourceType => HasActiveResource ? _activeResourceType : null;
+        public ResourceType? ReservedResourceType => _hasReservedResourceType
+            ? _reservedResourceType
+            : null;
         public Transform VisualRoot => visualRoot != null ? visualRoot : transform;
         public float PlacementDuration => placementDuration;
         public float AddBounceDuration => addBounceDuration;
@@ -64,7 +74,20 @@ namespace IndustryTycoon.Player
 
         public bool CanAdd(int amount)
         {
-            return amount > 0 && amount <= AvailableCapacity;
+            return CanAccept(ResourceType.Wood, amount);
+        }
+
+        public bool CanAdd(ResourceType resourceType, int amount)
+        {
+            return CanAccept(resourceType, amount);
+        }
+
+        public bool CanAccept(ResourceType resourceType, int amount)
+        {
+            return IsSupportedResource(resourceType)
+                   && amount > 0
+                   && amount <= AvailableCapacity
+                   && IsResourceTypeCompatible(resourceType);
         }
 
         public bool CanRemove(ResourceType resourceType, int amount)
@@ -74,9 +97,20 @@ namespace IndustryTycoon.Player
 
         public bool TryReserveCapacity(int amount)
         {
-            if (amount <= 0 || amount > AvailableCapacity)
+            return TryReserveCapacity(ResourceType.Wood, amount);
+        }
+
+        public bool TryReserveCapacity(ResourceType resourceType, int amount)
+        {
+            if (!CanAccept(resourceType, amount))
             {
                 return false;
+            }
+
+            if (!_hasReservedResourceType)
+            {
+                _reservedResourceType = resourceType;
+                _hasReservedResourceType = true;
             }
 
             _reservedCapacity += amount;
@@ -91,6 +125,12 @@ namespace IndustryTycoon.Player
             }
 
             _reservedCapacity -= amount;
+            if (_reservedCapacity == 0)
+            {
+                _reservedResourceType = default;
+                _hasReservedResourceType = false;
+            }
+
             return true;
         }
 
@@ -98,19 +138,29 @@ namespace IndustryTycoon.Player
         {
             if (amount <= 0
                 || amount > _reservedCapacity
-                || amount > capacity - _totalAmount)
+                || amount > capacity - _totalAmount
+                || !_hasReservedResourceType
+                || _reservedResourceType != resourceType
+                || !IsSupportedResource(resourceType)
+                || (_hasActiveResourceType && _activeResourceType != resourceType))
             {
                 return false;
             }
 
             _reservedCapacity -= amount;
+            if (_reservedCapacity == 0)
+            {
+                _reservedResourceType = default;
+                _hasReservedResourceType = false;
+            }
+
             AddAmount(resourceType, amount);
             return true;
         }
 
         public bool TryAdd(ResourceType resourceType, int amount)
         {
-            if (!CanAdd(amount))
+            if (!CanAccept(resourceType, amount))
             {
                 return false;
             }
@@ -121,6 +171,12 @@ namespace IndustryTycoon.Player
 
         private void AddAmount(ResourceType resourceType, int amount)
         {
+            if (!_hasActiveResourceType)
+            {
+                _activeResourceType = resourceType;
+                _hasActiveResourceType = true;
+            }
+
             _amounts[resourceType] = GetAmount(resourceType) + amount;
             _totalAmount += amount;
             RefreshVisuals();
@@ -146,10 +202,22 @@ namespace IndustryTycoon.Player
             }
 
             _totalAmount -= amount;
+            if (_totalAmount == 0)
+            {
+                _activeResourceType = default;
+                _hasActiveResourceType = false;
+            }
+
             RefreshVisuals();
             Changed?.Invoke();
             ItemsRemoved?.Invoke(resourceType, amount, _totalAmount);
             return true;
+        }
+
+        public bool TryGetActiveResourceType(out ResourceType resourceType)
+        {
+            resourceType = _activeResourceType;
+            return HasActiveResource;
         }
 
         public bool TryGetTopVisualPose(
@@ -159,7 +227,8 @@ namespace IndustryTycoon.Player
             out Vector3 scale)
         {
             int amount = GetAmount(resourceType);
-            if (resourceType == displayedResourceType
+            if (HasActiveResource
+                && resourceType == _activeResourceType
                 && amount > 0
                 && amount <= _visualItems.Count)
             {
@@ -252,9 +321,10 @@ namespace IndustryTycoon.Player
             while (_visualItems.Count < capacity)
             {
                 GameObject visual = Instantiate(itemVisualPrefab, parent);
-                visual.name = $"Carried {displayedResourceType} {_visualItems.Count + 1:00}";
+                visual.name = $"Carried Resource {_visualItems.Count + 1:00}";
                 visual.SetActive(false);
                 _visualItems.Add(visual);
+                _visualSelectors.Add(visual.GetComponent<ResourceVisual>());
                 _visualBaseScales.Add(visual.transform.localScale);
                 _visualStartPositions.Add(Vector3.zero);
                 _visualTargetPositions.Add(Vector3.zero);
@@ -267,7 +337,9 @@ namespace IndustryTycoon.Player
         private void RefreshVisuals()
         {
             EnsureVisualPool();
-            int visibleCount = Mathf.Min(GetAmount(displayedResourceType), _visualItems.Count);
+            int visibleCount = HasActiveResource
+                ? Mathf.Min(_totalAmount, _visualItems.Count)
+                : 0;
 
             for (int i = 0; i < _visualItems.Count; i++)
             {
@@ -278,6 +350,12 @@ namespace IndustryTycoon.Player
                     visual.SetActive(false);
                     _visualAnimationElapsed[i] = -1f;
                     continue;
+                }
+
+                ResourceVisual resourceVisual = _visualSelectors[i];
+                if (resourceVisual != null)
+                {
+                    resourceVisual.Show(_activeResourceType);
                 }
 
                 int row = i / itemsPerRow;
@@ -346,6 +424,17 @@ namespace IndustryTycoon.Player
 
             int distanceFromCenter = (column + 1) / 2;
             return column % 2 == 1 ? -distanceFromCenter : distanceFromCenter;
+        }
+
+        private bool IsResourceTypeCompatible(ResourceType resourceType)
+        {
+            return (!_hasActiveResourceType || _activeResourceType == resourceType)
+                   && (!_hasReservedResourceType || _reservedResourceType == resourceType);
+        }
+
+        private static bool IsSupportedResource(ResourceType resourceType)
+        {
+            return resourceType == ResourceType.Wood || resourceType == ResourceType.Plank;
         }
 
         private void OnValidate()

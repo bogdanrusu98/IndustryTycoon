@@ -35,7 +35,14 @@ namespace IndustryTycoon.UI
                 return;
             }
 
-            countText.text = $"Wood: {carryStack.GetAmount(ResourceType.Wood)} / {carryStack.Capacity}";
+            if (!carryStack.TryGetActiveResourceType(out ResourceType resourceType))
+            {
+                countText.text = $"Wood: 0 / {carryStack.Capacity}";
+                return;
+            }
+
+            string resourceLabel = resourceType == ResourceType.Plank ? "Plank" : "Wood";
+            countText.text = $"{resourceLabel}: {carryStack.TotalAmount} / {carryStack.Capacity}";
         }
     }
 }
