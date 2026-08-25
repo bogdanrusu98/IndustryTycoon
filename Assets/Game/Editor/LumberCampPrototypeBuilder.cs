@@ -9,6 +9,7 @@ using IndustryTycoon.Interaction;
 using IndustryTycoon.Logistics;
 using IndustryTycoon.Player;
 using IndustryTycoon.Processing;
+using IndustryTycoon.Progression;
 using IndustryTycoon.ResourceSystem;
 using IndustryTycoon.UI;
 using IndustryTycoon.Workers;
@@ -46,6 +47,23 @@ namespace IndustryTycoon.Editor
 
             public AudioFeedback Audio { get; }
             public HapticFeedback Haptics { get; }
+        }
+
+        private readonly struct M8Services
+        {
+            public M8Services(
+                LumberCampCompletion completion,
+                LumberCampPacingProbe pacingProbe,
+                ParticleSystem completionParticles)
+            {
+                Completion = completion;
+                PacingProbe = pacingProbe;
+                CompletionParticles = completionParticles;
+            }
+
+            public LumberCampCompletion Completion { get; }
+            public LumberCampPacingProbe PacingProbe { get; }
+            public ParticleSystem CompletionParticles { get; }
         }
 
         [MenuItem("Industry Tycoon/Prototype/Rebuild Lumber Camp")]
@@ -286,7 +304,7 @@ namespace IndustryTycoon.Editor
                 feedbackParticleMaterial,
                 feedbackServices,
                 player.transform.Find("Capsule Placeholder"));
-            CreateSalePoint(
+            SalePoint salePoint = CreateSalePoint(
                 scene,
                 player.GetComponent<CarryStack>(),
                 cashPile,
@@ -348,7 +366,7 @@ namespace IndustryTycoon.Editor
                 feedbackParticleMaterial,
                 feedbackServices,
                 followCamera);
-            CreateWoodProcessing(
+            FirstProcessorUnlock processorUnlock = CreateWoodProcessing(
                 scene,
                 workerUnlock,
                 stockpile,
@@ -373,8 +391,56 @@ namespace IndustryTycoon.Editor
                 feedbackParticleMaterial,
                 feedbackServices,
                 followCamera);
+            FirstAutoFeederUnlock autoFeederUnlock = FindRoot(
+                    scene,
+                    "Auto Feeder Automation")
+                ?.GetComponent<FirstAutoFeederUnlock>();
+            FirstPackingStationUnlock packingStationUnlock = FindRoot(
+                    scene,
+                    "Packing Station Automation")
+                ?.GetComponent<FirstPackingStationUnlock>();
+            FirstCourierUnlock courierUnlock = FindRoot(
+                    scene,
+                    "Courier Automation")
+                ?.GetComponent<FirstCourierUnlock>();
+            CrateCourier courier = FindRoot(scene, "Crate Courier Delivery")
+                ?.GetComponentInChildren<CrateCourier>(true);
+            Require(processorUnlock != null
+                    && autoFeederUnlock != null
+                    && packingStationUnlock != null
+                    && courierUnlock != null
+                    && courier != null,
+                "M8 requires the complete M4-M7 progression chain.");
+
+            M8Services m8Services = CreateM8Progression(
+                scene,
+                player.GetComponent<CarryStack>(),
+                salePoint,
+                productionUpgrade,
+                workerUnlock,
+                processorUnlock,
+                autoFeederUnlock,
+                packingStationUnlock,
+                courierUnlock,
+                courier,
+                processorMaterial,
+                sawBladeMaterial,
+                purchaseCompleteMaterial,
+                feedbackParticleMaterial);
             CreateLighting(scene);
-            CreateHud(scene, player.GetComponent<CarryStack>(), wallet);
+            CreateHud(
+                scene,
+                player.GetComponent<CarryStack>(),
+                wallet,
+                productionUpgrade,
+                workerUnlock,
+                processorUnlock,
+                autoFeederUnlock,
+                packingStationUnlock,
+                courierUnlock,
+                m8Services,
+                feedbackServices,
+                followCamera);
 
             ConfigurePortraitSettings();
             UpdateBuildSettings();
@@ -940,12 +1006,12 @@ namespace IndustryTycoon.Editor
 
             GameObject spawnerObject = new GameObject("Wood Spawner");
             SceneManager.MoveGameObjectToScene(spawnerObject, scene);
-            spawnerObject.transform.position = new Vector3(0f, 0f, 5.25f);
+            spawnerObject.transform.position = new Vector3(1.5f, 0f, 5.25f);
 
             WoodSpawner spawner = spawnerObject.AddComponent<WoodSpawner>();
             spawner.ConfigurePrefab(woodResourcePrefab);
-            SetVector2(spawner, "spawnArea", new Vector2(11f, 7.5f));
-            SetInteger(spawner, "maximumActiveCount", 32);
+            SetVector2(spawner, "spawnArea", new Vector2(7f, 7.5f));
+            SetInteger(spawner, "maximumActiveCount", 24);
             EditorUtility.SetDirty(spawner);
             Require(spawner.WoodPrefab != null, "WoodSpawner rejected its prefab reference.");
             return spawner;
@@ -2005,7 +2071,7 @@ namespace IndustryTycoon.Editor
                 scene,
                 "Packing Station Purchase Pad",
                 "PACKING STATION",
-                new Vector3(8.2f, 0f, -8f),
+                new Vector3(-8.2f, 0f, 14.2f),
                 900,
                 false,
                 wallet,
@@ -2020,7 +2086,7 @@ namespace IndustryTycoon.Editor
 
             GameObject stationRoot = new GameObject("Packing Station");
             SceneManager.MoveGameObjectToScene(stationRoot, scene);
-            stationRoot.transform.position = new Vector3(7.5f, 0f, 11.5f);
+            stationRoot.transform.position = new Vector3(-8.2f, 0f, 11.5f);
 
             GameObject stationVisual = new GameObject("Packing Workshop Visual");
             stationVisual.transform.SetParent(stationRoot.transform, false);
@@ -2725,6 +2791,122 @@ namespace IndustryTycoon.Editor
             return label;
         }
 
+        private static M8Services CreateM8Progression(
+            Scene scene,
+            CarryStack carryStack,
+            SalePoint salePoint,
+            WoodProductionUpgrade productionUpgrade,
+            FirstWorkerUnlock workerUnlock,
+            FirstProcessorUnlock processorUnlock,
+            FirstAutoFeederUnlock autoFeederUnlock,
+            FirstPackingStationUnlock packingStationUnlock,
+            FirstCourierUnlock courierUnlock,
+            CrateCourier courier,
+            Material mineMaterial,
+            Material metalMaterial,
+            Material completionMaterial,
+            Material particleMaterial)
+        {
+            GameObject mineRoot = new GameObject("Mine Teaser");
+            SceneManager.MoveGameObjectToScene(mineRoot, scene);
+            mineRoot.transform.position = new Vector3(7.2f, 0f, 13.1f);
+
+            GameObject platform = CreatePrimitiveChild(
+                "Mine Preview Platform",
+                PrimitiveType.Cube,
+                mineRoot.transform,
+                mineMaterial);
+            platform.transform.localPosition = new Vector3(0f, 0.16f, 0f);
+            platform.transform.localScale = new Vector3(4.1f, 0.30f, 2.35f);
+
+            GameObject barrierLeft = CreatePrimitiveChild(
+                "Locked Barrier Left",
+                PrimitiveType.Cube,
+                mineRoot.transform,
+                completionMaterial);
+            barrierLeft.transform.localPosition = new Vector3(-1.35f, 0.72f, -0.62f);
+            barrierLeft.transform.localScale = new Vector3(0.18f, 1.12f, 0.18f);
+
+            GameObject barrierRight = CreatePrimitiveChild(
+                "Locked Barrier Right",
+                PrimitiveType.Cube,
+                mineRoot.transform,
+                completionMaterial);
+            barrierRight.transform.localPosition = new Vector3(1.35f, 0.72f, -0.62f);
+            barrierRight.transform.localScale = new Vector3(0.18f, 1.12f, 0.18f);
+
+            GameObject barrierBeam = CreatePrimitiveChild(
+                "Locked Barrier Beam",
+                PrimitiveType.Cube,
+                mineRoot.transform,
+                completionMaterial);
+            barrierBeam.transform.localPosition = new Vector3(0f, 0.88f, -0.62f);
+            barrierBeam.transform.localRotation = Quaternion.Euler(0f, 0f, -8f);
+            barrierBeam.transform.localScale = new Vector3(2.85f, 0.22f, 0.18f);
+
+            GameObject pickaxeHandle = CreatePrimitiveChild(
+                "Pickaxe Handle",
+                PrimitiveType.Cube,
+                mineRoot.transform,
+                completionMaterial);
+            pickaxeHandle.transform.localPosition = new Vector3(0f, 0.92f, 0.28f);
+            pickaxeHandle.transform.localRotation = Quaternion.Euler(0f, 0f, -38f);
+            pickaxeHandle.transform.localScale = new Vector3(0.14f, 1.45f, 0.14f);
+
+            GameObject pickaxeHead = CreatePrimitiveChild(
+                "Pickaxe Head",
+                PrimitiveType.Cube,
+                mineRoot.transform,
+                metalMaterial);
+            pickaxeHead.transform.localPosition = new Vector3(-0.52f, 1.58f, 0.28f);
+            pickaxeHead.transform.localRotation = Quaternion.Euler(0f, 0f, -8f);
+            pickaxeHead.transform.localScale = new Vector3(1.10f, 0.18f, 0.24f);
+
+            TextMesh mineLabel = CreateWorldLabel(
+                "Mine Teaser Label",
+                mineRoot.transform,
+                "\u26CF  MINE - LOCKED",
+                new Vector3(0f, 2.30f, 0.10f),
+                new Color(1f, 0.84f, 0.34f));
+            mineLabel.characterSize = 0.050f;
+            mineRoot.SetActive(false);
+
+            GameObject m8Root = new GameObject("Lumber Camp Progression");
+            SceneManager.MoveGameObjectToScene(m8Root, scene);
+
+            ParticleSystem completionParticles = CreateFeedbackParticleSystem(
+                "Lumber Camp Complete Burst",
+                m8Root.transform,
+                new Vector3(1.15f, 1.0f, -4.5f),
+                new Color(0.28f, 1f, 0.58f),
+                particleMaterial,
+                48,
+                0.52f,
+                1.80f,
+                0.14f);
+
+            LumberCampCompletion completion =
+                m8Root.AddComponent<LumberCampCompletion>();
+            SetObjectReference(completion, "courierUnlock", courierUnlock);
+            SetObjectReference(completion, "courier", courier);
+            SetObjectReference(completion, "mineTeaserRoot", mineRoot);
+
+            LumberCampPacingProbe pacingProbe =
+                m8Root.AddComponent<LumberCampPacingProbe>();
+            SetObjectReference(pacingProbe, "carryStack", carryStack);
+            SetObjectReference(pacingProbe, "salePoint", salePoint);
+            SetObjectReference(pacingProbe, "productionUpgrade", productionUpgrade);
+            SetObjectReference(pacingProbe, "workerUnlock", workerUnlock);
+            SetObjectReference(pacingProbe, "processorUnlock", processorUnlock);
+            SetObjectReference(pacingProbe, "autoFeederUnlock", autoFeederUnlock);
+            SetObjectReference(pacingProbe, "packingStationUnlock", packingStationUnlock);
+            SetObjectReference(pacingProbe, "courierUnlock", courierUnlock);
+            SetObjectReference(pacingProbe, "courier", courier);
+            SetObjectReference(pacingProbe, "completion", completion);
+
+            return new M8Services(completion, pacingProbe, completionParticles);
+        }
+
         private static void CreateLighting(Scene scene)
         {
             GameObject lightObject = new GameObject("Directional Light");
@@ -2739,7 +2921,19 @@ namespace IndustryTycoon.Editor
             RenderSettings.sun = directionalLight;
         }
 
-        private static void CreateHud(Scene scene, CarryStack carryStack, Wallet wallet)
+        private static void CreateHud(
+            Scene scene,
+            CarryStack carryStack,
+            Wallet wallet,
+            WoodProductionUpgrade productionUpgrade,
+            FirstWorkerUnlock workerUnlock,
+            FirstProcessorUnlock processorUnlock,
+            FirstAutoFeederUnlock autoFeederUnlock,
+            FirstPackingStationUnlock packingStationUnlock,
+            FirstCourierUnlock courierUnlock,
+            M8Services m8Services,
+            FeedbackServices feedbackServices,
+            SmoothFollowCamera followCamera)
         {
             GameObject canvasObject = new GameObject(
                 "HUD",
@@ -2796,6 +2990,92 @@ namespace IndustryTycoon.Editor
             SetObjectReference(walletHud, "wallet", wallet);
             SetObjectReference(walletHud, "cashText", cashText);
             SetFloat(walletHud, "animationDuration", 0.22f);
+
+            GameObject guidancePanel = new GameObject(
+                "Next Unlock",
+                typeof(RectTransform),
+                typeof(Image));
+            guidancePanel.transform.SetParent(safeAreaObject.transform, false);
+            RectTransform guidancePanelRect =
+                guidancePanel.GetComponent<RectTransform>();
+            guidancePanelRect.anchorMin = new Vector2(0.5f, 1f);
+            guidancePanelRect.anchorMax = new Vector2(0.5f, 1f);
+            guidancePanelRect.pivot = new Vector2(0.5f, 1f);
+            guidancePanelRect.sizeDelta = new Vector2(820f, 132f);
+            guidancePanelRect.anchoredPosition = new Vector2(0f, -238f);
+            guidancePanel.GetComponent<Image>().color =
+                new Color(0.07f, 0.09f, 0.07f, 0.78f);
+
+            Text guidanceText = CreateHudLine(
+                "Next Unlock Text",
+                guidancePanel.transform,
+                "NEXT: PRODUCTION UPGRADE\n$0 / $120",
+                Vector2.zero,
+                Vector2.one,
+                34);
+            NextUnlockGuidance guidance =
+                guidancePanel.AddComponent<NextUnlockGuidance>();
+            SetObjectReference(guidance, "productionUpgrade", productionUpgrade);
+            SetObjectReference(guidance, "workerUnlock", workerUnlock);
+            SetObjectReference(guidance, "processorUnlock", processorUnlock);
+            SetObjectReference(guidance, "autoFeederUnlock", autoFeederUnlock);
+            SetObjectReference(guidance, "packingStationUnlock", packingStationUnlock);
+            SetObjectReference(guidance, "courierUnlock", courierUnlock);
+            SetObjectReference(guidance, "completion", m8Services.Completion);
+            SetObjectReference(guidance, "guidanceText", guidanceText);
+
+            GameObject bannerRoot = new GameObject(
+                "Completion Banner",
+                typeof(RectTransform),
+                typeof(CanvasGroup),
+                typeof(Image));
+            bannerRoot.transform.SetParent(safeAreaObject.transform, false);
+            RectTransform bannerRect = bannerRoot.GetComponent<RectTransform>();
+            bannerRect.anchorMin = new Vector2(0.5f, 0.66f);
+            bannerRect.anchorMax = new Vector2(0.5f, 0.66f);
+            bannerRect.pivot = new Vector2(0.5f, 0.5f);
+            bannerRect.sizeDelta = new Vector2(880f, 196f);
+            bannerRect.anchoredPosition = Vector2.zero;
+            bannerRoot.GetComponent<Image>().color =
+                new Color(0.05f, 0.28f, 0.16f, 0.94f);
+
+            CreateHudLine(
+                "Completion Text",
+                bannerRoot.transform,
+                "LUMBER CAMP COMPLETE\nMINE AREA REVEALED",
+                Vector2.zero,
+                Vector2.one,
+                44);
+            CanvasGroup bannerCanvasGroup = bannerRoot.GetComponent<CanvasGroup>();
+            bannerCanvasGroup.blocksRaycasts = false;
+            bannerCanvasGroup.interactable = false;
+
+            LumberCampCompletionFeedback completionFeedback =
+                safeAreaObject.AddComponent<LumberCampCompletionFeedback>();
+            SetObjectReference(completionFeedback, "completion", m8Services.Completion);
+            SetObjectReference(completionFeedback, "bannerRoot", bannerRoot);
+            SetObjectReference(
+                completionFeedback,
+                "bannerCanvasGroup",
+                bannerCanvasGroup);
+            SetObjectReference(completionFeedback, "bannerTransform", bannerRect);
+            SetObjectReference(
+                completionFeedback,
+                "completionParticles",
+                m8Services.CompletionParticles);
+            SetObjectReference(
+                completionFeedback,
+                "audioFeedback",
+                feedbackServices.Audio);
+            SetObjectReference(
+                completionFeedback,
+                "hapticFeedback",
+                feedbackServices.Haptics);
+            SetObjectReference(completionFeedback, "followCamera", followCamera);
+            SetFloat(completionFeedback, "entranceDuration", 0.24f);
+            SetFloat(completionFeedback, "holdDuration", 1.45f);
+            SetFloat(completionFeedback, "exitDuration", 0.30f);
+            bannerRoot.SetActive(false);
         }
 
         private static Text CreateHudLine(
@@ -3033,8 +3313,8 @@ namespace IndustryTycoon.Editor
                 "WoodSpawner base interval must be 1.25 seconds.");
             Require(Mathf.Approximately(woodSpawner.ProductionRateMultiplier, 1f),
                 "WoodSpawner must begin at 1x production.");
-            Require(GetIntegerValue(woodSpawner, "maximumActiveCount") == 32,
-                "WoodSpawner active cap must leave room to observe the upgrade.");
+            Require(GetIntegerValue(woodSpawner, "maximumActiveCount") == 24,
+                "WoodSpawner active cap must prevent excessive loose-Wood clutter.");
 
             WoodHud woodHud = hudObject != null
                 ? hudObject.GetComponentInChildren<WoodHud>(true)
@@ -3429,12 +3709,22 @@ namespace IndustryTycoon.Editor
                 audioFeedback,
                 hapticFeedback,
                 followCamera);
+            ValidateM8Scene(
+                scene,
+                carryStack,
+                salePoint,
+                productionUpgrade,
+                workerAutomation,
+                audioFeedback,
+                hapticFeedback,
+                followCamera);
             ValidateCoreLoopLogic();
             ValidateM3Logic();
             ValidateM4Logic();
             ValidateM5Logic();
             ValidateM6Logic();
             ValidateM7Logic();
+            ValidateM8Logic();
         }
 
         private static void ValidateM4Scene(
@@ -3471,6 +3761,52 @@ namespace IndustryTycoon.Editor
                 "Processor input and output interaction zones are too close.");
             Require(Vector3.Distance(purchaseObject.transform.position, inputTransform.position) >= 3.0f,
                 "Processor purchase and input zones are too close for portrait controls.");
+
+            WoodSpawner woodSpawner = FindRoot(scene, "Wood Spawner")?.GetComponent<WoodSpawner>();
+            ResourceCollector resourceCollector = carryStack.GetComponent<ResourceCollector>();
+            SphereCollider looseWoodCollider = woodSpawner != null && woodSpawner.WoodPrefab != null
+                ? woodSpawner.WoodPrefab.GetComponent<SphereCollider>()
+                : null;
+            Require(woodSpawner != null && resourceCollector != null && looseWoodCollider != null,
+                "Processor output clearance validation requires WoodSpawner and player pickup geometry.");
+            Vector2 spawnArea = GetVector2Value(woodSpawner, "spawnArea");
+            float spawnLeftEdge = woodSpawner.transform.position.x - (spawnArea.x * 0.5f);
+            float spawnRightEdge = woodSpawner.transform.position.x + (spawnArea.x * 0.5f);
+            Vector3 outputCenter = outputTransform.TransformPoint(outputTrigger.center);
+            float outputRightEdge = outputCenter.x
+                                    + (outputTrigger.size.x
+                                       * Mathf.Abs(outputTransform.lossyScale.x)
+                                       * 0.5f);
+            CharacterController playerController = playerCollider as CharacterController;
+            Require(playerController != null,
+                "Processor output clearance validation requires the player CharacterController.");
+            float playerCollisionRadius = playerController.radius
+                                          * Mathf.Max(
+                                              Mathf.Abs(playerController.transform.lossyScale.x),
+                                              Mathf.Abs(playerController.transform.lossyScale.z));
+            float looseWoodRadius = looseWoodCollider.radius
+                                    * Mathf.Abs(looseWoodCollider.transform.lossyScale.x);
+            float requiredLooseWoodClearance = playerCollisionRadius
+                                             + GetFloatValue(resourceCollector, "pickupRadius")
+                                             + looseWoodRadius
+                                             + 0.10f;
+            Require(spawnLeftEdge - outputRightEdge >= requiredLooseWoodClearance,
+                "Loose Wood spawn bounds overlap the Processor output pickup area.");
+
+            GameObject stockpileObject = FindRoot(scene, "Wood Stockpile");
+            BoxCollider stockpileTrigger = stockpileObject != null
+                ? stockpileObject.GetComponent<BoxCollider>()
+                : null;
+            Require(stockpileTrigger != null,
+                "Loose Wood spawn clearance validation requires the Wood Stockpile trigger.");
+            Vector3 stockpileCenter = stockpileObject.transform.TransformPoint(
+                stockpileTrigger.center);
+            float stockpileLeftEdge = stockpileCenter.x
+                                      - (stockpileTrigger.size.x
+                                         * Mathf.Abs(stockpileObject.transform.lossyScale.x)
+                                         * 0.5f);
+            Require(stockpileLeftEdge - spawnRightEdge >= looseWoodRadius + 0.05f,
+                "Loose Wood spawn bounds overlap the Wood Stockpile presentation.");
 
             PurchasePad purchasePad = purchaseObject.GetComponent<PurchasePad>();
             PurchasePadFeedback purchaseFeedback = purchaseObject.GetComponent<PurchasePadFeedback>();
@@ -4053,6 +4389,217 @@ namespace IndustryTycoon.Editor
             return trigger;
         }
 
+        private static void ValidateM8Scene(
+            Scene scene,
+            CarryStack carryStack,
+            SalePoint salePoint,
+            WoodProductionUpgrade productionUpgrade,
+            FirstWorkerUnlock workerUnlock,
+            AudioFeedback audioFeedback,
+            HapticFeedback hapticFeedback,
+            SmoothFollowCamera followCamera)
+        {
+            GameObject progressionRoot = FindRoot(scene, "Lumber Camp Progression");
+            GameObject mineRoot = FindRoot(scene, "Mine Teaser");
+            GameObject hudRoot = FindRoot(scene, "HUD");
+            GameObject processorAutomation = FindRoot(scene, "Processor Automation");
+            GameObject feederAutomation = FindRoot(scene, "Auto Feeder Automation");
+            GameObject packingAutomation = FindRoot(scene, "Packing Station Automation");
+            GameObject courierAutomation = FindRoot(scene, "Courier Automation");
+            GameObject deliveryRoot = FindRoot(scene, "Crate Courier Delivery");
+            GameObject processorRoot = FindRoot(scene, "Wood Processor");
+            GameObject packingRoot = FindRoot(scene, "Packing Station");
+            GameObject packingPurchaseRoot =
+                FindRoot(scene, "Packing Station Purchase Pad");
+            Require(progressionRoot != null
+                    && mineRoot != null
+                    && hudRoot != null
+                    && processorAutomation != null
+                    && feederAutomation != null
+                    && packingAutomation != null
+                    && courierAutomation != null
+                    && deliveryRoot != null
+                    && processorRoot != null
+                    && packingRoot != null
+                    && packingPurchaseRoot != null,
+                "M8 progression, HUD, Mine, or accepted unlock roots are missing.");
+
+            FirstProcessorUnlock processorUnlock =
+                processorAutomation.GetComponent<FirstProcessorUnlock>();
+            FirstAutoFeederUnlock feederUnlock =
+                feederAutomation.GetComponent<FirstAutoFeederUnlock>();
+            FirstPackingStationUnlock packingUnlock =
+                packingAutomation.GetComponent<FirstPackingStationUnlock>();
+            FirstCourierUnlock courierUnlock =
+                courierAutomation.GetComponent<FirstCourierUnlock>();
+            CrateCourier courier =
+                deliveryRoot.GetComponentInChildren<CrateCourier>(true);
+            LumberCampCompletion completion =
+                progressionRoot.GetComponent<LumberCampCompletion>();
+            LumberCampPacingProbe pacingProbe =
+                progressionRoot.GetComponent<LumberCampPacingProbe>();
+            NextUnlockGuidance guidance =
+                hudRoot.GetComponentInChildren<NextUnlockGuidance>(true);
+            LumberCampCompletionFeedback completionFeedback =
+                hudRoot.GetComponentInChildren<LumberCampCompletionFeedback>(true);
+            Require(processorUnlock != null
+                    && feederUnlock != null
+                    && packingUnlock != null
+                    && courierUnlock != null
+                    && courier != null
+                    && completion != null
+                    && pacingProbe != null
+                    && guidance != null
+                    && completionFeedback != null,
+                "M8 runtime components are missing from the generated scene.");
+
+            Require(completion.CourierUnlock == courierUnlock
+                    && completion.Courier == courier
+                    && completion.MineTeaserRoot == mineRoot
+                    && !completion.IsCompleted
+                    && completion.CompletionCount == 0,
+                "Lumber Camp completion must start incomplete and reference authoritative Courier state.");
+            Require(!mineRoot.activeSelf
+                    && mineRoot.GetComponentsInChildren<Collider>(true).Length == 0
+                    && mineRoot.GetComponentsInChildren<Rigidbody>(true).Length == 0,
+                "Mine teaser must begin hidden and remain presentation-only.");
+            TextMesh mineLabel = mineRoot.GetComponentInChildren<TextMesh>(true);
+            Require(mineLabel != null
+                    && mineLabel.text.Contains("MINE")
+                    && mineLabel.text.Contains("LOCKED"),
+                "Mine teaser requires a clear locked label.");
+
+            Transform processorOutput =
+                processorRoot.transform.Find("Processor Output Zone");
+            Transform packingInput = packingRoot.transform.Find("Packing Input Zone");
+            Transform packingOutput = packingRoot.transform.Find("Packing Output Zone");
+            Require(processorOutput != null
+                    && packingInput != null
+                    && packingOutput != null,
+                "M8 layout audit requires Processor and Packing interaction zones.");
+
+            WoodSpawner woodSpawner = FindRoot(scene, "Wood Spawner")
+                ?.GetComponent<WoodSpawner>();
+            ResourceCollector resourceCollector =
+                carryStack.GetComponent<ResourceCollector>();
+            CharacterController playerController =
+                carryStack.GetComponent<CharacterController>();
+            SphereCollider looseWoodCollider =
+                woodSpawner != null && woodSpawner.WoodPrefab != null
+                    ? woodSpawner.WoodPrefab.GetComponent<SphereCollider>()
+                    : null;
+            BoxCollider packingOutputTrigger =
+                packingOutput.GetComponent<BoxCollider>();
+            Require(woodSpawner != null
+                    && resourceCollector != null
+                    && playerController != null
+                    && looseWoodCollider != null
+                    && packingOutputTrigger != null,
+                "M8 Packing output clearance requires Wood and player pickup geometry.");
+            Vector2 spawnArea = GetVector2Value(woodSpawner, "spawnArea");
+            float spawnLeftEdge = woodSpawner.transform.position.x
+                                  - (spawnArea.x * 0.5f);
+            Vector3 packingOutputCenter = packingOutput.TransformPoint(
+                packingOutputTrigger.center);
+            float packingOutputRightEdge = packingOutputCenter.x
+                                           + (packingOutputTrigger.size.x
+                                              * Mathf.Abs(
+                                                  packingOutput.lossyScale.x)
+                                              * 0.5f);
+            float playerCollisionRadius = playerController.radius
+                                          * Mathf.Max(
+                                              Mathf.Abs(
+                                                  playerController.transform.lossyScale.x),
+                                              Mathf.Abs(
+                                                  playerController.transform.lossyScale.z));
+            float looseWoodRadius = looseWoodCollider.radius
+                                    * Mathf.Abs(
+                                        looseWoodCollider.transform.lossyScale.x);
+            float requiredLooseWoodClearance = playerCollisionRadius
+                                             + GetFloatValue(
+                                                 resourceCollector,
+                                                 "pickupRadius")
+                                             + looseWoodRadius
+                                             + 0.10f;
+            Require(spawnLeftEdge - packingOutputRightEdge
+                    >= requiredLooseWoodClearance,
+                "Loose Wood spawn bounds overlap the Packing output pickup area.");
+
+            float plankTransportDistance = Vector3.Distance(
+                processorOutput.position,
+                packingInput.position);
+            float crateTransportDistance = Vector3.Distance(
+                packingOutput.position,
+                salePoint.transform.position);
+            float packingPadDistance = Vector3.Distance(
+                packingPurchaseRoot.transform.position,
+                packingRoot.transform.position);
+            Require(plankTransportDistance >= 5.5f
+                    && plankTransportDistance <= 7f,
+                $"Processor to Packing flow must remain readable without excessive repetition; found {plankTransportDistance:0.00} units.");
+            Require(crateTransportDistance >= 12f
+                    && crateTransportDistance <= 15.5f,
+                $"Packing to Sale travel must remain meaningful but short; found {crateTransportDistance:0.00} units.");
+            Require(packingPadDistance >= 2.5f
+                    && packingPadDistance <= 3.2f
+                    && Vector3.Distance(
+                        packingPurchaseRoot.transform.position,
+                        packingInput.position) >= 4.5f,
+                "Packing purchase pad must visibly belong to the station without conflicting with its input.");
+            Require(Vector3.Distance(
+                        mineRoot.transform.position,
+                        packingRoot.transform.position) >= 8f,
+                "Mine teaser must not visually crowd the completed Packing area.");
+
+            Require(pacingProbe.CarryStack == carryStack
+                    && pacingProbe.SalePoint == salePoint
+                    && pacingProbe.ProductionUpgrade == productionUpgrade
+                    && pacingProbe.WorkerUnlock == workerUnlock
+                    && pacingProbe.ProcessorUnlock == processorUnlock
+                    && pacingProbe.AutoFeederUnlock == feederUnlock
+                    && pacingProbe.PackingStationUnlock == packingUnlock
+                    && pacingProbe.CourierUnlock == courierUnlock
+                    && pacingProbe.Courier == courier
+                    && pacingProbe.Completion == completion,
+                "Development pacing probe is not wired exclusively to authoritative events.");
+
+            Require(guidance.ProductionUpgrade == productionUpgrade
+                    && guidance.WorkerUnlock == workerUnlock
+                    && guidance.ProcessorUnlock == processorUnlock
+                    && guidance.AutoFeederUnlock == feederUnlock
+                    && guidance.PackingStationUnlock == packingUnlock
+                    && guidance.CourierUnlock == courierUnlock
+                    && guidance.Completion == completion
+                    && guidance.GuidanceText != null,
+                "Next Unlock guidance references are incomplete.");
+            Require(guidance.GuidanceText.text
+                    == "NEXT: PRODUCTION UPGRADE\n$0 / $120",
+                "Next Unlock initial copy must show authoritative paid / total progress.");
+            RectTransform guidanceRect = guidance.GetComponent<RectTransform>();
+            Require(guidanceRect != null
+                    && guidanceRect.sizeDelta.x <= 880f
+                    && guidanceRect.sizeDelta.y <= 150f,
+                "Next Unlock HUD must remain compact in portrait safe area.");
+
+            Require(completionFeedback.Completion == completion
+                    && completionFeedback.BannerRoot != null
+                    && !completionFeedback.BannerRoot.activeSelf
+                    && Mathf.Approximately(completionFeedback.EntranceDuration, 0.24f)
+                    && Mathf.Approximately(completionFeedback.HoldDuration, 1.45f)
+                    && Mathf.Approximately(completionFeedback.ExitDuration, 0.30f)
+                    && GetObjectReference(completionFeedback, "completionParticles") != null
+                    && GetObjectReference(completionFeedback, "audioFeedback") == audioFeedback
+                    && GetObjectReference(completionFeedback, "hapticFeedback") == hapticFeedback
+                    && GetObjectReference(completionFeedback, "followCamera") == followCamera,
+                "Completion presentation must be short, non-blocking, and reuse M2 feedback services.");
+            Text completionText =
+                completionFeedback.BannerRoot.GetComponentInChildren<Text>(true);
+            Require(completionText != null
+                    && completionText.text.Contains("LUMBER CAMP COMPLETE")
+                    && completionText.text.Contains("MINE AREA REVEALED"),
+                "Completion presentation must make the off-camera Mine reveal discoverable.");
+        }
+
         private static void ValidateFeedbackParticles(Scene scene)
         {
             var particleSystems = new List<ParticleSystem>();
@@ -4063,8 +4610,8 @@ namespace IndustryTycoon.Editor
                 particleSystems.AddRange(rootParticles);
             }
 
-            Require(particleSystems.Count == 21,
-                $"The prototype requires twenty-one reusable feedback emitters; found {particleSystems.Count}.");
+            Require(particleSystems.Count == 22,
+                $"The prototype requires twenty-two reusable feedback emitters; found {particleSystems.Count}.");
             for (int i = 0; i < particleSystems.Count; i++)
             {
                 ParticleSystem particles = particleSystems[i];
@@ -5139,6 +5686,75 @@ namespace IndustryTycoon.Editor
             }
         }
 
+        private static void ValidateM8Logic()
+        {
+            LumberCampProgressStage[] orderedStages =
+            {
+                LumberCampProgressStage.ProductionUpgrade,
+                LumberCampProgressStage.Worker,
+                LumberCampProgressStage.Processor,
+                LumberCampProgressStage.AutoFeeder,
+                LumberCampProgressStage.PackingStation,
+                LumberCampProgressStage.Courier,
+                LumberCampProgressStage.FirstCourierDelivery,
+                LumberCampProgressStage.Complete
+            };
+            for (int i = 0; i < orderedStages.Length; i++)
+            {
+                Require((int)orderedStages[i] == i,
+                    "M8 Next Unlock stage order changed or can skip a prerequisite.");
+            }
+
+            Require(NextUnlockGuidance.BuildDisplayText(
+                        LumberCampProgressStage.AutoFeeder,
+                        420,
+                        600)
+                    == "NEXT: AUTO FEEDER\n$420 / $600",
+                "M8 guidance did not render authoritative paid / total progress.");
+            Require(NextUnlockGuidance.BuildDisplayText(
+                        LumberCampProgressStage.FirstCourierDelivery,
+                        0,
+                        0)
+                    == "NEXT: FIRST COURIER DELIVERY"
+                    && NextUnlockGuidance.BuildDisplayText(
+                        LumberCampProgressStage.Complete,
+                        0,
+                        0)
+                    == "LUMBER CAMP COMPLETE",
+                "M8 guidance requires distinct delivery-waiting and completed states.");
+
+            GameObject probeObject = new GameObject("M8 Pacing Probe Logic Validation");
+            try
+            {
+                LumberCampPacingProbe probe =
+                    probeObject.AddComponent<LumberCampPacingProbe>();
+                probe.ResetProbe();
+                Require(probe.RecordedMilestoneCount == 1
+                        && probe.HasTimestamp(
+                            LumberCampPacingMilestone.SessionStart)
+                        && Mathf.Approximately(
+                            (float)probe.GetElapsedSeconds(
+                                LumberCampPacingMilestone.SessionStart),
+                            0f)
+                        && !probe.HasTimestamp(
+                            LumberCampPacingMilestone.FirstSale)
+                        && probe.AreRecordedTimestampsOrdered()
+                        && !probe.HasCompleteOrderedSequence(),
+                    "M8 pacing probe did not reset to one valid session-start timestamp.");
+
+                probe.ResetProbe();
+                Require(probe.RecordedMilestoneCount == 1
+                        && probe.AutomaticReportCount == 0
+                        && probe.BuildReport().Contains("Sale --:--")
+                        && probe.BuildReport().Contains("Complete --:--"),
+                    "M8 pacing probe retained stale timestamps or report state after reset.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(probeObject);
+            }
+        }
+
         private static void DepositValidationWood(WoodStockpile stockpile)
         {
             Require(stockpile != null
@@ -5207,6 +5823,32 @@ namespace IndustryTycoon.Editor
             }
 
             return property.intValue;
+        }
+
+        private static float GetFloatValue(Object target, string propertyName)
+        {
+            var serializedObject = new SerializedObject(target);
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                throw new InvalidOperationException(
+                    $"Serialized property '{propertyName}' was not found on {target.GetType().Name}.");
+            }
+
+            return property.floatValue;
+        }
+
+        private static Vector2 GetVector2Value(Object target, string propertyName)
+        {
+            var serializedObject = new SerializedObject(target);
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                throw new InvalidOperationException(
+                    $"Serialized property '{propertyName}' was not found on {target.GetType().Name}.");
+            }
+
+            return property.vector2Value;
         }
 
         private static void Require(bool condition, string message)
