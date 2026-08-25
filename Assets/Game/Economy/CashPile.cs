@@ -47,10 +47,21 @@ namespace IndustryTycoon.Economy
                 return 0;
             }
 
-            _storedCash += acceptedAmount;
-            RefreshVisuals();
-            StoredCashChanged?.Invoke(_storedCash);
+            FinalizeDepositForTransfer(acceptedAmount);
+            PublishDepositCommitted();
             return acceptedAmount;
+        }
+
+        internal void FinalizeDepositForTransfer(int amount)
+        {
+            Debug.Assert(CanDeposit(amount));
+            _storedCash += amount;
+            RefreshVisuals();
+        }
+
+        internal void PublishDepositCommitted()
+        {
+            StoredCashChanged?.Invoke(_storedCash);
         }
 
         public bool TryWithdrawAll(out int amount)

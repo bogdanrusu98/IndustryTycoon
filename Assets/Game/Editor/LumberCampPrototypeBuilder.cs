@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using IndustryTycoon.CameraSystem;
 using IndustryTycoon.Core;
 using IndustryTycoon.Economy;
@@ -12,6 +13,7 @@ using IndustryTycoon.ResourceSystem;
 using IndustryTycoon.UI;
 using IndustryTycoon.Workers;
 using UnityEditor;
+using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -99,6 +101,46 @@ namespace IndustryTycoon.Editor
             ValidateSavedPrototype(false);
         }
 
+        public static void BuildWindowsPlayerFromCommandLine()
+        {
+            string buildPath = GetCommandLineValue("-customBuildPath");
+            if (string.IsNullOrWhiteSpace(buildPath))
+            {
+                throw new InvalidOperationException(
+                    "BuildWindowsPlayerFromCommandLine requires -customBuildPath <file.exe>.");
+            }
+
+            string fullBuildPath = Path.GetFullPath(buildPath);
+            string buildDirectory = Path.GetDirectoryName(fullBuildPath);
+            if (string.IsNullOrWhiteSpace(buildDirectory))
+            {
+                throw new InvalidOperationException(
+                    $"Invalid Windows Player build path: {fullBuildPath}");
+            }
+
+            Directory.CreateDirectory(buildDirectory);
+            var buildOptions = new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = fullBuildPath,
+                target = BuildTarget.StandaloneWindows64,
+                options = BuildOptions.None
+            };
+            BuildReport report = BuildPipeline.BuildPlayer(buildOptions);
+            if (report.summary.result != BuildResult.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    $"Windows Player build failed: {report.summary.result}, "
+                    + $"{report.summary.totalErrors} errors, "
+                    + $"{report.summary.totalWarnings} warnings.");
+            }
+
+            Debug.Log(
+                $"Windows Player build passed: {fullBuildPath} "
+                + $"({report.summary.totalSize} bytes, "
+                + $"{report.summary.totalWarnings} warnings).");
+        }
+
         private static void BuildPrototype()
         {
             EnsureProjectFolders();
@@ -184,6 +226,14 @@ namespace IndustryTycoon.Editor
                 MaterialFolder + "/Packing_Station.mat",
                 new Color(0.46f, 0.18f, 0.58f),
                 0.30f);
+            Material courierMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Courier.mat",
+                new Color(0.08f, 0.44f, 0.64f),
+                0.32f);
+            Material courierAccentMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Courier_Accent.mat",
+                new Color(1f, 0.70f, 0.16f),
+                0.26f);
             Material feedbackParticleMaterial = CreateOrUpdateParticleMaterial(
                 MaterialFolder + "/Feedback_Particle.mat");
 
@@ -303,6 +353,7 @@ namespace IndustryTycoon.Editor
                 workerUnlock,
                 stockpile,
                 wallet,
+                cashPile,
                 player.GetComponent<CarryStack>(),
                 playerCollider,
                 purchaseMaterial,
@@ -317,6 +368,8 @@ namespace IndustryTycoon.Editor
                 crateMaterial,
                 crateAccentMaterial,
                 packingMaterial,
+                courierMaterial,
+                courierAccentMaterial,
                 feedbackParticleMaterial,
                 feedbackServices,
                 followCamera);
@@ -1470,6 +1523,7 @@ namespace IndustryTycoon.Editor
             FirstWorkerUnlock workerUnlock,
             WoodStockpile stockpile,
             Wallet wallet,
+            CashPile cashPile,
             CarryStack carryStack,
             Collider playerCollider,
             Material purchaseAvailableMaterial,
@@ -1484,6 +1538,8 @@ namespace IndustryTycoon.Editor
             Material crateMaterial,
             Material crateAccentMaterial,
             Material packingMaterial,
+            Material courierMaterial,
+            Material courierAccentMaterial,
             Material particleMaterial,
             FeedbackServices feedbackServices,
             SmoothFollowCamera followCamera)
@@ -1674,6 +1730,7 @@ namespace IndustryTycoon.Editor
                 scene,
                 autoFeederUnlock,
                 wallet,
+                cashPile,
                 carryStack,
                 playerCollider,
                 purchaseAvailableMaterial,
@@ -1688,6 +1745,8 @@ namespace IndustryTycoon.Editor
                 crateMaterial,
                 crateAccentMaterial,
                 particleMaterial,
+                courierMaterial,
+                courierAccentMaterial,
                 feedbackServices,
                 followCamera);
             return processorUnlock;
@@ -1922,6 +1981,7 @@ namespace IndustryTycoon.Editor
             Scene scene,
             FirstAutoFeederUnlock autoFeederUnlock,
             Wallet wallet,
+            CashPile cashPile,
             CarryStack carryStack,
             Collider playerCollider,
             Material purchaseAvailableMaterial,
@@ -1936,6 +1996,8 @@ namespace IndustryTycoon.Editor
             Material crateMaterial,
             Material crateAccentMaterial,
             Material particleMaterial,
+            Material courierMaterial,
+            Material courierAccentMaterial,
             FeedbackServices feedbackServices,
             SmoothFollowCamera followCamera)
         {
@@ -2072,6 +2134,22 @@ namespace IndustryTycoon.Editor
                 new Vector3(0f, 1.38f, 0.08f),
                 new Color(1f, 0.76f, 0.30f));
 
+            GameObject courierPickupPoint = new GameObject("Courier Pickup Point");
+            courierPickupPoint.transform.SetParent(stationRoot.transform, false);
+            courierPickupPoint.transform.localPosition = new Vector3(2.55f, 0f, -0.65f);
+            CreateZoneDisc(
+                "Courier Pickup Marker",
+                courierPickupPoint.transform,
+                courierAccentMaterial,
+                0.72f);
+            TextMesh courierPickupLabel = CreateWorldLabel(
+                "Courier Pickup Label",
+                courierPickupPoint.transform,
+                "COURIER\nPICKUP",
+                new Vector3(0f, 1.60f, 0.08f),
+                new Color(1f, 0.82f, 0.34f));
+            courierPickupLabel.characterSize = 0.044f;
+
             TextMesh statusText = CreateWorldLabel(
                 "Packing Status",
                 stationVisual.transform,
@@ -2195,7 +2273,299 @@ namespace IndustryTycoon.Editor
             SetObjectReference(unlockFeedback, "hapticFeedback", feedbackServices.Haptics);
             SetObjectReference(unlockFeedback, "followCamera", followCamera);
             SetFloat(unlockFeedback, "unlockDuration", 0.65f);
+
+            CreateCourierDelivery(
+                scene,
+                unlock,
+                station,
+                cashPile,
+                wallet,
+                playerCollider,
+                courierPickupPoint.transform,
+                purchaseAvailableMaterial,
+                purchaseCompletedMaterial,
+                cashAccentMaterial,
+                cashVisualPrefab,
+                tokenOrigin,
+                resourceVisualPrefab,
+                courierMaterial,
+                courierAccentMaterial,
+                crateMaterial,
+                particleMaterial,
+                feedbackServices,
+                followCamera);
             return unlock;
+        }
+
+        private static FirstCourierUnlock CreateCourierDelivery(
+            Scene scene,
+            FirstPackingStationUnlock packingStationUnlock,
+            PackingStation packingStation,
+            CashPile cashPile,
+            Wallet wallet,
+            Collider playerCollider,
+            Transform pickupPoint,
+            Material purchaseAvailableMaterial,
+            Material purchaseCompletedMaterial,
+            Material cashAccentMaterial,
+            GameObject cashVisualPrefab,
+            Transform tokenOrigin,
+            GameObject resourceVisualPrefab,
+            Material courierMaterial,
+            Material courierAccentMaterial,
+            Material crateMaterial,
+            Material particleMaterial,
+            FeedbackServices feedbackServices,
+            SmoothFollowCamera followCamera)
+        {
+            PurchasePad purchasePad = CreatePurchasePad(
+                scene,
+                "Courier Purchase Pad",
+                "DELIVERY COURIER",
+                new Vector3(0f, 0f, -8f),
+                1500,
+                false,
+                wallet,
+                playerCollider,
+                purchaseAvailableMaterial,
+                purchaseCompletedMaterial,
+                cashAccentMaterial,
+                cashVisualPrefab,
+                tokenOrigin,
+                particleMaterial,
+                feedbackServices.Audio);
+
+            GameObject deliveryRoot = new GameObject("Crate Courier Delivery");
+            SceneManager.MoveGameObjectToScene(deliveryRoot, scene);
+
+            GameObject deliveryPoint = new GameObject("Delivery Point");
+            deliveryPoint.transform.SetParent(deliveryRoot.transform, false);
+            deliveryPoint.transform.position = new Vector3(1.15f, 0f, -4.5f);
+            CreateZoneDisc(
+                "Cash Delivery Marker",
+                deliveryPoint.transform,
+                purchaseCompletedMaterial,
+                0.82f);
+            GameObject deliveryArrow = CreatePrimitiveChild(
+                "Cash Delivery Arrow",
+                PrimitiveType.Cube,
+                deliveryPoint.transform,
+                cashAccentMaterial);
+            deliveryArrow.transform.localPosition = new Vector3(-0.48f, 0.16f, 0f);
+            deliveryArrow.transform.localRotation = Quaternion.Euler(0f, 0f, 18f);
+            deliveryArrow.transform.localScale = new Vector3(0.62f, 0.09f, 0.22f);
+            CreateWorldLabel(
+                "Delivery Point Label",
+                deliveryPoint.transform,
+                "DELIVERY  TO CASH",
+                new Vector3(0f, 1.12f, 0.10f),
+                new Color(0.52f, 1f, 0.58f));
+
+            GameObject courierObject = new GameObject("Crate Courier");
+            courierObject.transform.SetParent(deliveryRoot.transform, false);
+            courierObject.transform.position = deliveryPoint.transform.position;
+
+            GameObject courierVisual = new GameObject("Courier Visual");
+            courierVisual.transform.SetParent(courierObject.transform, false);
+
+            GameObject chassis = CreatePrimitiveChild(
+                "Courier Chassis",
+                PrimitiveType.Cube,
+                courierVisual.transform,
+                courierMaterial);
+            chassis.transform.localPosition = new Vector3(0f, 0.58f, 0f);
+            chassis.transform.localScale = new Vector3(1.34f, 0.42f, 1.88f);
+
+            GameObject cabin = CreatePrimitiveChild(
+                "Courier Cabin",
+                PrimitiveType.Cube,
+                courierVisual.transform,
+                courierMaterial);
+            cabin.transform.localPosition = new Vector3(0f, 0.96f, -0.36f);
+            cabin.transform.localScale = new Vector3(1.10f, 0.58f, 0.88f);
+
+            GameObject windscreen = CreatePrimitiveChild(
+                "Courier Windscreen",
+                PrimitiveType.Cube,
+                courierVisual.transform,
+                courierAccentMaterial);
+            windscreen.transform.localPosition = new Vector3(0f, 1.02f, -0.82f);
+            windscreen.transform.localScale = new Vector3(0.82f, 0.30f, 0.08f);
+
+            GameObject cargoDeck = CreatePrimitiveChild(
+                "Courier Cargo Deck",
+                PrimitiveType.Cube,
+                courierVisual.transform,
+                crateMaterial);
+            cargoDeck.transform.localPosition = new Vector3(0f, 0.91f, 0.56f);
+            cargoDeck.transform.localScale = new Vector3(1.16f, 0.14f, 0.64f);
+
+            GameObject frontLeftWheel = CreateCourierWheel(
+                "Front Left Wheel",
+                courierVisual.transform,
+                new Vector3(-0.72f, 0.34f, -0.58f),
+                courierAccentMaterial);
+            GameObject frontRightWheel = CreateCourierWheel(
+                "Front Right Wheel",
+                courierVisual.transform,
+                new Vector3(0.72f, 0.34f, -0.58f),
+                courierAccentMaterial);
+            CreateCourierWheel(
+                "Rear Left Wheel",
+                courierVisual.transform,
+                new Vector3(-0.72f, 0.34f, 0.62f),
+                courierAccentMaterial);
+            CreateCourierWheel(
+                "Rear Right Wheel",
+                courierVisual.transform,
+                new Vector3(0.72f, 0.34f, 0.62f),
+                courierAccentMaterial);
+
+            GameObject carriedCrateAnchor = new GameObject("Carried Crate Anchor");
+            carriedCrateAnchor.transform.SetParent(courierVisual.transform, false);
+            carriedCrateAnchor.transform.localPosition = new Vector3(0f, 1.24f, 0.52f);
+
+            GameObject statusIndicator = CreatePrimitiveChild(
+                "Courier Status Indicator",
+                PrimitiveType.Cube,
+                courierVisual.transform,
+                courierMaterial);
+            statusIndicator.transform.localPosition = new Vector3(0f, 1.46f, -0.16f);
+            statusIndicator.transform.localScale = new Vector3(0.62f, 0.12f, 0.18f);
+
+            TextMesh statusText = CreateWorldLabel(
+                "Courier Status",
+                courierVisual.transform,
+                "COURIER  LOCKED",
+                new Vector3(0f, 2.02f, 0f),
+                Color.white);
+
+            ParticleSystem pickupParticles = CreateFeedbackParticleSystem(
+                "Courier Pickup Burst",
+                courierObject.transform,
+                new Vector3(0f, 1.05f, 0.42f),
+                new Color(1f, 0.70f, 0.22f),
+                particleMaterial,
+                20,
+                0.28f,
+                1.10f,
+                0.09f);
+            ParticleSystem deliveryParticles = CreateFeedbackParticleSystem(
+                "Courier Delivery Burst",
+                courierObject.transform,
+                new Vector3(0f, 1.05f, -0.25f),
+                new Color(0.20f, 1f, 0.46f),
+                particleMaterial,
+                24,
+                0.32f,
+                1.20f,
+                0.10f);
+
+            CrateCourier courier = courierObject.AddComponent<CrateCourier>();
+            SetObjectReference(courier, "packingStation", packingStation);
+            SetObjectReference(courier, "cashPile", cashPile);
+            SetObjectReference(courier, "pickupPoint", pickupPoint);
+            SetObjectReference(courier, "deliveryPoint", deliveryPoint.transform);
+            SetFloat(courier, "movementSpeed", 3.5f);
+            SetFloat(courier, "rotationSpeed", 540f);
+            SetFloat(courier, "stopDistance", 0.08f);
+            SetFloat(courier, "pickupDelay", 0.60f);
+            SetFloat(courier, "deliveryDelay", 0.45f);
+            SetFloat(courier, "retryInterval", 0.75f);
+
+            CrateCourierFeedback courierFeedback =
+                courierObject.AddComponent<CrateCourierFeedback>();
+            SetObjectReference(courierFeedback, "courier", courier);
+            SetObjectReference(courierFeedback, "courierVisual", courierVisual.transform);
+            SetObjectReference(
+                courierFeedback,
+                "carriedCrateAnchor",
+                carriedCrateAnchor.transform);
+            SetObjectReference(
+                courierFeedback,
+                "resourceVisualPrefab",
+                resourceVisualPrefab);
+            SetObjectReference(courierFeedback, "statusText", statusText);
+            SetObjectReference(
+                courierFeedback,
+                "statusIndicator",
+                statusIndicator.GetComponent<Renderer>());
+            SetObjectReference(courierFeedback, "idleMaterial", courierMaterial);
+            SetObjectReference(
+                courierFeedback,
+                "movingMaterial",
+                courierAccentMaterial);
+            SetObjectReference(
+                courierFeedback,
+                "deliveryMaterial",
+                purchaseCompletedMaterial);
+            SetObjectReference(
+                courierFeedback,
+                "leftWheel",
+                frontLeftWheel.transform);
+            SetObjectReference(
+                courierFeedback,
+                "rightWheel",
+                frontRightWheel.transform);
+            SetObjectReference(courierFeedback, "pickupParticles", pickupParticles);
+            SetObjectReference(courierFeedback, "deliveryParticles", deliveryParticles);
+            SetInteger(courierFeedback, "cargoVisualPoolSize", 2);
+            SetFloat(courierFeedback, "cargoVisualScale", 0.58f);
+            SetFloat(courierFeedback, "wheelRotationSpeed", 420f);
+
+            deliveryRoot.SetActive(false);
+            purchasePad.gameObject.SetActive(false);
+
+            GameObject automationRoot = new GameObject("Courier Automation");
+            SceneManager.MoveGameObjectToScene(automationRoot, scene);
+
+            FirstCourierUnlock unlock = automationRoot.AddComponent<FirstCourierUnlock>();
+            SetObjectReference(unlock, "packingStationUnlock", packingStationUnlock);
+            SetObjectReference(unlock, "courierPurchasePad", purchasePad);
+            SetObjectReference(
+                unlock,
+                "courierPurchasePadRoot",
+                purchasePad.gameObject);
+            SetObjectReference(unlock, "courierRoot", deliveryRoot);
+
+            ParticleSystem unlockParticles = CreateFeedbackParticleSystem(
+                "Courier Unlock Burst",
+                automationRoot.transform,
+                deliveryPoint.transform.position + new Vector3(0f, 1f, 0f),
+                new Color(0.20f, 0.78f, 1f),
+                particleMaterial,
+                36,
+                0.52f,
+                1.70f,
+                0.13f);
+
+            CourierUnlockFeedback unlockFeedback =
+                automationRoot.AddComponent<CourierUnlockFeedback>();
+            SetObjectReference(unlockFeedback, "courierUnlock", unlock);
+            SetObjectReference(unlockFeedback, "courierVisual", courierVisual.transform);
+            SetObjectReference(unlockFeedback, "unlockParticles", unlockParticles);
+            SetObjectReference(unlockFeedback, "audioFeedback", feedbackServices.Audio);
+            SetObjectReference(unlockFeedback, "hapticFeedback", feedbackServices.Haptics);
+            SetObjectReference(unlockFeedback, "followCamera", followCamera);
+            SetFloat(unlockFeedback, "unlockDuration", 0.65f);
+            return unlock;
+        }
+
+        private static GameObject CreateCourierWheel(
+            string name,
+            Transform parent,
+            Vector3 localPosition,
+            Material material)
+        {
+            GameObject wheel = CreatePrimitiveChild(
+                name,
+                PrimitiveType.Cylinder,
+                parent,
+                material);
+            wheel.transform.localPosition = localPosition;
+            wheel.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
+            wheel.transform.localScale = new Vector3(0.28f, 0.14f, 0.28f);
+            return wheel;
         }
 
         private static void CreateConveyorRail(
@@ -3051,11 +3421,20 @@ namespace IndustryTycoon.Editor
                 audioFeedback,
                 hapticFeedback,
                 followCamera);
+            ValidateM7Scene(
+                scene,
+                wallet,
+                cashPile,
+                playerCollider,
+                audioFeedback,
+                hapticFeedback,
+                followCamera);
             ValidateCoreLoopLogic();
             ValidateM3Logic();
             ValidateM4Logic();
             ValidateM5Logic();
             ValidateM6Logic();
+            ValidateM7Logic();
         }
 
         private static void ValidateM4Scene(
@@ -3493,6 +3872,176 @@ namespace IndustryTycoon.Editor
                 "Packing Station purchase pad is too close to an accepted interaction zone.");
         }
 
+        private static void ValidateM7Scene(
+            Scene scene,
+            Wallet wallet,
+            CashPile cashPile,
+            Collider playerCollider,
+            AudioFeedback audioFeedback,
+            HapticFeedback hapticFeedback,
+            SmoothFollowCamera followCamera)
+        {
+            GameObject purchaseObject = FindRoot(scene, "Courier Purchase Pad");
+            GameObject deliveryRoot = FindRoot(scene, "Crate Courier Delivery");
+            GameObject automationObject = FindRoot(scene, "Courier Automation");
+            GameObject packingObject = FindRoot(scene, "Packing Station");
+            GameObject packingAutomationObject =
+                FindRoot(scene, "Packing Station Automation");
+            Require(purchaseObject != null,
+                "The prototype scene has no Courier Purchase Pad.");
+            Require(deliveryRoot != null,
+                "The prototype scene has no Crate Courier Delivery root.");
+            Require(automationObject != null,
+                "The prototype scene has no Courier Automation root.");
+            Require(packingObject != null && packingAutomationObject != null,
+                "M7 requires the accepted Packing Station roots.");
+
+            BoxCollider purchaseTrigger = ValidateTriggerZone(
+                purchaseObject,
+                "Courier Purchase Pad");
+            Transform courierTransform = deliveryRoot.transform.Find("Crate Courier");
+            Transform deliveryPoint = deliveryRoot.transform.Find("Delivery Point");
+            Transform pickupPoint = packingObject.transform.Find("Courier Pickup Point");
+            Transform packingOutput = packingObject.transform.Find("Packing Output Zone");
+            Require(courierTransform != null
+                    && deliveryPoint != null
+                    && pickupPoint != null
+                    && packingOutput != null,
+                "Courier requires one agent and fixed Packing pickup / Cash delivery points.");
+            Require(deliveryRoot.GetComponentsInChildren<CrateCourier>(true).Length == 1,
+                "M7 must contain exactly one Crate Courier.");
+            Require(Vector3.Distance(pickupPoint.position, packingOutput.position) >= 1.2f
+                    && Vector3.Distance(pickupPoint.position, packingOutput.position) <= 2.2f,
+                "Courier pickup must remain visibly adjacent to, but clear of, manual output.");
+            Require(Vector3.Distance(deliveryPoint.position, cashPile.transform.position) <= 3f,
+                "Courier Delivery Point must remain visibly connected to the Cash Pile.");
+
+            PurchasePad purchasePad = purchaseObject.GetComponent<PurchasePad>();
+            PurchasePadFeedback purchaseFeedback =
+                purchaseObject.GetComponent<PurchasePadFeedback>();
+            CrateCourier courier = courierTransform.GetComponent<CrateCourier>();
+            CrateCourierFeedback courierFeedback =
+                courierTransform.GetComponent<CrateCourierFeedback>();
+            FirstCourierUnlock unlock =
+                automationObject.GetComponent<FirstCourierUnlock>();
+            CourierUnlockFeedback unlockFeedback =
+                automationObject.GetComponent<CourierUnlockFeedback>();
+            PackingStation packingStation = packingObject.GetComponent<PackingStation>();
+            FirstPackingStationUnlock packingUnlock =
+                packingAutomationObject.GetComponent<FirstPackingStationUnlock>();
+
+            Require(purchasePad != null
+                    && purchasePad.Wallet == wallet
+                    && purchasePad.PlayerCollider == playerCollider
+                    && purchasePad.InteractionCollider == purchaseTrigger,
+                "Courier Purchase Pad gameplay references are incomplete.");
+            Require(purchasePad.PurchaseLabel == "DELIVERY COURIER"
+                    && purchasePad.TotalCost == 1500
+                    && purchasePad.SpendPerTick == 5
+                    && Mathf.Approximately(purchasePad.SpendInterval, 0.10f),
+                "Courier Purchase Pad must cost $1500 and reuse the $5 / 0.10-second cadence.");
+            Require(!purchasePad.StartsAvailable
+                    && !purchasePad.IsAvailable
+                    && !purchaseTrigger.enabled
+                    && !purchaseObject.activeSelf,
+                "Courier Purchase Pad must begin locked, disabled, and hidden.");
+            Require(purchaseFeedback != null
+                    && purchaseFeedback.TokenPoolSize == 4
+                    && Mathf.Approximately(purchaseFeedback.TokenFlightDuration, 0.22f)
+                    && GetObjectReference(purchaseFeedback, "tokenVisualPrefab") != null
+                    && GetObjectReference(purchaseFeedback, "purchaseParticles") != null
+                    && GetObjectReference(purchaseFeedback, "audioFeedback") == audioFeedback,
+                "Courier Purchase Pad must reuse the capped purchase feedback.");
+
+            Require(courier != null && !deliveryRoot.activeSelf,
+                "The single Crate Courier delivery root must begin inactive.");
+            Require(courier.PackingStation == packingStation
+                    && courier.CashPile == cashPile
+                    && courier.PickupPoint == pickupPoint
+                    && courier.DeliveryPoint == deliveryPoint,
+                "Courier fixed-route authoritative references are incomplete.");
+            Require(courier.AcceptedResourceType == ResourceType.Crate
+                    && courier.Capacity == 2
+                    && courier.CashPerCrate == 40,
+                "Courier must accept only Crates, carry at most two, and pay $40 each.");
+            Require(Mathf.Approximately(courier.MovementSpeed, 3.5f)
+                    && Mathf.Approximately(courier.RotationSpeed, 540f)
+                    && Mathf.Approximately(courier.StopDistance, 0.08f)
+                    && Mathf.Approximately(courier.PickupDelay, 0.60f)
+                    && Mathf.Approximately(courier.DeliveryDelay, 0.45f)
+                    && Mathf.Approximately(courier.RetryInterval, 0.75f),
+                "Courier tuning must remain 3.5 speed / 0.60 pickup / 0.45 delivery / 0.75 retry.");
+            Require(courier.State == CrateCourierState.Disabled
+                    && courier.ReservedCrates == 0
+                    && courier.CarriedCrates == 0
+                    && courier.CompletedTripCount == 0,
+                "Courier must begin disabled with no claim, cargo, or completed delivery.");
+            Require(packingStation.MaximumCourierReservedCrates == 2
+                    && packingStation.ReservedCourierOutputCrates == 0,
+                "Packing output must begin with an empty, capped two-Crate courier claim.");
+
+            Require(courierFeedback != null
+                    && courierFeedback.ConfiguredCargoVisualPoolSize == 2
+                    && Mathf.Approximately(courierFeedback.CargoVisualScale, 0.58f)
+                    && Mathf.Approximately(courierFeedback.WheelRotationSpeed, 420f),
+                "Courier presentation must use exactly two capped cargo visuals.");
+            Require(GetObjectReference(courierFeedback, "courier") == courier
+                    && GetObjectReference(courierFeedback, "courierVisual") != null
+                    && GetObjectReference(courierFeedback, "carriedCrateAnchor") != null
+                    && GetObjectReference(courierFeedback, "resourceVisualPrefab") != null
+                    && GetObjectReference(courierFeedback, "statusText") != null
+                    && GetObjectReference(courierFeedback, "statusIndicator") != null
+                    && GetObjectReference(courierFeedback, "pickupParticles") != null
+                    && GetObjectReference(courierFeedback, "deliveryParticles") != null,
+                "Courier presentation references are incomplete.");
+            Require(courierTransform.GetComponentsInChildren<Rigidbody>(true).Length == 0
+                    && courierTransform.GetComponentsInChildren<Collider>(true).Length == 0,
+                "Courier and carried Crate presentation must not use physics components.");
+
+            Require(unlock != null
+                    && unlock.PackingStationUnlock == packingUnlock
+                    && unlock.CourierPurchasePad == purchasePad
+                    && unlock.CourierPurchasePadRoot == purchaseObject
+                    && unlock.CourierRoot == deliveryRoot,
+                "Courier unlock-gate references are incomplete.");
+            Require(!unlock.IsPadUnlocked && !unlock.IsCourierActivated,
+                "Courier must begin fully locked behind Packing Station activation.");
+            Require(unlockFeedback != null
+                    && Mathf.Approximately(unlockFeedback.UnlockDuration, 0.65f)
+                    && GetObjectReference(unlockFeedback, "courierUnlock") == unlock
+                    && GetObjectReference(unlockFeedback, "courierVisual")
+                       == courierTransform.Find("Courier Visual")
+                    && GetObjectReference(unlockFeedback, "unlockParticles") != null
+                    && GetObjectReference(unlockFeedback, "audioFeedback") == audioFeedback
+                    && GetObjectReference(unlockFeedback, "hapticFeedback") == hapticFeedback
+                    && GetObjectReference(unlockFeedback, "followCamera") == followCamera,
+                "Courier unlock feedback must reuse accepted presentation services.");
+
+            string[] separatedRoots =
+            {
+                "Cash Pile",
+                "Sale Point",
+                "Purchase Pad",
+                "Worker Purchase Pad",
+                "Processor Purchase Pad",
+                "Auto Feeder Purchase Pad",
+                "Packing Station Purchase Pad"
+            };
+            for (int i = 0; i < separatedRoots.Length; i++)
+            {
+                GameObject otherRoot = FindRoot(scene, separatedRoots[i]);
+                Require(otherRoot != null,
+                    $"M7 portrait check is missing '{separatedRoots[i]}'.");
+                BoxCollider otherTrigger = otherRoot.GetComponent<BoxCollider>();
+                Require(otherTrigger != null
+                        && Vector3.Distance(
+                            purchaseObject.transform.position,
+                            otherRoot.transform.position) >= 3.4f
+                        && !purchaseTrigger.bounds.Intersects(otherTrigger.bounds),
+                    $"Courier Purchase Pad overlaps '{separatedRoots[i]}' in portrait layout.");
+            }
+        }
+
         private static BoxCollider ValidateTriggerZone(GameObject root, string label)
         {
             BoxCollider trigger = root.GetComponent<BoxCollider>();
@@ -3514,8 +4063,8 @@ namespace IndustryTycoon.Editor
                 particleSystems.AddRange(rootParticles);
             }
 
-            Require(particleSystems.Count == 17,
-                $"The prototype requires seventeen reusable feedback emitters; found {particleSystems.Count}.");
+            Require(particleSystems.Count == 21,
+                $"The prototype requires twenty-one reusable feedback emitters; found {particleSystems.Count}.");
             for (int i = 0; i < particleSystems.Count; i++)
             {
                 ParticleSystem particles = particleSystems[i];
@@ -4488,6 +5037,108 @@ namespace IndustryTycoon.Editor
             }
         }
 
+        private static void ValidateM7Logic()
+        {
+            GameObject validationRoot = new GameObject("M7 Logic Validation");
+            try
+            {
+                GameObject walletObject = new GameObject("M7 Courier Purchase Wallet");
+                walletObject.transform.SetParent(validationRoot.transform, false);
+                Wallet wallet = walletObject.AddComponent<Wallet>();
+                GameObject padObject = new GameObject("M7 Courier Purchase Pad");
+                padObject.transform.SetParent(validationRoot.transform, false);
+                BoxCollider padCollider = padObject.AddComponent<BoxCollider>();
+                padCollider.isTrigger = true;
+                PurchasePad purchasePad = padObject.AddComponent<PurchasePad>();
+                SetObjectReference(purchasePad, "wallet", wallet);
+                SetObjectReference(purchasePad, "interactionCollider", padCollider);
+                SetString(purchasePad, "purchaseLabel", "DELIVERY COURIER");
+                SetBoolean(purchasePad, "startsAvailable", false);
+                SetInteger(purchasePad, "totalCost", 1500);
+                SetInteger(purchasePad, "spendPerTick", 5);
+                wallet.Deposit(1500);
+
+                Require(purchasePad.ProcessPaymentStep() == 0
+                        && purchasePad.RemainingCost == 1500
+                        && purchasePad.SetAvailable(true),
+                    "Locked M7 Courier pad accepted payment or could not unlock.");
+                for (int i = 0; i < 13; i++)
+                {
+                    Require(purchasePad.ProcessPaymentStep() == 5,
+                        "Courier pad rejected valid partial funding.");
+                }
+
+                Require(purchasePad.RemainingCost == 1435 && wallet.Balance == 1435,
+                    "Courier pad did not retain its $65 partial payment.");
+                purchasePad.enabled = false;
+                purchasePad.enabled = true;
+                Require(purchasePad.RemainingCost == 1435,
+                    "Courier pad lost partial payment across lifecycle changes.");
+
+                int completionCount = 0;
+                purchasePad.Completed += () => completionCount++;
+                int paymentGuard = 0;
+                while (!purchasePad.IsCompleted && paymentGuard++ < 400)
+                {
+                    purchasePad.ProcessPaymentStep();
+                }
+
+                Require(purchasePad.IsCompleted
+                        && purchasePad.RemainingCost == 0
+                        && wallet.Balance == 0
+                        && completionCount == 1
+                        && purchasePad.ProcessPaymentStep() == 0,
+                    "Courier pad did not complete exactly once at $1500.");
+
+                GameObject stationObject = new GameObject("M7 Packing Reservation");
+                stationObject.transform.SetParent(validationRoot.transform, false);
+                PackingStation packingStation =
+                    stationObject.AddComponent<PackingStation>();
+                Require(packingStation.MaximumCourierReservedCrates == 2
+                        && packingStation.ReservedCourierOutputCrates == 0
+                        && !packingStation.TryReserveCourierOutput(
+                            2,
+                            out PackingStationOutputReservation emptyReservation)
+                        && !emptyReservation.IsValid,
+                    "Empty Packing output created an invalid M7 courier claim.");
+
+                GameObject cashObject = new GameObject("M7 Delivery Cash Pile");
+                cashObject.transform.SetParent(validationRoot.transform, false);
+                CashPile cashPile = cashObject.AddComponent<CashPile>();
+                GameObject courierObject = new GameObject("M7 Courier");
+                courierObject.transform.SetParent(validationRoot.transform, false);
+                CrateCourier courier = courierObject.AddComponent<CrateCourier>();
+                Require(courier.AcceptedResourceType == ResourceType.Crate
+                        && courier.Capacity == 2
+                        && courier.CashPerCrate == 40
+                        && !courier.TryCommitDelivery()
+                        && cashPile.StoredCash == 0,
+                    "Courier accepted the wrong product/capacity or credited a non-trip.");
+
+                GameObject deliveryWalletObject =
+                    new GameObject("M7 Delivery Isolation Wallet");
+                deliveryWalletObject.transform.SetParent(validationRoot.transform, false);
+                Wallet deliveryWallet = deliveryWalletObject.AddComponent<Wallet>();
+                Require(cashPile.Deposit(courier.CashPerCrate) == 40
+                        && cashPile.StoredCash == 40
+                        && deliveryWallet.Balance == 0
+                        && cashPile.Deposit(courier.Capacity * courier.CashPerCrate) == 80
+                        && cashPile.StoredCash == 120
+                        && deliveryWallet.Balance == 0,
+                    "M7 Cash Pile did not preserve exact $40/$80 delivery isolation.");
+                Require(cashPile.TryWithdrawAll(out int collectedCash)
+                        && collectedCash == 120
+                        && cashPile.StoredCash == 0
+                        && deliveryWallet.Balance == 0
+                        && deliveryWallet.Deposit(collectedCash) == 120,
+                    "M7 Wallet changed before explicit Cash Pile collection.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(validationRoot);
+            }
+        }
+
         private static void DepositValidationWood(WoodStockpile stockpile)
         {
             Require(stockpile != null
@@ -4505,6 +5156,23 @@ namespace IndustryTycoon.Editor
                 if (roots[i].name == rootName)
                 {
                     return roots[i];
+                }
+            }
+
+            return null;
+        }
+
+        private static string GetCommandLineValue(string argumentName)
+        {
+            string[] arguments = Environment.GetCommandLineArgs();
+            for (int i = 0; i < arguments.Length - 1; i++)
+            {
+                if (string.Equals(
+                        arguments[i],
+                        argumentName,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return arguments[i + 1];
                 }
             }
 
