@@ -434,7 +434,9 @@ namespace IndustryTycoon.Player
 
         private static bool IsSupportedResource(ResourceType resourceType)
         {
-            return resourceType == ResourceType.Wood || resourceType == ResourceType.Plank;
+            return resourceType == ResourceType.Wood
+                   || resourceType == ResourceType.Plank
+                   || resourceType == ResourceType.Crate;
         }
 
         private void OnValidate()

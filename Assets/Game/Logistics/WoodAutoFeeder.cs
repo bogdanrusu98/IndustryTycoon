@@ -104,6 +104,7 @@ namespace IndustryTycoon.Logistics
         {
             if (!Application.isPlaying
                 || !isActiveAndEnabled
+                || !gameObject.activeInHierarchy
                 || _isShuttingDown
                 || _isAcquiring
                 || _isCompleting
@@ -168,6 +169,7 @@ namespace IndustryTycoon.Logistics
             if (!_hasInFlightTransfer
                 || _activeTransferGeneration != startedGeneration
                 || !isActiveAndEnabled
+                || !gameObject.activeInHierarchy
                 || _isShuttingDown)
             {
                 return false;
@@ -427,8 +429,10 @@ namespace IndustryTycoon.Logistics
             if (_cycleCoroutine != null
                 || _isShuttingDown
                 || !isActiveAndEnabled
+                || !gameObject.activeInHierarchy
                 || presentation == null
-                || !presentation.isActiveAndEnabled)
+                || !presentation.isActiveAndEnabled
+                || !presentation.gameObject.activeInHierarchy)
             {
                 return;
             }

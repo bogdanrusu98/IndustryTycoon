@@ -41,7 +41,20 @@ namespace IndustryTycoon.UI
                 return;
             }
 
-            string resourceLabel = resourceType == ResourceType.Plank ? "Plank" : "Wood";
+            string resourceLabel;
+            switch (resourceType)
+            {
+                case ResourceType.Plank:
+                    resourceLabel = "Plank";
+                    break;
+                case ResourceType.Crate:
+                    resourceLabel = "Crate";
+                    break;
+                default:
+                    resourceLabel = "Wood";
+                    break;
+            }
+
             countText.text = $"{resourceLabel}: {carryStack.TotalAmount} / {carryStack.Capacity}";
         }
     }

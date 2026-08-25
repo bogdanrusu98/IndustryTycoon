@@ -168,9 +168,21 @@ namespace IndustryTycoon.Editor
                 MaterialFolder + "/Plank_Accent.mat",
                 new Color(0.48f, 0.24f, 0.08f),
                 0.18f);
+            Material crateMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Crate.mat",
+                new Color(0.57f, 0.32f, 0.11f),
+                0.20f);
+            Material crateAccentMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Crate_Accent.mat",
+                new Color(0.94f, 0.66f, 0.22f),
+                0.24f);
             Material processorMaterial = CreateOrUpdateMaterial(
                 MaterialFolder + "/Processor.mat",
                 new Color(0.10f, 0.38f, 0.48f),
+                0.30f);
+            Material packingMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Packing_Station.mat",
+                new Color(0.46f, 0.18f, 0.58f),
                 0.30f);
             Material feedbackParticleMaterial = CreateOrUpdateParticleMaterial(
                 MaterialFolder + "/Feedback_Particle.mat");
@@ -179,7 +191,9 @@ namespace IndustryTycoon.Editor
                 barkMaterial,
                 cutMaterial,
                 plankMaterial,
-                plankAccentMaterial);
+                plankAccentMaterial,
+                crateMaterial,
+                crateAccentMaterial);
             BuildWoodResourcePrefab(barkMaterial, cutMaterial);
             GameObject cashVisualPrefab = BuildCashVisualPrefab(cashMaterial, cashAccentMaterial);
             GameObject playerPrefab = BuildPlayerPrefab(
@@ -300,6 +314,9 @@ namespace IndustryTycoon.Editor
                 processorMaterial,
                 sawBladeMaterial,
                 plankMaterial,
+                crateMaterial,
+                crateAccentMaterial,
+                packingMaterial,
                 feedbackParticleMaterial,
                 feedbackServices,
                 followCamera);
@@ -444,7 +461,9 @@ namespace IndustryTycoon.Editor
             Material barkMaterial,
             Material cutMaterial,
             Material plankMaterial,
-            Material plankAccentMaterial)
+            Material plankAccentMaterial,
+            Material crateMaterial,
+            Material crateAccentMaterial)
         {
             GameObject root = new GameObject("WoodCarryVisual");
             try
@@ -458,9 +477,15 @@ namespace IndustryTycoon.Editor
                 CreatePlankGeometry(plankVisual.transform, plankMaterial, plankAccentMaterial);
                 plankVisual.SetActive(false);
 
+                GameObject crateVisual = new GameObject("Crate Visual");
+                crateVisual.transform.SetParent(root.transform, false);
+                CreateCrateGeometry(crateVisual.transform, crateMaterial, crateAccentMaterial);
+                crateVisual.SetActive(false);
+
                 ResourceVisual resourceVisual = root.AddComponent<ResourceVisual>();
                 SetObjectReference(resourceVisual, "woodRoot", woodVisual);
                 SetObjectReference(resourceVisual, "plankRoot", plankVisual);
+                SetObjectReference(resourceVisual, "crateRoot", crateVisual);
                 root.transform.localScale = Vector3.one * 0.7f;
                 return SavePrefabAndReload(root, WoodVisualPrefabPath);
             }
@@ -559,6 +584,43 @@ namespace IndustryTycoon.Editor
                 accentMaterial);
             stripe.transform.localPosition = new Vector3(0f, 0.087f, 0f);
             stripe.transform.localScale = new Vector3(0.90f, 0.025f, 0.055f);
+        }
+
+        private static void CreateCrateGeometry(
+            Transform parent,
+            Material crateMaterial,
+            Material accentMaterial)
+        {
+            GameObject box = CreatePrimitiveChild(
+                "Crate Box",
+                PrimitiveType.Cube,
+                parent,
+                crateMaterial);
+            box.transform.localScale = new Vector3(0.84f, 0.68f, 0.72f);
+
+            GameObject horizontalBand = CreatePrimitiveChild(
+                "Crate Horizontal Band",
+                PrimitiveType.Cube,
+                parent,
+                accentMaterial);
+            horizontalBand.transform.localPosition = new Vector3(0f, 0f, -0.372f);
+            horizontalBand.transform.localScale = new Vector3(0.90f, 0.14f, 0.045f);
+
+            GameObject verticalBand = CreatePrimitiveChild(
+                "Crate Vertical Band",
+                PrimitiveType.Cube,
+                parent,
+                accentMaterial);
+            verticalBand.transform.localPosition = new Vector3(0f, 0f, -0.376f);
+            verticalBand.transform.localScale = new Vector3(0.14f, 0.74f, 0.05f);
+
+            GameObject lid = CreatePrimitiveChild(
+                "Crate Lid",
+                PrimitiveType.Cube,
+                parent,
+                accentMaterial);
+            lid.transform.localPosition = new Vector3(0f, 0.37f, 0f);
+            lid.transform.localScale = new Vector3(0.90f, 0.08f, 0.78f);
         }
 
         private static void CreateLogEnd(string name, Transform parent, Material material, float xPosition)
@@ -962,7 +1024,7 @@ namespace IndustryTycoon.Editor
             CreateWorldLabel(
                 "Sale Label",
                 root.transform,
-                "SELL MATERIALS\nWOOD $5  PLANK $15",
+                "SELL MATERIALS\nWOOD $5  PLANK $15  CRATE $40",
                 new Vector3(0f, 1.55f, 0.15f),
                 Color.white);
 
@@ -988,6 +1050,7 @@ namespace IndustryTycoon.Editor
             SetEnum(salePoint, "resourceType", (int)ResourceType.Wood);
             SetInteger(salePoint, "woodValue", 5);
             SetInteger(salePoint, "plankValue", 15);
+            SetInteger(salePoint, "crateValue", 40);
             SetFloat(salePoint, "unloadInterval", 0.2f);
 
             SalePointFeedback saleFeedback = root.AddComponent<SalePointFeedback>();
@@ -1418,6 +1481,9 @@ namespace IndustryTycoon.Editor
             Material processorMaterial,
             Material bladeMaterial,
             Material plankMaterial,
+            Material crateMaterial,
+            Material crateAccentMaterial,
+            Material packingMaterial,
             Material particleMaterial,
             FeedbackServices feedbackServices,
             SmoothFollowCamera followCamera)
@@ -1586,7 +1652,7 @@ namespace IndustryTycoon.Editor
             SetObjectReference(unlockFeedback, "followCamera", followCamera);
             SetFloat(unlockFeedback, "unlockDuration", 0.65f);
 
-            CreateFirstInputLogistics(
+            FirstAutoFeederUnlock autoFeederUnlock = CreateFirstInputLogistics(
                 scene,
                 processorUnlock,
                 stockpile,
@@ -1601,6 +1667,26 @@ namespace IndustryTycoon.Editor
                 resourceVisualPrefab,
                 processorMaterial,
                 bladeMaterial,
+                particleMaterial,
+                feedbackServices,
+                followCamera);
+            CreatePackingStation(
+                scene,
+                autoFeederUnlock,
+                wallet,
+                carryStack,
+                playerCollider,
+                purchaseAvailableMaterial,
+                purchaseCompletedMaterial,
+                cashAccentMaterial,
+                cashVisualPrefab,
+                tokenOrigin,
+                resourceVisualPrefab,
+                packingMaterial,
+                bladeMaterial,
+                plankMaterial,
+                crateMaterial,
+                crateAccentMaterial,
                 particleMaterial,
                 feedbackServices,
                 followCamera);
@@ -1824,6 +1910,286 @@ namespace IndustryTycoon.Editor
                 automationRoot.AddComponent<AutoFeederUnlockFeedback>();
             SetObjectReference(unlockFeedback, "autoFeederUnlock", unlock);
             SetObjectReference(unlockFeedback, "autoFeederVisual", feederVisual.transform);
+            SetObjectReference(unlockFeedback, "unlockParticles", unlockParticles);
+            SetObjectReference(unlockFeedback, "audioFeedback", feedbackServices.Audio);
+            SetObjectReference(unlockFeedback, "hapticFeedback", feedbackServices.Haptics);
+            SetObjectReference(unlockFeedback, "followCamera", followCamera);
+            SetFloat(unlockFeedback, "unlockDuration", 0.65f);
+            return unlock;
+        }
+
+        private static FirstPackingStationUnlock CreatePackingStation(
+            Scene scene,
+            FirstAutoFeederUnlock autoFeederUnlock,
+            Wallet wallet,
+            CarryStack carryStack,
+            Collider playerCollider,
+            Material purchaseAvailableMaterial,
+            Material purchaseCompletedMaterial,
+            Material cashAccentMaterial,
+            GameObject cashVisualPrefab,
+            Transform tokenOrigin,
+            GameObject resourceVisualPrefab,
+            Material packingMaterial,
+            Material metalMaterial,
+            Material plankMaterial,
+            Material crateMaterial,
+            Material crateAccentMaterial,
+            Material particleMaterial,
+            FeedbackServices feedbackServices,
+            SmoothFollowCamera followCamera)
+        {
+            PurchasePad purchasePad = CreatePurchasePad(
+                scene,
+                "Packing Station Purchase Pad",
+                "PACKING STATION",
+                new Vector3(8.2f, 0f, -8f),
+                900,
+                false,
+                wallet,
+                playerCollider,
+                purchaseAvailableMaterial,
+                purchaseCompletedMaterial,
+                cashAccentMaterial,
+                cashVisualPrefab,
+                tokenOrigin,
+                particleMaterial,
+                feedbackServices.Audio);
+
+            GameObject stationRoot = new GameObject("Packing Station");
+            SceneManager.MoveGameObjectToScene(stationRoot, scene);
+            stationRoot.transform.position = new Vector3(7.5f, 0f, 11.5f);
+
+            GameObject stationVisual = new GameObject("Packing Workshop Visual");
+            stationVisual.transform.SetParent(stationRoot.transform, false);
+
+            GameObject platform = CreatePrimitiveChild(
+                "Packing Platform",
+                PrimitiveType.Cube,
+                stationVisual.transform,
+                packingMaterial);
+            platform.transform.localPosition = new Vector3(0f, 0.20f, 0.35f);
+            platform.transform.localScale = new Vector3(4.1f, 0.34f, 2.55f);
+
+            GameObject rearWall = CreatePrimitiveChild(
+                "Workshop Rear Wall",
+                PrimitiveType.Cube,
+                stationVisual.transform,
+                packingMaterial);
+            rearWall.transform.localPosition = new Vector3(0f, 1.05f, 1.18f);
+            rearWall.transform.localScale = new Vector3(3.45f, 1.52f, 0.20f);
+
+            GameObject roof = CreatePrimitiveChild(
+                "Workshop Roof",
+                PrimitiveType.Cube,
+                stationVisual.transform,
+                crateAccentMaterial);
+            roof.transform.localPosition = new Vector3(0f, 1.86f, 0.34f);
+            roof.transform.localScale = new Vector3(3.9f, 0.18f, 2.08f);
+
+            GameObject leftPost = CreatePrimitiveChild(
+                "Workshop Left Post",
+                PrimitiveType.Cube,
+                stationVisual.transform,
+                metalMaterial);
+            leftPost.transform.localPosition = new Vector3(-1.62f, 1.02f, 0.38f);
+            leftPost.transform.localScale = new Vector3(0.20f, 1.62f, 0.20f);
+
+            GameObject rightPost = CreatePrimitiveChild(
+                "Workshop Right Post",
+                PrimitiveType.Cube,
+                stationVisual.transform,
+                metalMaterial);
+            rightPost.transform.localPosition = new Vector3(1.62f, 1.02f, 0.38f);
+            rightPost.transform.localScale = new Vector3(0.20f, 1.62f, 0.20f);
+
+            GameObject packingTable = CreatePrimitiveChild(
+                "Packing Table",
+                PrimitiveType.Cube,
+                stationVisual.transform,
+                crateMaterial);
+            packingTable.transform.localPosition = new Vector3(0f, 0.74f, 0.35f);
+            packingTable.transform.localScale = new Vector3(2.25f, 0.28f, 1.18f);
+
+            GameObject workingPart = CreatePrimitiveChild(
+                "Packing Tape Arm",
+                PrimitiveType.Cube,
+                stationVisual.transform,
+                crateAccentMaterial);
+            workingPart.transform.localPosition = new Vector3(0f, 1.22f, 0.34f);
+            workingPart.transform.localScale = new Vector3(1.72f, 0.16f, 0.24f);
+
+            GameObject tapeRoll = CreatePrimitiveChild(
+                "Packing Tape Roll",
+                PrimitiveType.Cylinder,
+                workingPart.transform,
+                crateAccentMaterial);
+            tapeRoll.transform.localPosition = new Vector3(0.72f, 0f, 0f);
+            tapeRoll.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            tapeRoll.transform.localScale = new Vector3(0.26f, 0.10f, 0.26f);
+
+            GameObject statusIndicator = CreatePrimitiveChild(
+                "Packing Status Indicator",
+                PrimitiveType.Cube,
+                stationVisual.transform,
+                packingMaterial);
+            statusIndicator.transform.localPosition = new Vector3(0f, 2.04f, 0.95f);
+            statusIndicator.transform.localScale = new Vector3(0.86f, 0.18f, 0.16f);
+
+            GameObject inputZoneObject = new GameObject("Packing Input Zone");
+            inputZoneObject.transform.SetParent(stationRoot.transform, false);
+            inputZoneObject.transform.localPosition = new Vector3(-1.65f, 0f, -1.70f);
+            BoxCollider inputTrigger = AddKinematicTrigger(
+                inputZoneObject,
+                new Vector3(2.2f, 2.4f, 2.2f));
+            CreateZoneDisc(
+                "Plank Input Area",
+                inputZoneObject.transform,
+                plankMaterial,
+                1.08f);
+            TextMesh inputText = CreateWorldLabel(
+                "Packing Input Amount",
+                inputZoneObject.transform,
+                "PLANK IN  0 / 24",
+                new Vector3(0f, 1.38f, 0.08f),
+                new Color(1f, 0.84f, 0.38f));
+
+            GameObject outputZoneObject = new GameObject("Packing Output Zone");
+            outputZoneObject.transform.SetParent(stationRoot.transform, false);
+            outputZoneObject.transform.localPosition = new Vector3(1.65f, 0f, -1.70f);
+            BoxCollider outputTrigger = AddKinematicTrigger(
+                outputZoneObject,
+                new Vector3(2.2f, 2.4f, 2.2f));
+            CreateZoneDisc(
+                "Crate Output Area",
+                outputZoneObject.transform,
+                crateMaterial,
+                1.08f);
+            TextMesh outputText = CreateWorldLabel(
+                "Packing Output Amount",
+                outputZoneObject.transform,
+                "CRATE OUT  0 / 12",
+                new Vector3(0f, 1.38f, 0.08f),
+                new Color(1f, 0.76f, 0.30f));
+
+            TextMesh statusText = CreateWorldLabel(
+                "Packing Status",
+                stationVisual.transform,
+                "PACKER  NO PLANKS",
+                new Vector3(0f, 2.52f, 0.48f),
+                Color.white);
+
+            GameObject outputVisualRoot = new GameObject("Packing Crate Output Visuals");
+            outputVisualRoot.transform.SetParent(stationVisual.transform, false);
+            outputVisualRoot.transform.localPosition = new Vector3(1.08f, 0.58f, 0.28f);
+
+            ParticleSystem completionParticles = CreateFeedbackParticleSystem(
+                "Packing Complete Burst",
+                outputVisualRoot.transform,
+                new Vector3(0f, 0.48f, 0f),
+                new Color(1f, 0.70f, 0.22f),
+                particleMaterial,
+                32,
+                0.34f,
+                1.28f,
+                0.11f);
+
+            PackingStation station = stationRoot.AddComponent<PackingStation>();
+            SetInteger(station, "inputCapacity", 24);
+            SetInteger(station, "outputCapacity", 12);
+            SetFloat(station, "processingDuration", 1.50f);
+
+            PackingStationInputZone inputZone =
+                inputZoneObject.AddComponent<PackingStationInputZone>();
+            SetObjectReference(inputZone, "packingStation", station);
+            SetObjectReference(inputZone, "carryStack", carryStack);
+            SetObjectReference(inputZone, "playerCollider", playerCollider);
+            SetFloat(inputZone, "transferInterval", 0.10f);
+            Require(inputZone.GetComponent<Collider>() == inputTrigger,
+                "Packing input component must share its trigger collider.");
+
+            PackingStationOutputZone outputZone =
+                outputZoneObject.AddComponent<PackingStationOutputZone>();
+            SetObjectReference(outputZone, "packingStation", station);
+            SetObjectReference(outputZone, "carryStack", carryStack);
+            SetObjectReference(outputZone, "playerCollider", playerCollider);
+            SetFloat(outputZone, "transferInterval", 0.10f);
+            Require(outputZone.GetComponent<Collider>() == outputTrigger,
+                "Packing output component must share its trigger collider.");
+
+            PackingStationFeedback stationFeedback =
+                stationRoot.AddComponent<PackingStationFeedback>();
+            SetObjectReference(stationFeedback, "station", station);
+            SetObjectReference(stationFeedback, "workingPart", workingPart.transform);
+            SetObjectReference(
+                stationFeedback,
+                "outputVisualRoot",
+                outputVisualRoot.transform);
+            SetObjectReference(
+                stationFeedback,
+                "resourceVisualPrefab",
+                resourceVisualPrefab);
+            SetObjectReference(stationFeedback, "inputText", inputText);
+            SetObjectReference(stationFeedback, "outputText", outputText);
+            SetObjectReference(stationFeedback, "statusText", statusText);
+            SetObjectReference(
+                stationFeedback,
+                "statusIndicator",
+                statusIndicator.GetComponent<Renderer>());
+            SetObjectReference(stationFeedback, "idleMaterial", packingMaterial);
+            SetObjectReference(
+                stationFeedback,
+                "workingMaterial",
+                purchaseCompletedMaterial);
+            SetObjectReference(
+                stationFeedback,
+                "outputFullMaterial",
+                crateAccentMaterial);
+            SetObjectReference(
+                stationFeedback,
+                "completionParticles",
+                completionParticles);
+            SetInteger(stationFeedback, "maximumOutputVisuals", 6);
+            SetInteger(stationFeedback, "cratesPerVisual", 2);
+            SetInteger(stationFeedback, "itemsPerRow", 3);
+            SetFloat(stationFeedback, "visualScale", 0.78f);
+            SetFloat(stationFeedback, "horizontalSpacing", 0.78f);
+            SetFloat(stationFeedback, "verticalSpacing", 0.30f);
+            SetFloat(stationFeedback, "depthSpacing", 0.42f);
+            SetFloat(stationFeedback, "workingRotationSpeed", 220f);
+            SetFloat(stationFeedback, "outputPopDuration", 0.18f);
+
+            stationRoot.SetActive(false);
+            purchasePad.gameObject.SetActive(false);
+
+            GameObject automationRoot = new GameObject("Packing Station Automation");
+            SceneManager.MoveGameObjectToScene(automationRoot, scene);
+
+            FirstPackingStationUnlock unlock =
+                automationRoot.AddComponent<FirstPackingStationUnlock>();
+            SetObjectReference(unlock, "autoFeederUnlock", autoFeederUnlock);
+            SetObjectReference(unlock, "packingStationPurchasePad", purchasePad);
+            SetObjectReference(
+                unlock,
+                "packingStationPurchasePadRoot",
+                purchasePad.gameObject);
+            SetObjectReference(unlock, "packingStationRoot", stationRoot);
+
+            ParticleSystem unlockParticles = CreateFeedbackParticleSystem(
+                "Packing Station Unlock Burst",
+                automationRoot.transform,
+                stationRoot.transform.position + new Vector3(0f, 1.15f, 0f),
+                new Color(0.92f, 0.42f, 1f),
+                particleMaterial,
+                40,
+                0.58f,
+                1.85f,
+                0.14f);
+
+            PackingStationUnlockFeedback unlockFeedback =
+                automationRoot.AddComponent<PackingStationUnlockFeedback>();
+            SetObjectReference(unlockFeedback, "packingStationUnlock", unlock);
+            SetObjectReference(unlockFeedback, "packingStationVisual", stationVisual.transform);
             SetObjectReference(unlockFeedback, "unlockParticles", unlockParticles);
             SetObjectReference(unlockFeedback, "audioFeedback", feedbackServices.Audio);
             SetObjectReference(unlockFeedback, "hapticFeedback", feedbackServices.Haptics);
@@ -2448,6 +2814,7 @@ namespace IndustryTycoon.Editor
             Require(salePoint.ResourceType == ResourceType.Wood, "Sale Point must unload Wood.");
             Require(salePoint.WoodValue == 5, "Sale Point wood value must be $5.");
             Require(salePoint.PlankValue == 15, "Sale Point plank value must be $15.");
+            Require(salePoint.CrateValue == 40, "Sale Point crate value must be $40.");
             Require(Mathf.Approximately(salePoint.UnloadInterval, 0.2f),
                 "Sale Point unload interval must be 0.2 seconds.");
             Require(saleFeedback != null
@@ -2620,8 +2987,9 @@ namespace IndustryTycoon.Editor
             ResourceVisual resourceVisual = carryVisualPrefab.GetComponent<ResourceVisual>();
             Require(resourceVisual != null
                     && resourceVisual.WoodRoot != null
-                    && resourceVisual.PlankRoot != null,
-                "Carried resource visuals must contain reusable Wood and Plank variants.");
+                    && resourceVisual.PlankRoot != null
+                    && resourceVisual.CrateRoot != null,
+                "Carried resource visuals must contain reusable Wood, Plank, and Crate variants.");
 
             GameObject cashVisualPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CashVisualPrefabPath);
             Require(cashVisualPrefab != null, "CashBundleVisual prefab is missing.");
@@ -2675,10 +3043,19 @@ namespace IndustryTycoon.Editor
                 audioFeedback,
                 hapticFeedback,
                 followCamera);
+            ValidateM6Scene(
+                scene,
+                carryStack,
+                wallet,
+                playerCollider,
+                audioFeedback,
+                hapticFeedback,
+                followCamera);
             ValidateCoreLoopLogic();
             ValidateM3Logic();
             ValidateM4Logic();
             ValidateM5Logic();
+            ValidateM6Logic();
         }
 
         private static void ValidateM4Scene(
@@ -2950,6 +3327,172 @@ namespace IndustryTycoon.Editor
                 "Auto Feeder purchase interaction overlaps an accepted portrait interaction zone.");
         }
 
+        private static void ValidateM6Scene(
+            Scene scene,
+            CarryStack carryStack,
+            Wallet wallet,
+            Collider playerCollider,
+            AudioFeedback audioFeedback,
+            HapticFeedback hapticFeedback,
+            SmoothFollowCamera followCamera)
+        {
+            GameObject purchaseObject = FindRoot(scene, "Packing Station Purchase Pad");
+            GameObject stationObject = FindRoot(scene, "Packing Station");
+            GameObject automationObject = FindRoot(scene, "Packing Station Automation");
+            GameObject feederAutomationObject = FindRoot(scene, "Auto Feeder Automation");
+            Require(purchaseObject != null,
+                "The prototype scene has no Packing Station Purchase Pad.");
+            Require(stationObject != null,
+                "The prototype scene has no Packing Station.");
+            Require(automationObject != null,
+                "The prototype scene has no Packing Station Automation root.");
+            Require(feederAutomationObject != null,
+                "M6 requires the accepted Auto Feeder Automation root.");
+
+            BoxCollider purchaseTrigger = ValidateTriggerZone(
+                purchaseObject,
+                "Packing Station Purchase Pad");
+            Transform inputTransform = stationObject.transform.Find("Packing Input Zone");
+            Transform outputTransform = stationObject.transform.Find("Packing Output Zone");
+            Transform visualTransform = stationObject.transform.Find("Packing Workshop Visual");
+            Require(inputTransform != null && outputTransform != null && visualTransform != null,
+                "Packing Station requires distinct workshop, input, and output roots.");
+            BoxCollider inputTrigger = ValidateTriggerZone(
+                inputTransform.gameObject,
+                "Packing Input Zone");
+            BoxCollider outputTrigger = ValidateTriggerZone(
+                outputTransform.gameObject,
+                "Packing Output Zone");
+            Require(Vector3.Distance(inputTransform.position, outputTransform.position) >= 2.8f,
+                "Packing input and output interaction zones are too close.");
+            Require(Vector3.Distance(purchaseObject.transform.position, inputTransform.position) >= 3f,
+                "Packing purchase and input zones are too close for portrait controls.");
+            Require(visualTransform.Find("Workshop Roof") != null
+                    && visualTransform.Find("Packing Tape Arm") != null
+                    && visualTransform.Find("Packing Table") != null,
+                "Packing Station must remain visually distinct as a recognizable workshop.");
+            Require(visualTransform.GetComponentsInChildren<Rigidbody>(true).Length == 0
+                    && visualTransform.GetComponentsInChildren<Collider>(true).Length == 0,
+                "Packing workshop presentation must not use Rigidbody or collider physics.");
+
+            PurchasePad purchasePad = purchaseObject.GetComponent<PurchasePad>();
+            PurchasePadFeedback purchaseFeedback =
+                purchaseObject.GetComponent<PurchasePadFeedback>();
+            PackingStation station = stationObject.GetComponent<PackingStation>();
+            PackingStationInputZone inputZone =
+                inputTransform.GetComponent<PackingStationInputZone>();
+            PackingStationOutputZone outputZone =
+                outputTransform.GetComponent<PackingStationOutputZone>();
+            PackingStationFeedback stationFeedback =
+                stationObject.GetComponent<PackingStationFeedback>();
+            FirstPackingStationUnlock unlock =
+                automationObject.GetComponent<FirstPackingStationUnlock>();
+            PackingStationUnlockFeedback unlockFeedback =
+                automationObject.GetComponent<PackingStationUnlockFeedback>();
+            FirstAutoFeederUnlock autoFeederUnlock =
+                feederAutomationObject.GetComponent<FirstAutoFeederUnlock>();
+
+            Require(purchasePad != null
+                    && purchasePad.Wallet == wallet
+                    && purchasePad.PlayerCollider == playerCollider
+                    && purchasePad.InteractionCollider == purchaseTrigger,
+                "Packing Station Purchase Pad gameplay references are incomplete.");
+            Require(purchasePad.PurchaseLabel == "PACKING STATION"
+                    && purchasePad.TotalCost == 900
+                    && purchasePad.SpendPerTick == 5
+                    && Mathf.Approximately(purchasePad.SpendInterval, 0.10f),
+                "Packing Station Purchase Pad must cost $900 and reuse the $5 / 0.10-second cadence.");
+            Require(!purchasePad.StartsAvailable
+                    && !purchasePad.IsAvailable
+                    && !purchaseTrigger.enabled
+                    && !purchaseObject.activeSelf,
+                "Packing Station Purchase Pad must begin locked, disabled, and hidden.");
+            Require(purchaseFeedback != null
+                    && purchaseFeedback.TokenPoolSize == 4
+                    && Mathf.Approximately(purchaseFeedback.TokenFlightDuration, 0.22f)
+                    && GetObjectReference(purchaseFeedback, "tokenVisualPrefab") != null
+                    && GetObjectReference(purchaseFeedback, "purchaseParticles") != null
+                    && GetObjectReference(purchaseFeedback, "audioFeedback") == audioFeedback,
+                "Packing Station Purchase Pad must reuse the capped M2 purchase feedback.");
+
+            Require(station != null && !stationObject.activeSelf,
+                "Packing Station must begin inactive.");
+            Require(station.InputCapacity == 24
+                    && station.OutputCapacity == 12
+                    && station.RecipeInputPlanks == 2
+                    && station.RecipeOutputCrates == 1
+                    && Mathf.Approximately(station.ProcessingDuration, 1.50f),
+                "Packing Station must use 24 Plank input, 12 Crate output, 2:1 recipe, and 1.50 seconds.");
+            Require(station.InputPlanks == 0
+                    && station.ProcessingInputPlanks == 0
+                    && station.AvailableInputCapacity == station.InputCapacity
+                    && station.OutputCrates == 0
+                    && station.ReservedOutputCapacity == 0
+                    && station.AvailableOutputCapacity == station.OutputCapacity,
+                "Packing Station buffers must begin empty and unreserved.");
+            Require(inputZone != null
+                    && inputZone.PackingStation == station
+                    && inputZone.CarryStack == carryStack
+                    && inputZone.PlayerCollider == playerCollider
+                    && Mathf.Approximately(inputZone.TransferInterval, 0.10f)
+                    && inputZone.GetComponent<Collider>() == inputTrigger,
+                "Packing input-zone references or cadence are incorrect.");
+            Require(outputZone != null
+                    && outputZone.PackingStation == station
+                    && outputZone.CarryStack == carryStack
+                    && outputZone.PlayerCollider == playerCollider
+                    && Mathf.Approximately(outputZone.TransferInterval, 0.10f)
+                    && outputZone.GetComponent<Collider>() == outputTrigger,
+                "Packing output-zone references or cadence are incorrect.");
+
+            Require(stationFeedback != null
+                    && stationFeedback.MaximumOutputVisuals == 6
+                    && stationFeedback.CratesPerVisual == 2
+                    && Mathf.Approximately(stationFeedback.WorkingRotationSpeed, 220f)
+                    && Mathf.Approximately(stationFeedback.OutputPopDuration, 0.18f),
+                "Packing Station presentation pool or working feedback tuning is incorrect.");
+            Require(GetObjectReference(stationFeedback, "station") == station
+                    && GetObjectReference(stationFeedback, "workingPart") != null
+                    && GetObjectReference(stationFeedback, "outputVisualRoot") != null
+                    && GetObjectReference(stationFeedback, "resourceVisualPrefab") != null
+                    && GetObjectReference(stationFeedback, "inputText") != null
+                    && GetObjectReference(stationFeedback, "outputText") != null
+                    && GetObjectReference(stationFeedback, "statusText") != null
+                    && GetObjectReference(stationFeedback, "statusIndicator") != null
+                    && GetObjectReference(stationFeedback, "completionParticles") != null,
+                "Packing Station presentation references are incomplete.");
+
+            Require(unlock != null
+                    && unlock.AutoFeederUnlock == autoFeederUnlock
+                    && unlock.PackingStationPurchasePad == purchasePad
+                    && unlock.PackingStationPurchasePadRoot == purchaseObject
+                    && unlock.PackingStationRoot == stationObject,
+                "Packing Station unlock-gate references are incomplete.");
+            Require(!unlock.IsPadUnlocked && !unlock.IsPackingStationActivated,
+                "Packing Station must begin fully locked behind Auto Feeder activation.");
+            Require(unlockFeedback != null
+                    && Mathf.Approximately(unlockFeedback.UnlockDuration, 0.65f)
+                    && GetObjectReference(unlockFeedback, "packingStationUnlock") == unlock
+                    && GetObjectReference(unlockFeedback, "packingStationVisual") == visualTransform
+                    && GetObjectReference(unlockFeedback, "unlockParticles") != null
+                    && GetObjectReference(unlockFeedback, "audioFeedback") == audioFeedback
+                    && GetObjectReference(unlockFeedback, "hapticFeedback") == hapticFeedback
+                    && GetObjectReference(unlockFeedback, "followCamera") == followCamera,
+                "Packing Station unlock feedback must reuse M2 presentation services.");
+
+            GameObject workerPurchaseObject = FindRoot(scene, "Worker Purchase Pad");
+            GameObject feederPurchaseObject = FindRoot(scene, "Auto Feeder Purchase Pad");
+            Require(workerPurchaseObject != null && feederPurchaseObject != null,
+                "M6 portrait separation checks require accepted progression pads.");
+            Require(Vector3.Distance(
+                        purchaseObject.transform.position,
+                        workerPurchaseObject.transform.position) >= 3.5f
+                    && Vector3.Distance(
+                        purchaseObject.transform.position,
+                        feederPurchaseObject.transform.position) >= 6f,
+                "Packing Station purchase pad is too close to an accepted interaction zone.");
+        }
+
         private static BoxCollider ValidateTriggerZone(GameObject root, string label)
         {
             BoxCollider trigger = root.GetComponent<BoxCollider>();
@@ -2971,8 +3514,8 @@ namespace IndustryTycoon.Editor
                 particleSystems.AddRange(rootParticles);
             }
 
-            Require(particleSystems.Count == 14,
-                $"The prototype requires fourteen reusable feedback emitters; found {particleSystems.Count}.");
+            Require(particleSystems.Count == 17,
+                $"The prototype requires seventeen reusable feedback emitters; found {particleSystems.Count}.");
             for (int i = 0; i < particleSystems.Count; i++)
             {
                 ParticleSystem particles = particleSystems[i];
@@ -3778,6 +4321,166 @@ namespace IndustryTycoon.Editor
                         && repeatedProcessor.InputWood == StableCycleCount + 1
                         && repeatedCarry.TotalAmount == 0,
                     "Manual Processor feeding no longer works after repeated automation cycles.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(validationRoot);
+            }
+        }
+
+        private static void ValidateM6Logic()
+        {
+            GameObject validationRoot = new GameObject("M6 Logic Validation");
+            try
+            {
+                GameObject isolationObject = new GameObject("M6 Carry Isolation");
+                isolationObject.transform.SetParent(validationRoot.transform, false);
+                CarryStack isolationStack = isolationObject.AddComponent<CarryStack>();
+                Require(isolationStack.TryAdd(ResourceType.Crate, 1)
+                        && isolationStack.GetAmount(ResourceType.Crate) == 1
+                        && !isolationStack.TryAdd(ResourceType.Wood, 1)
+                        && !isolationStack.TryAdd(ResourceType.Plank, 1)
+                        && isolationStack.TryRemove(ResourceType.Crate, 1)
+                        && isolationStack.TotalAmount == 0,
+                    "CarryStack did not preserve Crate type isolation or empty-stack reuse.");
+                Require(isolationStack.TryReserveCapacity(ResourceType.Crate, 1)
+                        && !isolationStack.CanAccept(ResourceType.Wood, 1)
+                        && !isolationStack.CanAccept(ResourceType.Plank, 1)
+                        && isolationStack.TryCommitReservedAdd(ResourceType.Crate, 1)
+                        && isolationStack.GetAmount(ResourceType.Crate) == 1
+                        && isolationStack.ReservedCapacity == 0,
+                    "CarryStack Crate reservation mixed types or failed to commit atomically.");
+                Require(isolationStack.TryRemove(ResourceType.Crate, 1)
+                        && isolationStack.TryAdd(ResourceType.Wood, 1)
+                        && !isolationStack.TryAdd(ResourceType.Crate, 1)
+                        && isolationStack.TryRemove(ResourceType.Wood, 1)
+                        && isolationStack.TryAdd(ResourceType.Plank, 1)
+                        && !isolationStack.TryAdd(ResourceType.Crate, 1)
+                        && isolationStack.TryRemove(ResourceType.Plank, 1)
+                        && !isolationStack.TryAdd((ResourceType)99, 1),
+                    "CarryStack accepted mixed or unsupported M6 resource ownership.");
+
+                GameObject rejectionStationObject =
+                    new GameObject("M6 Rejection Packing Station");
+                rejectionStationObject.transform.SetParent(validationRoot.transform, false);
+                PackingStation rejectionStation =
+                    rejectionStationObject.AddComponent<PackingStation>();
+                Require(isolationStack.TryAdd(ResourceType.Wood, 1)
+                        && !rejectionStation.TryTransferInputFrom(isolationStack)
+                        && isolationStack.GetAmount(ResourceType.Wood) == 1
+                        && rejectionStation.InputPlanks == 0
+                        && isolationStack.TryRemove(ResourceType.Wood, 1)
+                        && isolationStack.TryAdd(ResourceType.Crate, 1)
+                        && !rejectionStation.TryTransferInputFrom(isolationStack)
+                        && isolationStack.GetAmount(ResourceType.Crate) == 1
+                        && rejectionStation.InputPlanks == 0
+                        && isolationStack.TryRemove(ResourceType.Crate, 1),
+                    "Packing input accepted Wood/Crate or changed rejected ownership.");
+
+                GameObject stationObject = new GameObject("M6 Packing Station");
+                stationObject.transform.SetParent(validationRoot.transform, false);
+                PackingStation station = stationObject.AddComponent<PackingStation>();
+                GameObject transferCarryObject = new GameObject("M6 Plank Transfer Carry");
+                transferCarryObject.transform.SetParent(validationRoot.transform, false);
+                CarryStack transferCarry = transferCarryObject.AddComponent<CarryStack>();
+                for (int batch = 0; batch < 2; batch++)
+                {
+                    Require(transferCarry.TryAdd(ResourceType.Plank, transferCarry.Capacity),
+                        "M6 validation could not prepare a full Plank CarryStack.");
+                    for (int unit = 0; unit < transferCarry.Capacity; unit++)
+                    {
+                        Require(station.TryTransferInputFrom(transferCarry),
+                            "Packing Station rejected Planks before reaching input capacity.");
+                    }
+                }
+
+                Require(station.InputPlanks == station.InputCapacity
+                        && station.ProcessingInputPlanks == 0
+                        && station.AvailableInputCapacity == 0
+                        && transferCarry.TotalAmount == 0,
+                    "Packing Station input capacity lost or duplicated deposited Planks.");
+                Require(transferCarry.TryAdd(ResourceType.Plank, 1)
+                        && !station.TryTransferInputFrom(transferCarry)
+                        && transferCarry.GetAmount(ResourceType.Plank) == 1
+                        && station.InputPlanks == station.InputCapacity,
+                    "Packing Station exceeded input capacity or consumed a rejected Plank.");
+
+                GameObject cashObject = new GameObject("M6 Sale Cash");
+                cashObject.transform.SetParent(validationRoot.transform, false);
+                CashPile cashPile = cashObject.AddComponent<CashPile>();
+                GameObject saleObject = new GameObject("M6 Sale Point");
+                saleObject.transform.SetParent(validationRoot.transform, false);
+                saleObject.AddComponent<BoxCollider>().isTrigger = true;
+                SalePoint salePoint = saleObject.AddComponent<SalePoint>();
+                SetObjectReference(salePoint, "carryStack", isolationStack);
+                SetObjectReference(salePoint, "cashPile", cashPile);
+                SetInteger(salePoint, "woodValue", 5);
+                SetInteger(salePoint, "plankValue", 15);
+                SetInteger(salePoint, "crateValue", 40);
+                Require(salePoint.GetUnitValue(ResourceType.Wood) == 5
+                        && salePoint.GetUnitValue(ResourceType.Plank) == 15
+                        && salePoint.GetUnitValue(ResourceType.Crate) == 40
+                        && (4 * salePoint.GetUnitValue(ResourceType.Wood)) == 20
+                        && (2 * salePoint.GetUnitValue(ResourceType.Plank)) == 30
+                        && salePoint.GetUnitValue(ResourceType.Crate) == 40,
+                    "M6 resource values no longer preserve $5 Wood / $15 Plank / $40 Crate economics.");
+                Require(isolationStack.TryAdd(ResourceType.Wood, 1)
+                        && salePoint.TryUnloadOne()
+                        && cashPile.StoredCash == 5
+                        && isolationStack.TryAdd(ResourceType.Plank, 1)
+                        && salePoint.TryUnloadOne()
+                        && cashPile.StoredCash == 20
+                        && isolationStack.TryAdd(ResourceType.Crate, 1)
+                        && salePoint.TryUnloadOne()
+                        && cashPile.StoredCash == 60
+                        && isolationStack.TotalAmount == 0,
+                    "Generic Sale Point did not progressively sell Wood, Plank, and Crate values.");
+
+                GameObject walletObject = new GameObject("M6 Purchase Wallet");
+                walletObject.transform.SetParent(validationRoot.transform, false);
+                Wallet wallet = walletObject.AddComponent<Wallet>();
+                GameObject padObject = new GameObject("M6 Packing Purchase Pad");
+                padObject.transform.SetParent(validationRoot.transform, false);
+                BoxCollider padCollider = padObject.AddComponent<BoxCollider>();
+                padCollider.isTrigger = true;
+                PurchasePad purchasePad = padObject.AddComponent<PurchasePad>();
+                SetObjectReference(purchasePad, "wallet", wallet);
+                SetObjectReference(purchasePad, "interactionCollider", padCollider);
+                SetString(purchasePad, "purchaseLabel", "PACKING STATION");
+                SetBoolean(purchasePad, "startsAvailable", false);
+                SetInteger(purchasePad, "totalCost", 900);
+                SetInteger(purchasePad, "spendPerTick", 5);
+                wallet.Deposit(900);
+                Require(purchasePad.ProcessPaymentStep() == 0
+                        && purchasePad.RemainingCost == 900
+                        && purchasePad.SetAvailable(true),
+                    "Locked M6 purchase pad accepted payment or could not unlock.");
+                for (int i = 0; i < 13; i++)
+                {
+                    Require(purchasePad.ProcessPaymentStep() == 5,
+                        "Packing Station pad rejected valid partial funding.");
+                }
+
+                Require(purchasePad.RemainingCost == 835 && wallet.Balance == 835,
+                    "Packing Station pad did not retain its $65 partial payment.");
+                purchasePad.enabled = false;
+                purchasePad.enabled = true;
+                Require(purchasePad.RemainingCost == 835,
+                    "Packing Station pad lost partial payment across lifecycle changes.");
+                int completionCount = 0;
+                purchasePad.Completed += () => completionCount++;
+                int paymentGuard = 0;
+                while (!purchasePad.IsCompleted && paymentGuard++ < 200)
+                {
+                    purchasePad.ProcessPaymentStep();
+                }
+
+                Require(purchasePad.IsCompleted
+                        && purchasePad.RemainingCost == 0
+                        && wallet.Balance == 0
+                        && completionCount == 1
+                        && purchasePad.ProcessPaymentStep() == 0,
+                    "Packing Station pad did not complete exactly once at $900.");
             }
             finally
             {

@@ -7,11 +7,13 @@ namespace IndustryTycoon.Feedback
     {
         [SerializeField] private GameObject woodRoot;
         [SerializeField] private GameObject plankRoot;
+        [SerializeField] private GameObject crateRoot;
         [SerializeField] private ResourceType displayedResourceType = ResourceType.Wood;
 
         public ResourceType DisplayedResourceType => displayedResourceType;
         public GameObject WoodRoot => woodRoot;
         public GameObject PlankRoot => plankRoot;
+        public GameObject CrateRoot => crateRoot;
 
         private void Awake()
         {
@@ -25,6 +27,18 @@ namespace IndustryTycoon.Feedback
         {
             woodRoot = woodVisualRoot;
             plankRoot = plankVisualRoot;
+            Show(initialResourceType);
+        }
+
+        public void Configure(
+            GameObject woodVisualRoot,
+            GameObject plankVisualRoot,
+            GameObject crateVisualRoot,
+            ResourceType initialResourceType = ResourceType.Wood)
+        {
+            woodRoot = woodVisualRoot;
+            plankRoot = plankVisualRoot;
+            crateRoot = crateVisualRoot;
             Show(initialResourceType);
         }
 
@@ -44,6 +58,11 @@ namespace IndustryTycoon.Feedback
             if (plankRoot != null)
             {
                 plankRoot.SetActive(displayedResourceType == ResourceType.Plank);
+            }
+
+            if (crateRoot != null)
+            {
+                crateRoot.SetActive(displayedResourceType == ResourceType.Crate);
             }
         }
 
