@@ -103,6 +103,31 @@ namespace IndustryTycoon.Processing
             return true;
         }
 
+        public void SynchronizeFromPurchaseState()
+        {
+            _isPadUnlocked = workerUnlock != null
+                             && workerUnlock.IsWorkerActivated
+                             && processorPurchasePad != null
+                             && processorPurchasePadRoot != null;
+            bool shouldActivateProcessor = _isPadUnlocked
+                                           && processorPurchasePad.IsCompleted
+                                           && processorRoot != null;
+
+            if (processorPurchasePadRoot != null)
+            {
+                processorPurchasePadRoot.SetActive(_isPadUnlocked);
+            }
+
+            if (processorRoot != null)
+            {
+                _isProcessorActivated = false;
+                processorRoot.SetActive(shouldActivateProcessor);
+            }
+
+            _isProcessorActivated = shouldActivateProcessor;
+            processorPurchasePad?.SetAvailable(_isPadUnlocked && !_isProcessorActivated);
+        }
+
         private void HandleWorkerActivated()
         {
             TryUnlockPad();

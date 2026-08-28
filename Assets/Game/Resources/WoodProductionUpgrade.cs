@@ -79,6 +79,26 @@ namespace IndustryTycoon.ResourceSystem
             return true;
         }
 
+        public void SynchronizeFromPurchaseState()
+        {
+            bool shouldApply = purchasePad != null
+                               && purchasePad.IsCompleted
+                               && woodSpawner != null;
+            _isApplied = shouldApply;
+            if (woodSpawner != null)
+            {
+                woodSpawner.SetProductionRateMultiplier(
+                    shouldApply ? productionMultiplier : 1f);
+            }
+
+            if (secondCutterVisual != null)
+            {
+                secondCutterVisual.SetActive(shouldApply);
+            }
+
+            RefreshStatusText();
+        }
+
         private void HandlePurchaseCompleted()
         {
             TryApply();

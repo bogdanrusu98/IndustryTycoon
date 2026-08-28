@@ -74,6 +74,11 @@ namespace IndustryTycoon.Player
 
         private void OnDisable()
         {
+            CancelTransientAttractions();
+        }
+
+        public void CancelTransientAttractions()
+        {
             for (int i = 0; i < _activeAttractions.Count; i++)
             {
                 Attraction attraction = _activeAttractions[i];

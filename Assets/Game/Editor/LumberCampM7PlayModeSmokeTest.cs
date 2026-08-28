@@ -175,6 +175,7 @@ namespace IndustryTycoon.Editor
                 throw new InvalidOperationException($"Missing prototype scene at {ScenePath}.");
             }
 
+            M9EditorSaveUtility.PrepareFreshSmokeTest();
             EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             SessionState.SetBool(RunningKey, true);
             SessionState.SetBool(CommandLineKey, commandLine);
@@ -283,6 +284,12 @@ namespace IndustryTycoon.Editor
                     && _cashCollector != null
                     && _salePoint != null,
                 "M7 smoke could not find the accepted player/economy loop.");
+            ResourceCollector resourceCollector =
+                _carryStack.GetComponent<ResourceCollector>();
+            Require(resourceCollector != null,
+                "M7 smoke requires the accepted player ResourceCollector.");
+            resourceCollector.CancelTransientAttractions();
+            resourceCollector.enabled = false;
             Require(_wallet.Balance == 0
                     && _cashPile.StoredCash == 0
                     && _cashCollector.PendingCash == 0

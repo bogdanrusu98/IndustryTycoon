@@ -325,6 +325,28 @@ namespace IndustryTycoon.Workers
             _searchCooldown = searchInterval;
         }
 
+        public void RestoreIdleState()
+        {
+            if (_targetClaim.IsValid)
+            {
+                _targetClaim.Pickup.TryReleaseClaim(_targetClaim);
+            }
+
+            _targetClaim = default;
+            ReleaseIncomingReservation();
+            bool hadCargo = _isCarrying;
+            _isCarrying = false;
+            _searchCooldown = 0f;
+            _actionDelayRemaining = 0f;
+            _pickupPauseStarted = false;
+            _depositPauseStarted = false;
+            SetState(LumberWorkerState.Idle);
+            if (hadCargo)
+            {
+                CargoChanged?.Invoke(false);
+            }
+        }
+
         private void ReleaseIncomingReservation()
         {
             if (_stockpileReservation.IsValid && stockpile != null)

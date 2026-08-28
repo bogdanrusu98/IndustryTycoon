@@ -34,6 +34,23 @@ namespace IndustryTycoon.Economy
             return Deposit(amount);
         }
 
+        public bool RestoreBalance(int restoredBalance)
+        {
+            if (restoredBalance < 0)
+            {
+                return false;
+            }
+
+            if (balance == restoredBalance)
+            {
+                return true;
+            }
+
+            balance = restoredBalance;
+            BalanceChanged?.Invoke(balance);
+            return true;
+        }
+
         public int SpendUpTo(int requestedAmount)
         {
             if (requestedAmount <= 0 || balance <= 0)

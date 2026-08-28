@@ -103,6 +103,32 @@ namespace IndustryTycoon.Processing
             return true;
         }
 
+        public void SynchronizeFromPurchaseState()
+        {
+            _isPadUnlocked = autoFeederUnlock != null
+                             && autoFeederUnlock.IsAutoFeederActivated
+                             && packingStationPurchasePad != null
+                             && packingStationPurchasePadRoot != null;
+            bool shouldActivatePackingStation = _isPadUnlocked
+                                                && packingStationPurchasePad.IsCompleted
+                                                && packingStationRoot != null;
+
+            if (packingStationPurchasePadRoot != null)
+            {
+                packingStationPurchasePadRoot.SetActive(_isPadUnlocked);
+            }
+
+            if (packingStationRoot != null)
+            {
+                _isPackingStationActivated = false;
+                packingStationRoot.SetActive(shouldActivatePackingStation);
+            }
+
+            _isPackingStationActivated = shouldActivatePackingStation;
+            packingStationPurchasePad?.SetAvailable(
+                _isPadUnlocked && !_isPackingStationActivated);
+        }
+
         private void HandleAutoFeederActivated()
         {
             TryUnlockPad();

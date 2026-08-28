@@ -111,6 +111,29 @@ namespace IndustryTycoon.Interaction
             return true;
         }
 
+        public bool NormalizeForPersistenceRestore()
+        {
+            bool wasPlayerInside = _isPlayerInside;
+            if (_collectionCoroutine != null)
+            {
+                StopCoroutine(_collectionCoroutine);
+                _collectionCoroutine = null;
+            }
+
+            RestorePendingCash();
+            HideFlightVisuals();
+            return wasPlayerInside;
+        }
+
+        public void ResumeAfterPersistenceRestore(bool wasPlayerInside)
+        {
+            _isPlayerInside = wasPlayerInside;
+            if (_isPlayerInside)
+            {
+                TryStartCollection();
+            }
+        }
+
         private IEnumerator CollectionRoutine()
         {
             if (!cashPile.TryWithdrawAll(out _pendingCash))

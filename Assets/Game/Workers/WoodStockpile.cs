@@ -241,6 +241,21 @@ namespace IndustryTycoon.Workers
             return true;
         }
 
+        public bool RestoreStableState(int storedWood)
+        {
+            if (storedWood < 0 || storedWood > capacity)
+            {
+                return false;
+            }
+
+            InvalidateIncomingReservation();
+            InvalidateOutgoingReservation();
+            _isPlayerWithdrawalInProgress = false;
+            _storedWood = storedWood;
+            NotifyStateChanged();
+            return true;
+        }
+
         private void InvalidateIncomingReservation()
         {
             _incomingReservations = 0;

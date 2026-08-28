@@ -271,6 +271,27 @@ namespace IndustryTycoon.Processing
             return true;
         }
 
+        public bool RestoreStableState(int inputWood, int outputPlanks)
+        {
+            if (inputWood < 0
+                || inputWood > inputCapacity
+                || outputPlanks < 0
+                || outputPlanks > outputCapacity)
+            {
+                return false;
+            }
+
+            InvalidateInputReservation();
+            StopProcessingAndReleaseReservation();
+            _isInputTransferInProgress = false;
+            _isOutputTransferInProgress = false;
+            _inputWood = inputWood;
+            _outputPlanks = outputPlanks;
+            _completedRecipeCount = 0;
+            NotifyBufferChanged();
+            return true;
+        }
+
         private IEnumerator ProcessReservedRecipe()
         {
             yield return _processingWait;

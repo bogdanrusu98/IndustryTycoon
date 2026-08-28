@@ -728,6 +728,41 @@ namespace IndustryTycoon.Logistics
             _isAwaitingCashCapacity = false;
         }
 
+        public void RestoreIdleState()
+        {
+            StopRetryCoroutine();
+            PackingStationOutputReservation reservation = _outputReservation;
+            _outputReservation = default;
+            _reservedCrates = 0;
+            _carriedCrates = 0;
+            _activeTripGeneration = 0;
+            _deliveryCommittedGeneration = 0;
+            _actionDelayRemaining = 0f;
+            _isAwaitingCashCapacity = false;
+            _isAcquiringReservation = false;
+            _isCommittingPickup = false;
+            _isCommittingDelivery = false;
+            _isResolvingCancellation = false;
+            CompletedPickupCount = 0;
+            CompletedTripCount = 0;
+            CancelledTripCount = 0;
+            PreemptedCrateCount = 0;
+            TotalDeliveredCrates = 0;
+            TotalDeliveredCash = 0;
+
+            if (reservation.IsValid && packingStation != null)
+            {
+                packingStation.ReleaseCourierOutputReservation(reservation);
+            }
+
+            SetState(isActiveAndEnabled
+                ? CrateCourierState.Wait
+                : CrateCourierState.Disabled);
+            ReservationChanged?.Invoke(0);
+            CargoChanged?.Invoke(0);
+            AssertInvariants();
+        }
+
         private uint NextTripGeneration()
         {
             _nextTripGeneration++;

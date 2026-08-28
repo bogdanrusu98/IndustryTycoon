@@ -151,6 +151,7 @@ namespace IndustryTycoon.Editor
                 throw new InvalidOperationException($"Missing prototype scene at {ScenePath}.");
             }
 
+            M9EditorSaveUtility.PrepareFreshSmokeTest();
             EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             SessionState.SetBool(RunningKey, true);
             SessionState.SetBool(CommandLineKey, commandLine);

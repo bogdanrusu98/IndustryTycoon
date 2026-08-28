@@ -103,6 +103,31 @@ namespace IndustryTycoon.Workers
             return true;
         }
 
+        public void SynchronizeFromPurchaseState()
+        {
+            _isPadUnlocked = productionUpgrade != null
+                             && productionUpgrade.IsApplied
+                             && workerPurchasePad != null
+                             && workerPurchasePadRoot != null;
+            bool shouldActivateWorker = _isPadUnlocked
+                                        && workerPurchasePad.IsCompleted
+                                        && workerRoot != null;
+
+            if (workerPurchasePadRoot != null)
+            {
+                workerPurchasePadRoot.SetActive(_isPadUnlocked);
+            }
+
+            if (workerRoot != null)
+            {
+                _isWorkerActivated = false;
+                workerRoot.SetActive(shouldActivateWorker);
+            }
+
+            _isWorkerActivated = shouldActivateWorker;
+            workerPurchasePad?.SetAvailable(_isPadUnlocked && !_isWorkerActivated);
+        }
+
         private void HandleProductionUpgradeApplied()
         {
             TryUnlockPad();

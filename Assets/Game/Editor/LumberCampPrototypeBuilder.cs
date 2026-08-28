@@ -7,6 +7,7 @@ using IndustryTycoon.Economy;
 using IndustryTycoon.Feedback;
 using IndustryTycoon.Interaction;
 using IndustryTycoon.Logistics;
+using IndustryTycoon.Persistence;
 using IndustryTycoon.Player;
 using IndustryTycoon.Processing;
 using IndustryTycoon.Progression;
@@ -17,6 +18,8 @@ using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
@@ -427,8 +430,23 @@ namespace IndustryTycoon.Editor
                 sawBladeMaterial,
                 purchaseCompleteMaterial,
                 feedbackParticleMaterial);
+            LocalPersistenceService persistenceService = CreateM9Persistence(
+                scene,
+                wallet,
+                cashPile,
+                player.GetComponent<CarryStack>(),
+                woodSpawner,
+                productionUpgrade,
+                workerUnlock,
+                processorUnlock,
+                autoFeederUnlock,
+                packingStationUnlock,
+                courierUnlock,
+                courier,
+                stockpile,
+                m8Services.Completion);
             CreateLighting(scene);
-            CreateHud(
+            NextUnlockGuidance nextUnlockGuidance = CreateHud(
                 scene,
                 player.GetComponent<CarryStack>(),
                 wallet,
@@ -440,7 +458,14 @@ namespace IndustryTycoon.Editor
                 courierUnlock,
                 m8Services,
                 feedbackServices,
-                followCamera);
+                followCamera,
+                persistenceService,
+                playerMovement,
+                player.GetComponent<PlayerDragInput>());
+            SetObjectReference(
+                persistenceService,
+                "nextUnlockGuidance",
+                nextUnlockGuidance);
 
             ConfigurePortraitSettings();
             UpdateBuildSettings();
@@ -470,6 +495,7 @@ namespace IndustryTycoon.Editor
             EnsureFolder("Assets/Game/Interaction");
             EnsureFolder("Assets/Game/Feedback");
             EnsureFolder("Assets/Game/Processing");
+            EnsureFolder("Assets/Game/Persistence");
             EnsureFolder("Assets/Game/Camera");
             EnsureFolder("Assets/Game/UI");
             EnsureFolder("Assets/Game/Workers");
@@ -2907,6 +2933,87 @@ namespace IndustryTycoon.Editor
             return new M8Services(completion, pacingProbe, completionParticles);
         }
 
+        private static LocalPersistenceService CreateM9Persistence(
+            Scene scene,
+            Wallet wallet,
+            CashPile cashPile,
+            CarryStack carryStack,
+            WoodSpawner woodSpawner,
+            WoodProductionUpgrade productionUpgrade,
+            FirstWorkerUnlock workerUnlock,
+            FirstProcessorUnlock processorUnlock,
+            FirstAutoFeederUnlock autoFeederUnlock,
+            FirstPackingStationUnlock packingStationUnlock,
+            FirstCourierUnlock courierUnlock,
+            CrateCourier courier,
+            WoodStockpile stockpile,
+            LumberCampCompletion completion)
+        {
+            LumberWorker worker = workerUnlock != null && workerUnlock.WorkerRoot != null
+                ? workerUnlock.WorkerRoot.GetComponent<LumberWorker>()
+                : null;
+            WoodProcessor processor = processorUnlock != null
+                                      && processorUnlock.ProcessorRoot != null
+                ? processorUnlock.ProcessorRoot.GetComponent<WoodProcessor>()
+                : null;
+            WoodAutoFeeder feeder = autoFeederUnlock != null
+                                    && autoFeederUnlock.AutoFeederRoot != null
+                ? autoFeederUnlock.AutoFeederRoot.GetComponent<WoodAutoFeeder>()
+                : null;
+            PackingStation packingStation = packingStationUnlock != null
+                                             && packingStationUnlock.PackingStationRoot != null
+                ? packingStationUnlock.PackingStationRoot.GetComponent<PackingStation>()
+                : null;
+            Require(wallet != null
+                    && cashPile != null
+                    && carryStack != null
+                    && woodSpawner != null
+                    && productionUpgrade != null
+                    && worker != null
+                    && stockpile != null
+                    && processor != null
+                    && feeder != null
+                    && packingStation != null
+                    && courier != null
+                    && completion != null,
+                "M9 persistence requires the complete authoritative M1-M8 state graph.");
+
+            GameObject root = new GameObject("Local Persistence");
+            SceneManager.MoveGameObjectToScene(root, scene);
+            LocalPersistenceService service = root.AddComponent<LocalPersistenceService>();
+            SetObjectReference(service, "wallet", wallet);
+            SetObjectReference(service, "cashPile", cashPile);
+            SetObjectReference(
+                service,
+                "cashPileCollector",
+                cashPile.GetComponent<CashPileCollector>());
+            SetObjectReference(service, "carryStack", carryStack);
+            SetObjectReference(
+                service,
+                "resourceCollector",
+                carryStack.GetComponent<ResourceCollector>());
+            SetObjectReference(service, "productionUpgrade", productionUpgrade);
+            SetObjectReference(service, "workerUnlock", workerUnlock);
+            SetObjectReference(service, "processorUnlock", processorUnlock);
+            SetObjectReference(service, "autoFeederUnlock", autoFeederUnlock);
+            SetObjectReference(service, "packingStationUnlock", packingStationUnlock);
+            SetObjectReference(service, "courierUnlock", courierUnlock);
+            SetObjectReference(service, "lumberCampCompletion", completion);
+            SetObjectReference(service, "woodSpawner", woodSpawner);
+            SetObjectReference(service, "lumberWorker", worker);
+            SetObjectReference(service, "stockpile", stockpile);
+            SetObjectReference(service, "processor", processor);
+            SetObjectReference(service, "autoFeeder", feeder);
+            SetObjectReference(service, "packingStation", packingStation);
+            SetObjectReference(service, "courier", courier);
+            SetFloat(service, "saveDebounceSeconds", 3f);
+            SetFloat(service, "returnScreenThresholdSeconds", 300f);
+            SetFloat(service, "maximumCreditedAwaySeconds", 14400f);
+            SetFloat(service, "offlineEfficiency", 0.60f);
+            SetFloat(service, "workerSecondsPerWood", 6.50f);
+            return service;
+        }
+
         private static void CreateLighting(Scene scene)
         {
             GameObject lightObject = new GameObject("Directional Light");
@@ -2921,7 +3028,7 @@ namespace IndustryTycoon.Editor
             RenderSettings.sun = directionalLight;
         }
 
-        private static void CreateHud(
+        private static NextUnlockGuidance CreateHud(
             Scene scene,
             CarryStack carryStack,
             Wallet wallet,
@@ -2933,7 +3040,10 @@ namespace IndustryTycoon.Editor
             FirstCourierUnlock courierUnlock,
             M8Services m8Services,
             FeedbackServices feedbackServices,
-            SmoothFollowCamera followCamera)
+            SmoothFollowCamera followCamera,
+            LocalPersistenceService persistenceService,
+            PlayerMovement playerMovement,
+            PlayerDragInput playerDragInput)
         {
             GameObject canvasObject = new GameObject(
                 "HUD",
@@ -3076,6 +3186,114 @@ namespace IndustryTycoon.Editor
             SetFloat(completionFeedback, "holdDuration", 1.45f);
             SetFloat(completionFeedback, "exitDuration", 0.30f);
             bannerRoot.SetActive(false);
+
+            CreateWelcomeBackUi(
+                scene,
+                safeAreaObject,
+                persistenceService,
+                playerMovement,
+                playerDragInput);
+            return guidance;
+        }
+
+        private static void CreateWelcomeBackUi(
+            Scene scene,
+            GameObject safeAreaObject,
+            LocalPersistenceService persistenceService,
+            PlayerMovement playerMovement,
+            PlayerDragInput playerDragInput)
+        {
+            GameObject eventSystemObject = new GameObject(
+                "EventSystem",
+                typeof(EventSystem),
+                typeof(InputSystemUIInputModule));
+            SceneManager.MoveGameObjectToScene(eventSystemObject, scene);
+            eventSystemObject.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
+
+            GameObject overlayRoot = new GameObject(
+                "Welcome Back Overlay",
+                typeof(RectTransform),
+                typeof(CanvasGroup),
+                typeof(Image));
+            overlayRoot.transform.SetParent(safeAreaObject.transform, false);
+            StretchToParent(overlayRoot.GetComponent<RectTransform>());
+            overlayRoot.GetComponent<Image>().color = new Color(0.015f, 0.025f, 0.02f, 0.82f);
+            CanvasGroup overlayCanvasGroup = overlayRoot.GetComponent<CanvasGroup>();
+            overlayCanvasGroup.interactable = true;
+            overlayCanvasGroup.blocksRaycasts = true;
+
+            GameObject card = new GameObject(
+                "Welcome Back Card",
+                typeof(RectTransform),
+                typeof(Image));
+            card.transform.SetParent(overlayRoot.transform, false);
+            RectTransform cardRect = card.GetComponent<RectTransform>();
+            cardRect.anchorMin = new Vector2(0.5f, 0.5f);
+            cardRect.anchorMax = new Vector2(0.5f, 0.5f);
+            cardRect.pivot = new Vector2(0.5f, 0.5f);
+            cardRect.sizeDelta = new Vector2(820f, 650f);
+            cardRect.anchoredPosition = Vector2.zero;
+            card.GetComponent<Image>().color = new Color(0.055f, 0.14f, 0.095f, 0.98f);
+
+            CreateHudLine(
+                "Welcome Back Title",
+                card.transform,
+                "WELCOME BACK",
+                new Vector2(0f, 0.73f),
+                Vector2.one,
+                62);
+            Text awayText = CreateHudLine(
+                "Away Text",
+                card.transform,
+                "Away: 0m",
+                new Vector2(0f, 0.50f),
+                new Vector2(1f, 0.73f),
+                42);
+            Text earnedText = CreateHudLine(
+                "Earned Text",
+                card.transform,
+                "Earned: $0",
+                new Vector2(0f, 0.31f),
+                new Vector2(1f, 0.52f),
+                46);
+
+            GameObject buttonObject = new GameObject(
+                "Collect Button",
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Button));
+            buttonObject.transform.SetParent(card.transform, false);
+            RectTransform buttonRect = buttonObject.GetComponent<RectTransform>();
+            buttonRect.anchorMin = new Vector2(0.5f, 0f);
+            buttonRect.anchorMax = new Vector2(0.5f, 0f);
+            buttonRect.pivot = new Vector2(0.5f, 0f);
+            buttonRect.sizeDelta = new Vector2(560f, 142f);
+            buttonRect.anchoredPosition = new Vector2(0f, 54f);
+            Image buttonImage = buttonObject.GetComponent<Image>();
+            buttonImage.color = new Color(0.16f, 0.78f, 0.42f, 1f);
+            Button collectButton = buttonObject.GetComponent<Button>();
+            ColorBlock colors = collectButton.colors;
+            colors.highlightedColor = new Color(0.23f, 0.92f, 0.52f, 1f);
+            colors.pressedColor = new Color(0.10f, 0.60f, 0.31f, 1f);
+            colors.selectedColor = colors.highlightedColor;
+            collectButton.colors = colors;
+            CreateHudLine(
+                "Collect Text",
+                buttonObject.transform,
+                "COLLECT",
+                Vector2.zero,
+                Vector2.one,
+                48);
+
+            WelcomeBackView welcomeBackView = safeAreaObject.AddComponent<WelcomeBackView>();
+            SetObjectReference(welcomeBackView, "persistenceService", persistenceService);
+            SetObjectReference(welcomeBackView, "overlayRoot", overlayRoot);
+            SetObjectReference(welcomeBackView, "awayText", awayText);
+            SetObjectReference(welcomeBackView, "earnedText", earnedText);
+            SetObjectReference(welcomeBackView, "collectButton", collectButton);
+            SetObjectReference(welcomeBackView, "playerMovement", playerMovement);
+            SetObjectReference(welcomeBackView, "playerDragInput", playerDragInput);
+            overlayRoot.SetActive(false);
         }
 
         private static Text CreateHudLine(
@@ -3718,6 +3936,13 @@ namespace IndustryTycoon.Editor
                 audioFeedback,
                 hapticFeedback,
                 followCamera);
+            ValidateM9Scene(
+                scene,
+                wallet,
+                cashPile,
+                carryStack,
+                productionUpgrade,
+                workerAutomation);
             ValidateCoreLoopLogic();
             ValidateM3Logic();
             ValidateM4Logic();
@@ -3725,6 +3950,133 @@ namespace IndustryTycoon.Editor
             ValidateM6Logic();
             ValidateM7Logic();
             ValidateM8Logic();
+        }
+
+        private static void ValidateM9Scene(
+            Scene scene,
+            Wallet wallet,
+            CashPile cashPile,
+            CarryStack carryStack,
+            WoodProductionUpgrade productionUpgrade,
+            FirstWorkerUnlock workerUnlock)
+        {
+            GameObject persistenceRoot = FindRoot(scene, "Local Persistence");
+            GameObject hudRoot = FindRoot(scene, "HUD");
+            GameObject eventSystemRoot = FindRoot(scene, "EventSystem");
+            Require(persistenceRoot != null
+                    && hudRoot != null
+                    && eventSystemRoot != null,
+                "M9 persistence, return UI, or EventSystem root is missing.");
+
+            LocalPersistenceService service =
+                persistenceRoot.GetComponent<LocalPersistenceService>();
+            WelcomeBackView welcomeBack =
+                hudRoot.GetComponentInChildren<WelcomeBackView>(true);
+            InputSystemUIInputModule inputModule =
+                eventSystemRoot.GetComponent<InputSystemUIInputModule>();
+            Require(service != null
+                    && welcomeBack != null
+                    && inputModule != null
+                    && eventSystemRoot.GetComponent<EventSystem>() != null,
+                "M9 runtime persistence or return-flow components are missing.");
+
+            FirstProcessorUnlock processorUnlock = FindRoot(
+                    scene,
+                    "Processor Automation")
+                ?.GetComponent<FirstProcessorUnlock>();
+            FirstAutoFeederUnlock feederUnlock = FindRoot(
+                    scene,
+                    "Auto Feeder Automation")
+                ?.GetComponent<FirstAutoFeederUnlock>();
+            FirstPackingStationUnlock packingUnlock = FindRoot(
+                    scene,
+                    "Packing Station Automation")
+                ?.GetComponent<FirstPackingStationUnlock>();
+            FirstCourierUnlock courierUnlock = FindRoot(
+                    scene,
+                    "Courier Automation")
+                ?.GetComponent<FirstCourierUnlock>();
+            LumberCampCompletion completion = FindRoot(
+                    scene,
+                    "Lumber Camp Progression")
+                ?.GetComponent<LumberCampCompletion>();
+            NextUnlockGuidance guidance =
+                hudRoot.GetComponentInChildren<NextUnlockGuidance>(true);
+
+            Require(service.Wallet == wallet
+                    && service.CashPile == cashPile
+                    && service.CarryStack == carryStack
+                    && service.ProductionUpgrade == productionUpgrade
+                    && service.WorkerUnlock == workerUnlock
+                    && service.ProcessorUnlock == processorUnlock
+                    && service.AutoFeederUnlock == feederUnlock
+                    && service.PackingStationUnlock == packingUnlock
+                    && service.CourierUnlock == courierUnlock
+                    && service.LumberCampCompletion == completion
+                    && GetObjectReference(service, "nextUnlockGuidance") == guidance,
+                "M9 persistence is not wired to the authoritative M1-M8 state graph.");
+            Require(service.Stockpile != null
+                    && service.Processor != null
+                    && service.PackingStation != null
+                    && service.LumberWorker != null
+                    && service.AutoFeeder != null
+                    && service.Courier != null
+                    && GetObjectReference(service, "woodSpawner") != null
+                    && GetObjectReference(service, "cashPileCollector") != null
+                    && GetObjectReference(service, "resourceCollector") != null,
+                "M9 transient normalization references are incomplete.");
+            Require(Mathf.Approximately(service.SaveDebounceSeconds, 3f)
+                    && Mathf.Approximately(service.ReturnScreenThresholdSeconds, 300f)
+                    && Mathf.Approximately(service.MaximumCreditedAwaySeconds, 14400f)
+                    && Mathf.Approximately(service.OfflineEfficiency, 0.60f)
+                    && Mathf.Approximately(service.WorkerSecondsPerWood, 6.50f),
+                "M9 save cadence or offline tuning changed unexpectedly.");
+
+            Require(welcomeBack.PersistenceService == service
+                    && welcomeBack.OverlayRoot != null
+                    && !welcomeBack.OverlayRoot.activeSelf
+                    && welcomeBack.AwayText != null
+                    && welcomeBack.EarnedText != null
+                    && welcomeBack.CollectButton != null,
+                "M9 Welcome Back view references or initial visibility are invalid.");
+            CanvasGroup overlayCanvasGroup =
+                welcomeBack.OverlayRoot.GetComponent<CanvasGroup>();
+            RectTransform overlayRect =
+                welcomeBack.OverlayRoot.GetComponent<RectTransform>();
+            Transform cardTransform =
+                welcomeBack.OverlayRoot.transform.Find("Welcome Back Card");
+            RectTransform cardRect = cardTransform != null
+                ? cardTransform.GetComponent<RectTransform>()
+                : null;
+            Text collectText = welcomeBack.CollectButton
+                .GetComponentInChildren<Text>(true);
+            Require(overlayCanvasGroup != null
+                    && overlayCanvasGroup.interactable
+                    && overlayCanvasGroup.blocksRaycasts
+                    && overlayRect != null
+                    && overlayRect.anchorMin == Vector2.zero
+                    && overlayRect.anchorMax == Vector2.one
+                    && cardRect != null
+                    && cardRect.sizeDelta == new Vector2(820f, 650f)
+                    && collectText != null
+                    && collectText.text == "COLLECT",
+                "M9 Welcome Back overlay is not a single blocking portrait-safe collection flow.");
+            Require(WelcomeBackView.FormatAwayDuration(6120d) == "1h 42m",
+                "M9 Welcome Back away-duration formatting is not deterministic.");
+
+            int eventSystemCount = 0;
+            int welcomeBackCount = 0;
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                eventSystemCount += roots[i]
+                    .GetComponentsInChildren<EventSystem>(true).Length;
+                welcomeBackCount += roots[i]
+                    .GetComponentsInChildren<WelcomeBackView>(true).Length;
+            }
+
+            Require(eventSystemCount == 1 && welcomeBackCount == 1,
+                "M9 requires exactly one EventSystem and one Welcome Back screen instance.");
         }
 
         private static void ValidateM4Scene(

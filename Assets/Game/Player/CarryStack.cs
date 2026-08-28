@@ -220,6 +220,39 @@ namespace IndustryTycoon.Player
             return HasActiveResource;
         }
 
+        public bool RestoreStableState(ResourceType? resourceType, int amount)
+        {
+            if (amount < 0
+                || amount > capacity
+                || (amount > 0 && (!resourceType.HasValue
+                                   || !IsSupportedResource(resourceType.Value)))
+                || (amount == 0 && resourceType.HasValue))
+            {
+                return false;
+            }
+
+            _amounts.Clear();
+            _totalAmount = 0;
+            _reservedCapacity = 0;
+            _activeResourceType = default;
+            _reservedResourceType = default;
+            _hasActiveResourceType = false;
+            _hasReservedResourceType = false;
+
+            if (amount > 0)
+            {
+                _activeResourceType = resourceType.Value;
+                _hasActiveResourceType = true;
+                _amounts[_activeResourceType] = amount;
+                _totalAmount = amount;
+            }
+
+            _lastVisibleCount = 0;
+            RefreshVisuals();
+            Changed?.Invoke();
+            return true;
+        }
+
         public bool TryGetTopVisualPose(
             ResourceType resourceType,
             out Vector3 position,

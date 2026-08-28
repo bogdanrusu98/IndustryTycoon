@@ -71,6 +71,13 @@ namespace IndustryTycoon.Progression
             return true;
         }
 
+        public void RestoreCompleted(bool completed)
+        {
+            _isCompleted = completed;
+            CompletionCount = completed ? 1 : 0;
+            ApplyPresentationState();
+        }
+
         private void HandleCourierActivated()
         {
             TryComplete();

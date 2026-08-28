@@ -157,6 +157,27 @@ namespace IndustryTycoon.Interaction
             return changed;
         }
 
+        public bool RestorePaidAmount(int paidAmount, bool completed)
+        {
+            EnsureInitialized();
+            if (paidAmount < 0
+                || paidAmount > totalCost
+                || completed != (paidAmount == totalCost))
+            {
+                return false;
+            }
+
+            StopSpending();
+            _remainingCost = totalCost - paidAmount;
+            _isCompleted = completed;
+            _isAvailable = startsAvailable && !_isCompleted;
+            _isPlayerInside = false;
+            _fundingPauseNotified = false;
+            ApplyVisualState();
+            ProgressChanged?.Invoke(_remainingCost);
+            return true;
+        }
+
         private void HandleWalletBalanceChanged(int newBalance)
         {
             if (_isAvailable && _isPlayerInside && newBalance > 0)

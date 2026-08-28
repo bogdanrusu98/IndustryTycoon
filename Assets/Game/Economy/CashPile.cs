@@ -52,6 +52,19 @@ namespace IndustryTycoon.Economy
             return acceptedAmount;
         }
 
+        public bool RestoreStoredCash(int restoredCash)
+        {
+            if (restoredCash < 0)
+            {
+                return false;
+            }
+
+            _storedCash = restoredCash;
+            RefreshVisuals();
+            StoredCashChanged?.Invoke(_storedCash);
+            return true;
+        }
+
         internal void FinalizeDepositForTransfer(int amount)
         {
             Debug.Assert(CanDeposit(amount));

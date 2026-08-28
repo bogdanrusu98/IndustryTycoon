@@ -363,6 +363,31 @@ namespace IndustryTycoon.Processing
             return true;
         }
 
+        public bool RestoreStableState(int inputPlanks, int outputCrates)
+        {
+            if (inputPlanks < 0
+                || inputPlanks > inputCapacity
+                || outputCrates < 0
+                || outputCrates > outputCapacity)
+            {
+                return false;
+            }
+
+            InvalidateCourierOutputReservation();
+            StopProcessingAndResolveOwnership();
+            _isInputTransferInProgress = false;
+            _isOutputTransferInProgress = false;
+            _inputPlanks = inputPlanks;
+            _processingInputPlanks = 0;
+            _outputCrates = outputCrates;
+            _reservedOutputCapacity = 0;
+            _completedRecipeCount = 0;
+            AssertInvariants();
+            CourierOutputReservationChanged?.Invoke(0);
+            NotifyBufferChanged();
+            return true;
+        }
+
         private IEnumerator ProcessReservedRecipe()
         {
             yield return _processingWait;

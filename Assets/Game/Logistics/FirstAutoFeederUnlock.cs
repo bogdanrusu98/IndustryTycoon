@@ -103,6 +103,32 @@ namespace IndustryTycoon.Logistics
             return true;
         }
 
+        public void SynchronizeFromPurchaseState()
+        {
+            _isPadUnlocked = processorUnlock != null
+                             && processorUnlock.IsProcessorActivated
+                             && autoFeederPurchasePad != null
+                             && autoFeederPurchasePadRoot != null;
+            bool shouldActivateAutoFeeder = _isPadUnlocked
+                                            && autoFeederPurchasePad.IsCompleted
+                                            && autoFeederRoot != null;
+
+            if (autoFeederPurchasePadRoot != null)
+            {
+                autoFeederPurchasePadRoot.SetActive(_isPadUnlocked);
+            }
+
+            if (autoFeederRoot != null)
+            {
+                _isAutoFeederActivated = false;
+                autoFeederRoot.SetActive(shouldActivateAutoFeeder);
+            }
+
+            _isAutoFeederActivated = shouldActivateAutoFeeder;
+            autoFeederPurchasePad?.SetAvailable(
+                _isPadUnlocked && !_isAutoFeederActivated);
+        }
+
         private void HandleProcessorActivated()
         {
             TryUnlockPad();

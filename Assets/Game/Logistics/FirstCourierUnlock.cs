@@ -105,6 +105,31 @@ namespace IndustryTycoon.Logistics
             return true;
         }
 
+        public void SynchronizeFromPurchaseState()
+        {
+            _isPadUnlocked = packingStationUnlock != null
+                             && packingStationUnlock.IsPackingStationActivated
+                             && courierPurchasePad != null
+                             && courierPurchasePadRoot != null;
+            bool shouldActivateCourier = _isPadUnlocked
+                                         && courierPurchasePad.IsCompleted
+                                         && courierRoot != null;
+
+            if (courierPurchasePadRoot != null)
+            {
+                courierPurchasePadRoot.SetActive(_isPadUnlocked);
+            }
+
+            if (courierRoot != null)
+            {
+                _isCourierActivated = false;
+                courierRoot.SetActive(shouldActivateCourier);
+            }
+
+            _isCourierActivated = shouldActivateCourier;
+            courierPurchasePad?.SetAvailable(_isPadUnlocked && !_isCourierActivated);
+        }
+
         private void HandlePackingStationActivated()
         {
             TryUnlockPad();
