@@ -31,6 +31,8 @@ namespace IndustryTycoon.ResourceSystem
         private bool _hasStarted;
         private bool _isShuttingDown;
 
+        public event System.Action<int> WoodProduced;
+
         public int ActiveCount => _activeCount;
         public int ActiveRegistryCount => _activePickups.Count;
         public ResourcePickup WoodPrefab => woodPrefab;
@@ -135,7 +137,9 @@ namespace IndustryTycoon.ResourceSystem
             int spawnCount = Mathf.Min(initialActiveCount, maximumActiveCount);
             for (int i = 0; i < spawnCount; i++)
             {
-                SpawnOne();
+                // Initial loose Wood is bootstrap world inventory, not production.
+                // Counting it would fabricate lifetime progress on every scene load.
+                SpawnOne(false);
             }
 
             _hasStarted = true;
@@ -190,7 +194,7 @@ namespace IndustryTycoon.ResourceSystem
                 yield return _spawnWait;
                 if (_activeCount < maximumActiveCount)
                 {
-                    SpawnOne();
+                    SpawnOne(true);
                 }
             }
         }
@@ -215,7 +219,7 @@ namespace IndustryTycoon.ResourceSystem
             }
         }
 
-        private void SpawnOne()
+        private void SpawnOne(bool countAsProduction)
         {
             ResourcePickup pickup = _pool.Get();
             Vector2 randomPoint = new Vector2(
@@ -227,6 +231,10 @@ namespace IndustryTycoon.ResourceSystem
             pickup.PrepareForSpawn(spawnPosition, spawnRotation);
             _activePickups.Add(pickup);
             _activeCount = _activePickups.Count;
+            if (countAsProduction)
+            {
+                WoodProduced?.Invoke(pickup.Amount);
+            }
         }
 
         private ResourcePickup CreatePooledItem()

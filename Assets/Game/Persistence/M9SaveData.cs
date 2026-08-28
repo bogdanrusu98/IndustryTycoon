@@ -1,12 +1,15 @@
 using System;
 using IndustryTycoon.Core;
+using IndustryTycoon.Progression;
 
 namespace IndustryTycoon.Persistence
 {
     public static class M9SaveSchema
     {
         public const string Id = "industry-tycoon-local-save";
-        public const int CurrentVersion = 1;
+        public const int Version1 = 1;
+        public const int Version2 = 2;
+        public const int CurrentVersion = Version2;
     }
 
     public static class M9PurchasePadIds
@@ -118,6 +121,9 @@ namespace IndustryTycoon.Persistence
         public long lastEvaluationUtcUnixSeconds;
         public long lastWriteUtcUnixSeconds;
 
+        public M10ProgressionSaveData progression =
+            M10ProgressionSaveData.CreateFresh();
+
         public static M9SaveData CreateFresh(long utcNowUnixSeconds)
         {
             long safeTimestamp = M9UnixTime.IsPlausible(utcNowUnixSeconds)
@@ -126,6 +132,7 @@ namespace IndustryTycoon.Persistence
             var data = new M9SaveData
             {
                 purchasePads = new M9PurchasePadSaveRecord[M9PurchasePadIds.Count],
+                progression = M10ProgressionSaveData.CreateFresh(),
                 lastEvaluationUtcUnixSeconds = safeTimestamp,
                 lastWriteUtcUnixSeconds = safeTimestamp
             };
@@ -285,6 +292,39 @@ namespace IndustryTycoon.Persistence
                 source.lastWriteUtcUnixSeconds,
                 safeFallbackTimestamp);
 
+            if (!M10ProgressionSaveValidator.TryNormalize(
+                    source.progression,
+                    out M10ProgressionSaveData normalizedProgression,
+                    out failureReason))
+            {
+                return false;
+            }
+
+            bool normalizedLumberCampCompleted = source.lumberCampCompleted
+                                                  && orderedPads[
+                                                      M9PurchasePadIds.Count - 1]
+                                                      .completed;
+            if (!ValidateExactProgressionFlags(
+                    normalizedProgression,
+                    orderedPads,
+                    normalizedLumberCampCompleted,
+                    out failureReason))
+            {
+                return false;
+            }
+
+            SeedExactProgressionFlags(
+                normalizedProgression,
+                orderedPads,
+                normalizedLumberCampCompleted);
+            if (!M10ProgressionSaveValidator.TryNormalize(
+                    normalizedProgression,
+                    out normalizedProgression,
+                    out failureReason))
+            {
+                return false;
+            }
+
             normalized = new M9SaveData
             {
                 schema = M9SaveSchema.Id,
@@ -297,8 +337,7 @@ namespace IndustryTycoon.Persistence
                     amount = carryAmount
                 },
                 purchasePads = orderedPads,
-                lumberCampCompleted = source.lumberCampCompleted
-                                        && orderedPads[M9PurchasePadIds.Count - 1].completed,
+                lumberCampCompleted = normalizedLumberCampCompleted,
                 stockpileWood = Clamp(
                     source.stockpileWood,
                     0,
@@ -326,9 +365,94 @@ namespace IndustryTycoon.Persistence
                     Math.Max(0L, settings.maximumPendingAwaySeconds)),
                 returnScreenPending = source.returnScreenPending,
                 lastEvaluationUtcUnixSeconds = lastEvaluation,
-                lastWriteUtcUnixSeconds = lastWrite
+                lastWriteUtcUnixSeconds = lastWrite,
+                progression = normalizedProgression
             };
             return true;
+        }
+
+        private static bool ValidateExactProgressionFlags(
+            M10ProgressionSaveData progression,
+            M9PurchasePadSaveRecord[] orderedPads,
+            bool lumberCampCompleted,
+            out string failureReason)
+        {
+            failureReason = null;
+            ProgressFlagId[] canonicalPadFlags =
+            {
+                ProgressFlagId.ProductionUpgradeUnlocked,
+                ProgressFlagId.WorkerUnlocked,
+                ProgressFlagId.ProcessorUnlocked,
+                ProgressFlagId.AutoFeederUnlocked,
+                ProgressFlagId.PackingStationUnlocked,
+                ProgressFlagId.CourierUnlocked
+            };
+            for (int i = 0; i < canonicalPadFlags.Length; i++)
+            {
+                if (progression.GetFlag(canonicalPadFlags[i])
+                    && !orderedPads[i].completed)
+                {
+                    failureReason =
+                        $"M10 flag {canonicalPadFlags[i]} contradicts its PurchasePad.";
+                    return false;
+                }
+            }
+
+            if (progression.GetFlag(ProgressFlagId.LumberCampCompleted)
+                && !lumberCampCompleted)
+            {
+                failureReason =
+                    "M10 Lumber Camp flag contradicts canonical completion state.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void SeedExactProgressionFlags(
+            M10ProgressionSaveData progression,
+            M9PurchasePadSaveRecord[] orderedPads,
+            bool lumberCampCompleted)
+        {
+            if (progression == null || orderedPads == null)
+            {
+                return;
+            }
+
+            if (orderedPads[0].completed)
+            {
+                progression.SetFlag(ProgressFlagId.ProductionUpgradeUnlocked);
+            }
+
+            if (orderedPads[1].completed)
+            {
+                progression.SetFlag(ProgressFlagId.WorkerUnlocked);
+            }
+
+            if (orderedPads[2].completed)
+            {
+                progression.SetFlag(ProgressFlagId.ProcessorUnlocked);
+            }
+
+            if (orderedPads[3].completed)
+            {
+                progression.SetFlag(ProgressFlagId.AutoFeederUnlocked);
+            }
+
+            if (orderedPads[4].completed)
+            {
+                progression.SetFlag(ProgressFlagId.PackingStationUnlocked);
+            }
+
+            if (orderedPads[5].completed)
+            {
+                progression.SetFlag(ProgressFlagId.CourierUnlocked);
+            }
+
+            if (lumberCampCompleted)
+            {
+                progression.SetFlag(ProgressFlagId.LumberCampCompleted);
+            }
         }
 
         private static long NormalizeTimestamp(long value, long fallback)

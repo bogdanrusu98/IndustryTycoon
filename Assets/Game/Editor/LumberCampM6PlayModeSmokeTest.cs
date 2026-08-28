@@ -217,6 +217,11 @@ namespace IndustryTycoon.Editor
 
         private static void InitializeRuntimeState()
         {
+            IndustryTycoon.Progression.LumberCampProgressionService m10 =
+                Object.FindAnyObjectByType<
+                    IndustryTycoon.Progression.LumberCampProgressionService>();
+            if (m10 != null) m10.enabled = false;
+
             if (_runtimeInitialized || !EditorApplication.isPlaying)
             {
                 return;

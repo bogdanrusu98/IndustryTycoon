@@ -32,6 +32,7 @@ namespace IndustryTycoon.Persistence
         [SerializeField] private FirstPackingStationUnlock packingStationUnlock;
         [SerializeField] private FirstCourierUnlock courierUnlock;
         [SerializeField] private LumberCampCompletion lumberCampCompletion;
+        [SerializeField] private LumberCampProgressionService progressionService;
         [SerializeField] private NextUnlockGuidance nextUnlockGuidance;
 
         [Header("Authoritative Production")]
@@ -90,6 +91,7 @@ namespace IndustryTycoon.Persistence
         public FirstPackingStationUnlock PackingStationUnlock => packingStationUnlock;
         public FirstCourierUnlock CourierUnlock => courierUnlock;
         public LumberCampCompletion LumberCampCompletion => lumberCampCompletion;
+        public LumberCampProgressionService ProgressionService => progressionService;
         public WoodStockpile Stockpile => stockpile;
         public WoodProcessor Processor => processor;
         public PackingStation PackingStation => packingStation;
@@ -208,14 +210,13 @@ namespace IndustryTycoon.Persistence
                     originalWalletBalance,
                     multiplier,
                     out int creditedCash,
-                    out int resultingWalletBalance))
+                    out _))
             {
                 return false;
             }
 
             if (creditedCash > 0
-                && (wallet.Deposit(creditedCash) != creditedCash
-                    || wallet.Balance != resultingWalletBalance))
+                && wallet.Deposit(creditedCash) != creditedCash)
             {
                 wallet.RestoreBalance(originalWalletBalance);
                 RestorePendingReturn(
@@ -416,6 +417,24 @@ namespace IndustryTycoon.Persistence
             LastOfflineResult = OfflineProgressionCalculator.Calculate(input, rules);
             ApplyOfflineResult(data, LastOfflineResult);
             ApplyStableState(data);
+
+            // ApplyStableState restores M10 silently by design. Offline settlement
+            // may nevertheless establish an exact canonical completion flag. Resolve
+            // its objective/achievement transitions before the Welcome Back reward
+            // can be collected, then fold all synchronous reward side effects back
+            // into the state that is persisted. Offline production/delivery remains
+            // excluded from the lifetime counters.
+            _state = data;
+            progressionService?.EvaluateCurrentState();
+            if (progressionService != null)
+            {
+                data.progression = progressionService.CapturePersistentState();
+            }
+
+            if (wallet != null)
+            {
+                data.walletCash = wallet.Balance;
+            }
         }
 
         private OfflineProgressionInput BuildOfflineInput(M9SaveData data, long now)
@@ -522,6 +541,7 @@ namespace IndustryTycoon.Persistence
             if (result.CourierCratesDelivered > 0)
             {
                 data.lumberCampCompleted = true;
+                data.progression?.SetFlag(ProgressFlagId.LumberCampCompleted);
             }
         }
 
@@ -536,6 +556,7 @@ namespace IndustryTycoon.Persistence
             bool cashPlayerInside = false;
             try
             {
+                progressionService?.RestorePersistentState(data.progression);
                 resourceCollector?.CancelTransientAttractions();
                 if (cashPileCollector != null)
                 {
@@ -642,6 +663,10 @@ namespace IndustryTycoon.Persistence
             }
 
             int courierCargo = courier != null ? courier.CarriedCrates : 0;
+            // M9 reconciles in-flight Courier cargo into stable Cash ownership so a
+            // quit cannot lose Crates. This is save normalization, not a delivery
+            // commit: it deliberately emits no M10 trip/delivery/gameplay-Cash metric
+            // and must not complete the Lumber Camp.
             normalizedPile += (long)courierCargo
                               * (courier != null ? courier.CashPerCrate : 40);
             if (normalizedPile > int.MaxValue)
@@ -700,9 +725,17 @@ namespace IndustryTycoon.Persistence
                 snapshot,
                 5,
                 courierUnlock != null ? courierUnlock.CourierPurchasePad : null);
-            snapshot.lumberCampCompleted = (lumberCampCompletion != null
-                                            && lumberCampCompletion.IsCompleted)
-                                           || courierCargo > 0;
+            snapshot.lumberCampCompleted = lumberCampCompletion != null
+                                            && lumberCampCompletion.IsCompleted;
+            snapshot.progression = progressionService != null
+                ? progressionService.CapturePersistentState()
+                : _state.progression != null
+                    ? _state.progression.DeepClone()
+                    : M10ProgressionSaveData.CreateFresh();
+            if (snapshot.lumberCampCompleted)
+            {
+                snapshot.progression.SetFlag(ProgressFlagId.LumberCampCompleted);
+            }
             snapshot.stockpileWood = (int)stableStockpile;
             snapshot.processorInputWood = processor.InputWood;
             snapshot.processorOutputPlanks = processor.OutputPlanks;
@@ -812,6 +845,10 @@ namespace IndustryTycoon.Persistence
             if (packingStation != null) packingStation.BufferChanged += HandleFourIntsChanged;
             if (lumberWorker != null) lumberWorker.CargoChanged += HandleBoolChanged;
             if (courier != null) courier.CargoChanged += HandleIntChanged;
+            if (progressionService != null)
+            {
+                progressionService.StateChanged += HandleChanged;
+            }
             SubscribePurchasePads(true);
             if (lumberCampCompletion != null)
             {
@@ -836,6 +873,10 @@ namespace IndustryTycoon.Persistence
             if (packingStation != null) packingStation.BufferChanged -= HandleFourIntsChanged;
             if (lumberWorker != null) lumberWorker.CargoChanged -= HandleBoolChanged;
             if (courier != null) courier.CargoChanged -= HandleIntChanged;
+            if (progressionService != null)
+            {
+                progressionService.StateChanged -= HandleChanged;
+            }
             SubscribePurchasePads(false);
             if (lumberCampCompletion != null)
             {

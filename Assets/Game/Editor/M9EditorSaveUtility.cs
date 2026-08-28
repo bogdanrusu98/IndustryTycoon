@@ -12,7 +12,8 @@ namespace IndustryTycoon.Editor
 {
     /// <summary>
     /// Editor-only save reset entry point used by manual QA and by fresh-state smoke tests.
-    /// It deliberately targets only the M9 primary/temp/backup/corrupt save artifacts.
+    /// It deliberately targets only the shared M9/M10 primary/temp/backup/corrupt
+    /// save artifacts; M10 meta-progression lives inside the same schema-v2 file.
     /// </summary>
     public static class M9EditorSaveUtility
     {
@@ -97,7 +98,7 @@ namespace IndustryTycoon.Editor
 
             EditorSceneManager.OpenScene(PrototypeScenePath, OpenSceneMode.Single);
             Debug.Log(
-                "M9 save reset complete. Lumber Camp reloaded at the exact M8 fresh start.");
+                "M10 save reset complete. Lumber Camp reloaded at the exact fresh start.");
         }
 
         public static bool TryDeleteAllSaveArtifacts(out string failureReason)

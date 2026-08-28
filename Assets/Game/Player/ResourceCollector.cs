@@ -37,6 +37,8 @@ namespace IndustryTycoon.Player
         private float _timeUntilScan;
         private int _reservedCapacity;
 
+        public event System.Action<ResourceType, int> CollectionCommitted;
+
         public float AttractionDuration => attractionDuration;
         public float AttractionArcHeight => attractionArcHeight;
         public float AttractionStagger => attractionStagger;
@@ -209,7 +211,11 @@ namespace IndustryTycoon.Player
                 int amount = pickup.Amount;
                 if (pickup.TryCompleteAttraction(attraction.Claim))
                 {
-                    if (!carryStack.TryCommitReservedAdd(resourceType, amount))
+                    if (carryStack.TryCommitReservedAdd(resourceType, amount))
+                    {
+                        CollectionCommitted?.Invoke(resourceType, amount);
+                    }
+                    else
                     {
                         carryStack.ReleaseReservedCapacity(attraction.ReservedAmount);
                     }

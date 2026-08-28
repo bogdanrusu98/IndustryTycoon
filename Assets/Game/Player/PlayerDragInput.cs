@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 
@@ -29,6 +31,8 @@ namespace IndustryTycoon.Player
         private bool _hasReleasedDragSample;
         private bool _hasReadDuringCurrentPress;
         private bool _hasMousePosition;
+        private readonly List<RaycastResult> _uiRaycastResults =
+            new List<RaycastResult>(8);
 
         public Vector2 ReadMoveInput()
         {
@@ -153,6 +157,13 @@ namespace IndustryTycoon.Player
                 _lastPointerPosition = _latestMousePosition;
             }
 
+            if (IsPointerOverUi(_lastPointerPosition))
+            {
+                _activePressControl = null;
+                _activePositionControl = null;
+                return;
+            }
+
             _dragOrigin = pressControl.parent is TouchControl touch
                 ? touch.startPosition.ReadValue()
                 : _lastPointerPosition;
@@ -161,6 +172,25 @@ namespace IndustryTycoon.Player
             _hasReleasedDragSample = false;
             _hasReadDuringCurrentPress = false;
             _isPressed = true;
+        }
+
+        private bool IsPointerOverUi(Vector2 screenPosition)
+        {
+            EventSystem eventSystem = EventSystem.current;
+            if (eventSystem == null)
+            {
+                return false;
+            }
+
+            var pointerData = new PointerEventData(eventSystem)
+            {
+                position = screenPosition
+            };
+            _uiRaycastResults.Clear();
+            eventSystem.RaycastAll(pointerData, _uiRaycastResults);
+            bool isOverUi = _uiRaycastResults.Count > 0;
+            _uiRaycastResults.Clear();
+            return isOverUi;
         }
 
         private void EndDrag(InputControl pressControl)

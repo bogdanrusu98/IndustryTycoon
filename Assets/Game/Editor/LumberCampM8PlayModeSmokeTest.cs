@@ -221,6 +221,10 @@ namespace IndustryTycoon.Editor
 
         private static void InitializeRuntimeState()
         {
+            LumberCampProgressionService m10 =
+                Object.FindAnyObjectByType<LumberCampProgressionService>();
+            if (m10 != null) m10.enabled = false;
+
             if (_runtimeInitialized || !EditorApplication.isPlaying)
             {
                 return;
@@ -246,6 +250,7 @@ namespace IndustryTycoon.Editor
             _packingStation = FindSingleIncludingInactive<PackingStation>();
             _courier = FindSingleIncludingInactive<CrateCourier>();
             _guidance = Object.FindAnyObjectByType<NextUnlockGuidance>();
+            _guidance?.Refresh();
             _completion = Object.FindAnyObjectByType<LumberCampCompletion>();
             _completionFeedback = Object.FindAnyObjectByType<LumberCampCompletionFeedback>();
             _pacingProbe = Object.FindAnyObjectByType<LumberCampPacingProbe>();

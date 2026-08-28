@@ -6,6 +6,7 @@ using IndustryTycoon.Logistics;
 using IndustryTycoon.Persistence;
 using IndustryTycoon.Player;
 using IndustryTycoon.Processing;
+using IndustryTycoon.Progression;
 using IndustryTycoon.ResourceSystem;
 using IndustryTycoon.UI;
 using IndustryTycoon.Workers;
@@ -67,6 +68,8 @@ namespace IndustryTycoon.Editor
 
         private static LocalPersistenceService _service;
         private static WelcomeBackView _welcomeBackView;
+        private static LumberCampProgressionService _progression;
+        private static AchievementToastView _achievementToast;
         private static ResourceCollector _resourceCollector;
         private static CashPileCollector _cashPileCollector;
         private static Stage _stage;
@@ -213,10 +216,22 @@ namespace IndustryTycoon.Editor
 
             _service = FindSingleIncludingInactive<LocalPersistenceService>();
             _welcomeBackView = FindSingleIncludingInactive<WelcomeBackView>();
+            _progression = FindSingleIncludingInactive<LumberCampProgressionService>();
+            _achievementToast = FindSingleIncludingInactive<AchievementToastView>();
             Require(_service != null,
                 "M9 lifecycle smoke could not find the LocalPersistenceService.");
             Require(_welcomeBackView != null,
                 "M9 lifecycle smoke could not find the Welcome Back view.");
+            Require(_progression != null,
+                "M10 lifecycle smoke could not find the progression service.");
+            Require(_achievementToast != null,
+                "M10 lifecycle smoke could not find the achievement toast.");
+
+            // This regression seeds M9 state through restore-only APIs. Keep M10's
+            // gameplay subscriptions disabled so those test fixtures cannot masquerade
+            // as real authoritative commits; the M10 assertions below verify persistence
+            // and offline/load silence independently.
+            _progression.enabled = false;
 
             _resourceCollector = _service.CarryStack != null
                 ? _service.CarryStack.GetComponent<ResourceCollector>()
@@ -298,6 +313,12 @@ namespace IndustryTycoon.Editor
             Require(!_service.LumberCampCompletion.IsCompleted
                     && !_service.LumberCampCompletion.MineTeaserRoot.activeSelf,
                 "Fresh M8 completion/Mine teaser state was not reset.");
+            AssertNoFakeM10Metrics();
+            Require(_progression.ObjectiveIndex == 0
+                    && _progression.ActiveContractIndex == 0
+                    && _progression.ActiveContractState == ContractProgressState.Active
+                    && _achievementToast.PresentationCount == 0,
+                "Fresh M10 objective, contract, or toast state was not reset.");
 
             PurchasePad[] pads = GetPurchasePads();
             for (int i = 0; i < pads.Length; i++)
@@ -321,6 +342,12 @@ namespace IndustryTycoon.Editor
         {
             EnsureStageTimeout(5d);
             SeedCompletedFactoryState();
+            // This M9 conservation fixture starts from an already-completed factory.
+            // Mark the exact flag-based M10 rewards as previously handled so the
+            // settlement can continue asserting that pending Courier cash is the
+            // only economy delta. The focused M10 smoke covers first completion
+            // during offline settlement and its legitimate achievement reward.
+            PrepareExactM10StateForReload();
 
             // Exercise an actual feeder transfer whose Wood remains owned by the
             // Stockpile until commit. The serialized snapshot must retain it exactly
@@ -466,6 +493,7 @@ namespace IndustryTycoon.Editor
                 "Offline settlement modified the player's persisted CarryStack.");
             Require(_service.LumberCampCompletion.IsCompleted,
                 "Lumber Camp completion was not retained through offline settlement.");
+            AssertNoFakeM10Metrics();
 
             _welcomeBackView.Refresh();
             Require(_welcomeBackView.IsVisible
@@ -473,6 +501,7 @@ namespace IndustryTycoon.Editor
                     && _welcomeBackView.EarnedText.text == "Earned: $200",
                 "Welcome Back presentation did not show the pending settlement once.");
 
+            PrepareExactM10StateForReload();
             Require(_service.SaveNow(),
                 "Pending offline return could not be flushed before Play Mode teardown.");
             M9SaveData persisted = LoadPrimarySave();
@@ -534,6 +563,16 @@ namespace IndustryTycoon.Editor
                     && _service.LumberCampCompletion.CompletionCount == 1
                     && _service.LumberCampCompletion.MineTeaserRoot.activeSelf,
                 "Lumber Camp completion/Mine teaser was not reconstructed.");
+            AssertNoFakeM10Metrics();
+            Require(_progression.GetFlag(ProgressFlagId.WorkerUnlocked)
+                    && _progression.GetFlag(ProgressFlagId.ProcessorUnlocked)
+                    && _progression.GetFlag(ProgressFlagId.AutoFeederUnlocked)
+                    && _progression.GetFlag(ProgressFlagId.PackingStationUnlocked)
+                    && _progression.GetFlag(ProgressFlagId.CourierUnlocked)
+                    && _progression.GetFlag(ProgressFlagId.LumberCampCompleted),
+                "M10 exact unlock/completion flags failed the real session round-trip.");
+            Require(_achievementToast.PresentationCount == 0,
+                "Save restore retriggered an M10 achievement toast.");
 
             int pendingCash = Expected(ExpectedPendingCashKey);
             Require(_service.HasPendingReturn
@@ -586,6 +625,7 @@ namespace IndustryTycoon.Editor
             Require(!_service.TryCollectOfflineReward(1f)
                     && _service.Wallet.Balance == walletAfterFirstCollection,
                 "A second COLLECT duplicated the offline reward.");
+            AssertNoFakeM10Metrics();
             _welcomeBackView.Refresh();
             Require(!_welcomeBackView.IsVisible,
                 "Welcome Back view remained visible after successful collection.");
@@ -600,9 +640,49 @@ namespace IndustryTycoon.Editor
                 "M9 lifecycle smoke observed one or more Console errors/assertions.");
 
             Pass(
-                "M9 persistence lifecycle Play Mode smoke passed: fresh M8 state, "
+                "M9/M10 persistence lifecycle Play Mode smoke passed: fresh state, "
                 + "transient conservation, two-session disk reload, deterministic 10-minute "
-                + "offline settlement, pending survival, and exactly-once COLLECT.");
+                + "offline settlement with zero fake metrics, silent M10 restore, pending "
+                + "survival, and exactly-once COLLECT.");
+        }
+
+        private static void PrepareExactM10StateForReload()
+        {
+            M10ProgressionSaveData state = _progression.CapturePersistentState();
+            for (int i = 0; i < LumberCampProgressionCatalog.FlagCount; i++)
+            {
+                state.flags[i].value = true;
+            }
+
+            MarkAchievementHandled(state, LumberCampAchievementId.FirstHire);
+            MarkAchievementHandled(state, LumberCampAchievementId.ProcessingBegins);
+            MarkAchievementHandled(state, LumberCampAchievementId.AutomationOnline);
+            MarkAchievementHandled(state, LumberCampAchievementId.DeliveryService);
+            MarkAchievementHandled(state, LumberCampAchievementId.FullyAutomatedInput);
+            MarkAchievementHandled(state, LumberCampAchievementId.LumberCampComplete);
+            _progression.RestorePersistentState(state);
+        }
+
+        private static void MarkAchievementHandled(
+            M10ProgressionSaveData state,
+            LumberCampAchievementId achievement)
+        {
+            M10AchievementSaveRecord record = state.FindAchievementRecord(
+                (int)achievement);
+            Require(record != null,
+                $"M10 test fixture could not find achievement {achievement}.");
+            record.unlocked = true;
+            record.rewarded = true;
+        }
+
+        private static void AssertNoFakeM10Metrics()
+        {
+            for (int i = 0; i < LumberCampProgressionCatalog.MetricCount; i++)
+            {
+                ProgressMetricId metric = (ProgressMetricId)i;
+                Require(_progression.GetMetric(metric) == 0L,
+                    $"Restore/offline flow fabricated M10 metric {metric}.");
+            }
         }
 
         private static void SeedCompletedFactoryState()

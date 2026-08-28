@@ -32,6 +32,7 @@ namespace IndustryTycoon.UI
         [SerializeField] private FirstPackingStationUnlock packingStationUnlock;
         [SerializeField] private FirstCourierUnlock courierUnlock;
         [SerializeField] private LumberCampCompletion completion;
+        [SerializeField] private LumberCampProgressionService progressionService;
 
         [Header("Presentation")]
         [SerializeField] private Text guidanceText;
@@ -47,6 +48,7 @@ namespace IndustryTycoon.UI
         public FirstPackingStationUnlock PackingStationUnlock => packingStationUnlock;
         public FirstCourierUnlock CourierUnlock => courierUnlock;
         public LumberCampCompletion Completion => completion;
+        public LumberCampProgressionService ProgressionService => progressionService;
         public Text GuidanceText => guidanceText;
         public LumberCampProgressStage CurrentStage { get; private set; }
         public int PaidAmount { get; private set; }
@@ -92,6 +94,11 @@ namespace IndustryTycoon.UI
                 completion.Completed += HandleProgressionChanged;
             }
 
+            if (progressionService != null)
+            {
+                progressionService.StateChanged += HandleProgressionChanged;
+            }
+
             Refresh();
         }
 
@@ -133,10 +140,39 @@ namespace IndustryTycoon.UI
             {
                 completion.Completed -= HandleProgressionChanged;
             }
+
+            if (progressionService != null)
+            {
+                progressionService.StateChanged -= HandleProgressionChanged;
+            }
         }
 
         public bool Refresh()
         {
+            if (progressionService != null
+                && progressionService.isActiveAndEnabled)
+            {
+                string objectiveText = progressionService.ObjectiveDisplayText;
+                bool objectiveChanged = !string.Equals(
+                    _displayText,
+                    objectiveText,
+                    StringComparison.Ordinal);
+                PaidAmount = 0;
+                TotalCost = 0;
+                _displayText = objectiveText;
+                if (guidanceText != null)
+                {
+                    guidanceText.text = _displayText;
+                }
+
+                if (objectiveChanged)
+                {
+                    GuidanceChanged?.Invoke(CurrentStage, 0, 0);
+                }
+
+                return objectiveChanged;
+            }
+
             LumberCampProgressStage nextStage = ResolveCurrentStage();
             PurchasePad purchasePad = ResolveCurrentPurchasePad(nextStage);
             int nextTotalCost = purchasePad != null ? purchasePad.TotalCost : 0;

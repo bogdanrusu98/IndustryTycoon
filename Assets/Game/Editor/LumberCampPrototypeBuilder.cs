@@ -430,6 +430,21 @@ namespace IndustryTycoon.Editor
                 sawBladeMaterial,
                 purchaseCompleteMaterial,
                 feedbackParticleMaterial);
+            LumberCampProgressionService progressionService =
+                CreateM10Progression(
+                    scene,
+                    wallet,
+                    woodSpawner,
+                    player.GetComponent<ResourceCollector>(),
+                    salePoint,
+                    productionUpgrade,
+                    workerUnlock,
+                    processorUnlock,
+                    autoFeederUnlock,
+                    packingStationUnlock,
+                    courierUnlock,
+                    courier,
+                    m8Services.Completion);
             LocalPersistenceService persistenceService = CreateM9Persistence(
                 scene,
                 wallet,
@@ -444,7 +459,8 @@ namespace IndustryTycoon.Editor
                 courierUnlock,
                 courier,
                 stockpile,
-                m8Services.Completion);
+                m8Services.Completion,
+                progressionService);
             CreateLighting(scene);
             NextUnlockGuidance nextUnlockGuidance = CreateHud(
                 scene,
@@ -459,6 +475,7 @@ namespace IndustryTycoon.Editor
                 m8Services,
                 feedbackServices,
                 followCamera,
+                progressionService,
                 persistenceService,
                 playerMovement,
                 player.GetComponent<PlayerDragInput>());
@@ -2933,6 +2950,60 @@ namespace IndustryTycoon.Editor
             return new M8Services(completion, pacingProbe, completionParticles);
         }
 
+        private static LumberCampProgressionService CreateM10Progression(
+            Scene scene,
+            Wallet wallet,
+            WoodSpawner woodSpawner,
+            ResourceCollector resourceCollector,
+            SalePoint salePoint,
+            WoodProductionUpgrade productionUpgrade,
+            FirstWorkerUnlock workerUnlock,
+            FirstProcessorUnlock processorUnlock,
+            FirstAutoFeederUnlock autoFeederUnlock,
+            FirstPackingStationUnlock packingStationUnlock,
+            FirstCourierUnlock courierUnlock,
+            CrateCourier courier,
+            LumberCampCompletion completion)
+        {
+            GameObject root = FindRoot(scene, "Lumber Camp Progression");
+            WoodProcessor processor = processorUnlock != null
+                                      && processorUnlock.ProcessorRoot != null
+                ? processorUnlock.ProcessorRoot.GetComponent<WoodProcessor>()
+                : null;
+            PackingStation packingStation = packingStationUnlock != null
+                                             && packingStationUnlock.PackingStationRoot != null
+                ? packingStationUnlock.PackingStationRoot.GetComponent<PackingStation>()
+                : null;
+            Require(root != null
+                    && wallet != null
+                    && woodSpawner != null
+                    && resourceCollector != null
+                    && salePoint != null
+                    && processor != null
+                    && packingStation != null
+                    && courier != null
+                    && completion != null,
+                "M10 progression requires all authoritative commit sources.");
+
+            LumberCampProgressionService service =
+                root.AddComponent<LumberCampProgressionService>();
+            SetObjectReference(service, "wallet", wallet);
+            SetObjectReference(service, "woodSpawner", woodSpawner);
+            SetObjectReference(service, "resourceCollector", resourceCollector);
+            SetObjectReference(service, "salePoint", salePoint);
+            SetObjectReference(service, "processor", processor);
+            SetObjectReference(service, "packingStation", packingStation);
+            SetObjectReference(service, "courier", courier);
+            SetObjectReference(service, "productionUpgrade", productionUpgrade);
+            SetObjectReference(service, "workerUnlock", workerUnlock);
+            SetObjectReference(service, "processorUnlock", processorUnlock);
+            SetObjectReference(service, "autoFeederUnlock", autoFeederUnlock);
+            SetObjectReference(service, "packingStationUnlock", packingStationUnlock);
+            SetObjectReference(service, "courierUnlock", courierUnlock);
+            SetObjectReference(service, "lumberCampCompletion", completion);
+            return service;
+        }
+
         private static LocalPersistenceService CreateM9Persistence(
             Scene scene,
             Wallet wallet,
@@ -2947,7 +3018,8 @@ namespace IndustryTycoon.Editor
             FirstCourierUnlock courierUnlock,
             CrateCourier courier,
             WoodStockpile stockpile,
-            LumberCampCompletion completion)
+            LumberCampCompletion completion,
+            LumberCampProgressionService progressionService)
         {
             LumberWorker worker = workerUnlock != null && workerUnlock.WorkerRoot != null
                 ? workerUnlock.WorkerRoot.GetComponent<LumberWorker>()
@@ -2975,7 +3047,8 @@ namespace IndustryTycoon.Editor
                     && feeder != null
                     && packingStation != null
                     && courier != null
-                    && completion != null,
+                    && completion != null
+                    && progressionService != null,
                 "M9 persistence requires the complete authoritative M1-M8 state graph.");
 
             GameObject root = new GameObject("Local Persistence");
@@ -2999,6 +3072,7 @@ namespace IndustryTycoon.Editor
             SetObjectReference(service, "packingStationUnlock", packingStationUnlock);
             SetObjectReference(service, "courierUnlock", courierUnlock);
             SetObjectReference(service, "lumberCampCompletion", completion);
+            SetObjectReference(service, "progressionService", progressionService);
             SetObjectReference(service, "woodSpawner", woodSpawner);
             SetObjectReference(service, "lumberWorker", worker);
             SetObjectReference(service, "stockpile", stockpile);
@@ -3041,6 +3115,7 @@ namespace IndustryTycoon.Editor
             M8Services m8Services,
             FeedbackServices feedbackServices,
             SmoothFollowCamera followCamera,
+            LumberCampProgressionService progressionService,
             LocalPersistenceService persistenceService,
             PlayerMovement playerMovement,
             PlayerDragInput playerDragInput)
@@ -3102,7 +3177,7 @@ namespace IndustryTycoon.Editor
             SetFloat(walletHud, "animationDuration", 0.22f);
 
             GameObject guidancePanel = new GameObject(
-                "Next Unlock",
+                "Main Objective",
                 typeof(RectTransform),
                 typeof(Image));
             guidancePanel.transform.SetParent(safeAreaObject.transform, false);
@@ -3111,18 +3186,18 @@ namespace IndustryTycoon.Editor
             guidancePanelRect.anchorMin = new Vector2(0.5f, 1f);
             guidancePanelRect.anchorMax = new Vector2(0.5f, 1f);
             guidancePanelRect.pivot = new Vector2(0.5f, 1f);
-            guidancePanelRect.sizeDelta = new Vector2(820f, 132f);
+            guidancePanelRect.sizeDelta = new Vector2(900f, 104f);
             guidancePanelRect.anchoredPosition = new Vector2(0f, -238f);
             guidancePanel.GetComponent<Image>().color =
                 new Color(0.07f, 0.09f, 0.07f, 0.78f);
 
             Text guidanceText = CreateHudLine(
-                "Next Unlock Text",
+                "Main Objective Text",
                 guidancePanel.transform,
-                "NEXT: PRODUCTION UPGRADE\n$0 / $120",
+                "OBJECTIVE: UNLOCK WORKER",
                 Vector2.zero,
                 Vector2.one,
-                34);
+                31);
             NextUnlockGuidance guidance =
                 guidancePanel.AddComponent<NextUnlockGuidance>();
             SetObjectReference(guidance, "productionUpgrade", productionUpgrade);
@@ -3132,7 +3207,13 @@ namespace IndustryTycoon.Editor
             SetObjectReference(guidance, "packingStationUnlock", packingStationUnlock);
             SetObjectReference(guidance, "courierUnlock", courierUnlock);
             SetObjectReference(guidance, "completion", m8Services.Completion);
+            SetObjectReference(guidance, "progressionService", progressionService);
             SetObjectReference(guidance, "guidanceText", guidanceText);
+
+            CreateM10ProgressionUi(
+                safeAreaObject,
+                progressionService,
+                feedbackServices);
 
             GameObject bannerRoot = new GameObject(
                 "Completion Banner",
@@ -3194,6 +3275,263 @@ namespace IndustryTycoon.Editor
                 playerMovement,
                 playerDragInput);
             return guidance;
+        }
+
+        private static void CreateM10ProgressionUi(
+            GameObject safeAreaObject,
+            LumberCampProgressionService progressionService,
+            FeedbackServices feedbackServices)
+        {
+            GameObject navigationRoot = new GameObject(
+                "Progression Tabs",
+                typeof(RectTransform));
+            navigationRoot.transform.SetParent(safeAreaObject.transform, false);
+            RectTransform navigationRect =
+                navigationRoot.GetComponent<RectTransform>();
+            navigationRect.anchorMin = new Vector2(0.5f, 1f);
+            navigationRect.anchorMax = new Vector2(0.5f, 1f);
+            navigationRect.pivot = new Vector2(0.5f, 1f);
+            navigationRect.sizeDelta = new Vector2(900f, 82f);
+            navigationRect.anchoredPosition = new Vector2(0f, -360f);
+
+            Button contractTab = CreateHudButton(
+                "Contracts Tab",
+                navigationRoot.transform,
+                "CONTRACT",
+                new Vector2(0f, 0f),
+                new Vector2(0.49f, 1f),
+                new Color(0.12f, 0.48f, 0.28f, 0.96f),
+                30);
+            Button achievementsTab = CreateHudButton(
+                "Achievements Tab",
+                navigationRoot.transform,
+                "ACHIEVEMENTS",
+                new Vector2(0.51f, 0f),
+                Vector2.one,
+                new Color(0.20f, 0.32f, 0.58f, 0.96f),
+                30);
+
+            GameObject contractPanel = new GameObject(
+                "Contract Panel",
+                typeof(RectTransform),
+                typeof(Image));
+            contractPanel.transform.SetParent(safeAreaObject.transform, false);
+            RectTransform contractRect = contractPanel.GetComponent<RectTransform>();
+            contractRect.anchorMin = new Vector2(0.5f, 1f);
+            contractRect.anchorMax = new Vector2(0.5f, 1f);
+            contractRect.pivot = new Vector2(0.5f, 1f);
+            contractRect.sizeDelta = new Vector2(900f, 300f);
+            contractRect.anchoredPosition = new Vector2(0f, -454f);
+            contractPanel.GetComponent<Image>().color =
+                new Color(0.04f, 0.08f, 0.055f, 0.93f);
+
+            Text contractDescription = CreateHudLine(
+                "Contract Description",
+                contractPanel.transform,
+                "SELL 20 WOOD",
+                new Vector2(0f, 0.65f),
+                Vector2.one,
+                38);
+            Text contractProgress = CreateHudLine(
+                "Contract Progress",
+                contractPanel.transform,
+                "0 / 20",
+                new Vector2(0f, 0.34f),
+                new Vector2(0.5f, 0.67f),
+                34);
+            Text contractReward = CreateHudLine(
+                "Contract Reward",
+                contractPanel.transform,
+                "REWARD: $150",
+                new Vector2(0.5f, 0.34f),
+                new Vector2(1f, 0.67f),
+                34);
+            Text contractState = CreateHudLine(
+                "Contract State",
+                contractPanel.transform,
+                "ACTIVE",
+                Vector2.zero,
+                new Vector2(0.58f, 0.36f),
+                30);
+            Button claimButton = CreateHudButton(
+                "Claim Contract Button",
+                contractPanel.transform,
+                "CLAIM",
+                new Vector2(0.61f, 0.06f),
+                new Vector2(0.96f, 0.33f),
+                new Color(0.16f, 0.78f, 0.42f, 1f),
+                31);
+            claimButton.gameObject.SetActive(false);
+            contractPanel.SetActive(false);
+
+            GameObject achievementsPanel = new GameObject(
+                "Achievements Panel",
+                typeof(RectTransform),
+                typeof(Image));
+            achievementsPanel.transform.SetParent(safeAreaObject.transform, false);
+            RectTransform achievementsRect =
+                achievementsPanel.GetComponent<RectTransform>();
+            achievementsRect.anchorMin = new Vector2(0.5f, 1f);
+            achievementsRect.anchorMax = new Vector2(0.5f, 1f);
+            achievementsRect.pivot = new Vector2(0.5f, 1f);
+            achievementsRect.sizeDelta = new Vector2(920f, 1050f);
+            achievementsRect.anchoredPosition = new Vector2(0f, -454f);
+            achievementsPanel.GetComponent<Image>().color =
+                new Color(0.035f, 0.055f, 0.10f, 0.96f);
+
+            Text achievementsTitle = CreateHudLine(
+                "Achievements Title",
+                achievementsPanel.transform,
+                "LUMBER CAMP ACHIEVEMENTS",
+                new Vector2(0f, 0.90f),
+                Vector2.one,
+                38);
+            achievementsTitle.alignment = TextAnchor.MiddleCenter;
+
+            GameObject viewport = new GameObject(
+                "Achievements Viewport",
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Mask));
+            viewport.transform.SetParent(achievementsPanel.transform, false);
+            RectTransform viewportRect = viewport.GetComponent<RectTransform>();
+            viewportRect.anchorMin = new Vector2(0.04f, 0.04f);
+            viewportRect.anchorMax = new Vector2(0.96f, 0.89f);
+            viewportRect.offsetMin = Vector2.zero;
+            viewportRect.offsetMax = Vector2.zero;
+            viewport.GetComponent<Image>().color =
+                new Color(0.02f, 0.03f, 0.055f, 0.78f);
+            viewport.GetComponent<Mask>().showMaskGraphic = true;
+
+            GameObject content = new GameObject(
+                "Achievements Content",
+                typeof(RectTransform),
+                typeof(Text),
+                typeof(ContentSizeFitter));
+            content.transform.SetParent(viewport.transform, false);
+            RectTransform contentRect = content.GetComponent<RectTransform>();
+            contentRect.anchorMin = new Vector2(0f, 1f);
+            contentRect.anchorMax = new Vector2(1f, 1f);
+            contentRect.pivot = new Vector2(0.5f, 1f);
+            contentRect.offsetMin = new Vector2(24f, 0f);
+            contentRect.offsetMax = new Vector2(-24f, 0f);
+            Text achievementsText = content.GetComponent<Text>();
+            achievementsText.font = UnityEngine.Resources.GetBuiltinResource<Font>(
+                "LegacyRuntime.ttf");
+            achievementsText.fontSize = 27;
+            achievementsText.fontStyle = FontStyle.Normal;
+            achievementsText.alignment = TextAnchor.UpperLeft;
+            achievementsText.color = Color.white;
+            achievementsText.raycastTarget = false;
+            achievementsText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            achievementsText.verticalOverflow = VerticalWrapMode.Overflow;
+            ContentSizeFitter fitter = content.GetComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            ScrollRect scrollRect = achievementsPanel.AddComponent<ScrollRect>();
+            scrollRect.content = contentRect;
+            scrollRect.viewport = viewportRect;
+            scrollRect.horizontal = false;
+            scrollRect.vertical = true;
+            scrollRect.movementType = ScrollRect.MovementType.Elastic;
+            scrollRect.scrollSensitivity = 38f;
+            achievementsPanel.SetActive(false);
+
+            ProgressionPanelsView panelsView =
+                safeAreaObject.AddComponent<ProgressionPanelsView>();
+            SetObjectReference(panelsView, "progressionService", progressionService);
+            SetObjectReference(panelsView, "contractTabButton", contractTab);
+            SetObjectReference(panelsView, "achievementsTabButton", achievementsTab);
+            SetObjectReference(panelsView, "contractPanelRoot", contractPanel);
+            SetObjectReference(panelsView, "achievementsPanelRoot", achievementsPanel);
+            SetObjectReference(
+                panelsView,
+                "contractDescriptionText",
+                contractDescription);
+            SetObjectReference(panelsView, "contractProgressText", contractProgress);
+            SetObjectReference(panelsView, "contractRewardText", contractReward);
+            SetObjectReference(panelsView, "contractStateText", contractState);
+            SetObjectReference(panelsView, "claimButton", claimButton);
+            SetObjectReference(panelsView, "achievementsListText", achievementsText);
+
+            GameObject toastRoot = new GameObject(
+                "Achievement Toast",
+                typeof(RectTransform),
+                typeof(CanvasGroup),
+                typeof(Image));
+            toastRoot.transform.SetParent(safeAreaObject.transform, false);
+            RectTransform toastRect = toastRoot.GetComponent<RectTransform>();
+            toastRect.anchorMin = new Vector2(0.5f, 0.64f);
+            toastRect.anchorMax = new Vector2(0.5f, 0.64f);
+            toastRect.pivot = new Vector2(0.5f, 0.5f);
+            toastRect.sizeDelta = new Vector2(860f, 150f);
+            toastRect.anchoredPosition = Vector2.zero;
+            toastRoot.GetComponent<Image>().color =
+                new Color(0.10f, 0.34f, 0.20f, 0.96f);
+            toastRoot.GetComponent<Image>().raycastTarget = false;
+            CanvasGroup toastCanvasGroup = toastRoot.GetComponent<CanvasGroup>();
+            toastCanvasGroup.blocksRaycasts = false;
+            toastCanvasGroup.interactable = false;
+            Text toastText = CreateHudLine(
+                "Achievement Toast Text",
+                toastRoot.transform,
+                "ACHIEVEMENT UNLOCKED",
+                Vector2.zero,
+                Vector2.one,
+                34);
+
+            AchievementToastView toastView =
+                safeAreaObject.AddComponent<AchievementToastView>();
+            SetObjectReference(toastView, "progressionService", progressionService);
+            SetObjectReference(toastView, "toastRoot", toastRoot);
+            SetObjectReference(toastView, "canvasGroup", toastCanvasGroup);
+            SetObjectReference(toastView, "toastTransform", toastRect);
+            SetObjectReference(toastView, "toastText", toastText);
+            SetObjectReference(toastView, "audioFeedback", feedbackServices.Audio);
+            SetObjectReference(toastView, "hapticFeedback", feedbackServices.Haptics);
+            SetFloat(toastView, "entranceDuration", 0.20f);
+            SetFloat(toastView, "holdDuration", 0.90f);
+            SetFloat(toastView, "exitDuration", 0.25f);
+            toastRoot.SetActive(false);
+        }
+
+        private static Button CreateHudButton(
+            string name,
+            Transform parent,
+            string label,
+            Vector2 anchorMin,
+            Vector2 anchorMax,
+            Color color,
+            int fontSize)
+        {
+            GameObject buttonObject = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(Image),
+                typeof(Button));
+            buttonObject.transform.SetParent(parent, false);
+            RectTransform rect = buttonObject.GetComponent<RectTransform>();
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.offsetMin = new Vector2(4f, 4f);
+            rect.offsetMax = new Vector2(-4f, -4f);
+            Image image = buttonObject.GetComponent<Image>();
+            image.color = color;
+            Button button = buttonObject.GetComponent<Button>();
+            ColorBlock colors = button.colors;
+            colors.highlightedColor = Color.Lerp(color, Color.white, 0.15f);
+            colors.pressedColor = Color.Lerp(color, Color.black, 0.18f);
+            colors.selectedColor = colors.highlightedColor;
+            button.colors = colors;
+            CreateHudLine(
+                name + " Text",
+                buttonObject.transform,
+                label,
+                Vector2.zero,
+                Vector2.one,
+                fontSize);
+            return button;
         }
 
         private static void CreateWelcomeBackUi(
@@ -3943,6 +4281,7 @@ namespace IndustryTycoon.Editor
                 carryStack,
                 productionUpgrade,
                 workerAutomation);
+            ValidateM10Scene(scene);
             ValidateCoreLoopLogic();
             ValidateM3Logic();
             ValidateM4Logic();
@@ -3950,6 +4289,7 @@ namespace IndustryTycoon.Editor
             ValidateM6Logic();
             ValidateM7Logic();
             ValidateM8Logic();
+            ValidateM10Logic();
         }
 
         private static void ValidateM9Scene(
@@ -4013,6 +4353,7 @@ namespace IndustryTycoon.Editor
                     && service.PackingStationUnlock == packingUnlock
                     && service.CourierUnlock == courierUnlock
                     && service.LumberCampCompletion == completion
+                    && service.ProgressionService != null
                     && GetObjectReference(service, "nextUnlockGuidance") == guidance,
                 "M9 persistence is not wired to the authoritative M1-M8 state graph.");
             Require(service.Stockpile != null
@@ -4077,6 +4418,103 @@ namespace IndustryTycoon.Editor
 
             Require(eventSystemCount == 1 && welcomeBackCount == 1,
                 "M9 requires exactly one EventSystem and one Welcome Back screen instance.");
+        }
+
+        private static void ValidateM10Scene(Scene scene)
+        {
+            GameObject progressionRoot = FindRoot(scene, "Lumber Camp Progression");
+            GameObject persistenceRoot = FindRoot(scene, "Local Persistence");
+            GameObject hudRoot = FindRoot(scene, "HUD");
+            Require(progressionRoot != null
+                    && persistenceRoot != null
+                    && hudRoot != null,
+                "M10 progression, persistence, or HUD root is missing.");
+
+            LumberCampProgressionService progression =
+                progressionRoot.GetComponent<LumberCampProgressionService>();
+            LocalPersistenceService persistence =
+                persistenceRoot.GetComponent<LocalPersistenceService>();
+            NextUnlockGuidance objective =
+                hudRoot.GetComponentInChildren<NextUnlockGuidance>(true);
+            ProgressionPanelsView panels =
+                hudRoot.GetComponentInChildren<ProgressionPanelsView>(true);
+            AchievementToastView toast =
+                hudRoot.GetComponentInChildren<AchievementToastView>(true);
+            Require(progression != null
+                    && persistence != null
+                    && objective != null
+                    && panels != null
+                    && toast != null,
+                "M10 runtime service or portrait views are missing.");
+
+            Require(progression.Wallet != null
+                    && progression.WoodSpawner != null
+                    && progression.ResourceCollector != null
+                    && progression.SalePoint != null
+                    && progression.Processor != null
+                    && progression.PackingStation != null
+                    && progression.Courier != null
+                    && progression.ProductionUpgrade != null
+                    && progression.WorkerUnlock != null
+                    && progression.ProcessorUnlock != null
+                    && progression.AutoFeederUnlock != null
+                    && progression.PackingStationUnlock != null
+                    && progression.CourierUnlock != null
+                    && progression.LumberCampCompletion != null
+                    && persistence.ProgressionService == progression,
+                "M10 service is not wired to authoritative commits/persistence.");
+            Require(objective.ProgressionService == progression
+                    && objective.GuidanceText != null
+                    && objective.GuidanceText.text == "OBJECTIVE: UNLOCK WORKER",
+                "M10 did not generalize the single M8 guidance line.");
+
+            Require(panels.ProgressionService == progression
+                    && panels.ContractTabButton != null
+                    && panels.AchievementsTabButton != null
+                    && panels.ContractPanelRoot != null
+                    && !panels.ContractPanelRoot.activeSelf
+                    && panels.AchievementsPanelRoot != null
+                    && !panels.AchievementsPanelRoot.activeSelf
+                    && panels.ContractDescriptionText != null
+                    && panels.ContractProgressText != null
+                    && panels.ContractRewardText != null
+                    && panels.ContractStateText != null
+                    && panels.ClaimButton != null
+                    && !panels.ClaimButton.gameObject.activeSelf
+                    && panels.AchievementsListText != null,
+                "M10 one-slot Contract/Achievement panels are incomplete.");
+            ScrollRect achievementsScroll =
+                panels.AchievementsPanelRoot.GetComponent<ScrollRect>();
+            Require(achievementsScroll != null
+                    && achievementsScroll.vertical
+                    && !achievementsScroll.horizontal
+                    && achievementsScroll.viewport != null
+                    && achievementsScroll.content != null
+                    && achievementsScroll.viewport.GetComponent<Mask>() != null
+                    && achievementsScroll.content.GetComponent<ContentSizeFitter>() != null,
+                "M10 Achievements list is not a bounded vertical ScrollRect.");
+
+            Require(toast.ProgressionService == progression
+                    && toast.ToastRoot != null
+                    && !toast.ToastRoot.activeSelf
+                    && toast.CanvasGroup != null
+                    && !toast.CanvasGroup.blocksRaycasts
+                    && !toast.CanvasGroup.interactable
+                    && toast.ToastText != null
+                    && Mathf.Approximately(toast.EntranceDuration, 0.20f)
+                    && Mathf.Approximately(toast.HoldDuration, 0.90f)
+                    && Mathf.Approximately(toast.ExitDuration, 0.25f),
+                "M10 Achievement toast is not short, queued, and nonblocking.");
+
+            Require(progressionRoot
+                        .GetComponents<LumberCampProgressionService>().Length == 1
+                    && hudRoot
+                        .GetComponentsInChildren<NextUnlockGuidance>(true).Length == 1
+                    && hudRoot
+                        .GetComponentsInChildren<ProgressionPanelsView>(true).Length == 1
+                    && hudRoot
+                        .GetComponentsInChildren<AchievementToastView>(true).Length == 1,
+                "M10 created duplicate progression services or HUD systems.");
         }
 
         private static void ValidateM4Scene(
@@ -4924,14 +5362,13 @@ namespace IndustryTycoon.Editor
                     && guidance.Completion == completion
                     && guidance.GuidanceText != null,
                 "Next Unlock guidance references are incomplete.");
-            Require(guidance.GuidanceText.text
-                    == "NEXT: PRODUCTION UPGRADE\n$0 / $120",
-                "Next Unlock initial copy must show authoritative paid / total progress.");
+            Require(guidance.GuidanceText.text == "OBJECTIVE: UNLOCK WORKER",
+                "M10 objective copy must replace the old Next Unlock HUD.");
             RectTransform guidanceRect = guidance.GetComponent<RectTransform>();
             Require(guidanceRect != null
-                    && guidanceRect.sizeDelta.x <= 880f
-                    && guidanceRect.sizeDelta.y <= 150f,
-                "Next Unlock HUD must remain compact in portrait safe area.");
+                    && guidanceRect.sizeDelta.x <= 920f
+                    && guidanceRect.sizeDelta.y <= 110f,
+                "Main Objective HUD must remain one compact portrait line.");
 
             Require(completionFeedback.Completion == completion
                     && completionFeedback.BannerRoot != null
@@ -6105,6 +6542,89 @@ namespace IndustryTycoon.Editor
             {
                 Object.DestroyImmediate(probeObject);
             }
+        }
+
+        private static void ValidateM10Logic()
+        {
+            Require(M9SaveSchema.CurrentVersion == M9SaveSchema.Version2,
+                "M10 requires local save schema version 2.");
+            Require(LumberCampProgressionCatalog.MetricCount == 10
+                    && LumberCampProgressionCatalog.FlagCount == 7
+                    && LumberCampProgressionCatalog.ObjectiveCount == 9
+                    && LumberCampProgressionCatalog.ContractCount == 5
+                    && LumberCampProgressionCatalog.AchievementCount == 15,
+                "M10 catalog sizes changed unexpectedly.");
+
+            ProgressFlagId[] objectiveFlags =
+            {
+                ProgressFlagId.WorkerUnlocked,
+                ProgressFlagId.ProcessorUnlocked,
+                default,
+                ProgressFlagId.AutoFeederUnlocked,
+                ProgressFlagId.PackingStationUnlocked,
+                default,
+                ProgressFlagId.CourierUnlocked,
+                default,
+                ProgressFlagId.LumberCampCompleted
+            };
+            long[] objectiveTargets = { 1L, 1L, 10L, 1L, 1L, 5L, 1L, 5L, 1L };
+            for (int i = 0; i < LumberCampProgressionCatalog.ObjectiveCount; i++)
+            {
+                MainObjectiveDefinition objective =
+                    LumberCampProgressionCatalog.GetObjective(i);
+                Require((int)objective.Id == i
+                        && objective.Target == objectiveTargets[i],
+                    $"M10 objective {i} order/target changed.");
+                if (objective.ConditionKind == ObjectiveConditionKind.Flag)
+                {
+                    Require(objective.Flag == objectiveFlags[i],
+                        $"M10 objective {i} uses the wrong unlock flag.");
+                }
+            }
+
+            long[] contractTargets = { 20L, 15L, 20L, 10L, 10L };
+            int[] contractRewards = { 150, 250, 300, 400, 600 };
+            var stableIds = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < LumberCampProgressionCatalog.ContractCount; i++)
+            {
+                LumberCampContractDefinition contract =
+                    LumberCampProgressionCatalog.GetContract(i);
+                Require((int)contract.Id == i
+                        && contract.Target == contractTargets[i]
+                        && contract.RewardCash == contractRewards[i]
+                        && stableIds.Add(contract.StableId),
+                    $"M10 Contract {i} definition is invalid or duplicated.");
+            }
+
+            int[] achievementRewards =
+            {
+                50, 75, 100, 125, 150, 200, 150, 150,
+                200, 250, 250, 300, 500, 250, 500
+            };
+            stableIds.Clear();
+            for (int i = 0;
+                 i < LumberCampProgressionCatalog.AchievementCount;
+                 i++)
+            {
+                LumberCampAchievementDefinition achievement =
+                    LumberCampProgressionCatalog.GetAchievement(i);
+                Require((int)achievement.Id == i
+                        && achievement.RewardCash == achievementRewards[i]
+                        && stableIds.Add(achievement.StableId),
+                    $"M10 Achievement {i} definition is invalid or duplicated.");
+            }
+
+            M10ProgressionSaveData fresh = M10ProgressionSaveData.CreateFresh();
+            Require(M10ProgressionSaveValidator.TryNormalize(
+                        fresh,
+                        out M10ProgressionSaveData normalized,
+                        out string failure)
+                    && normalized.objectiveIndex == 0
+                    && normalized.activeContractIndex == 0
+                    && normalized.activeContractBaseline == 0L
+                    && normalized.activeContractState
+                    == ContractProgressState.Active,
+                "Fresh M10 state did not normalize deterministically: " + failure);
         }
 
         private static void DepositValidationWood(WoodStockpile stockpile)

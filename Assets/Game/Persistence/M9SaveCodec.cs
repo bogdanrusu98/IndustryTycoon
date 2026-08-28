@@ -1,4 +1,6 @@
 using System;
+using IndustryTycoon.Core;
+using IndustryTycoon.Progression;
 using UnityEngine;
 
 namespace IndustryTycoon.Persistence
@@ -18,28 +20,37 @@ namespace IndustryTycoon.Persistence
         private M9SaveDecodeResult(
             M9SaveDecodeStatus status,
             M9SaveData data,
-            string diagnostic)
+            string diagnostic,
+            bool wasMigrated)
         {
             Status = status;
             Data = data;
             Diagnostic = diagnostic ?? string.Empty;
+            WasMigrated = wasMigrated;
         }
 
         public M9SaveDecodeStatus Status { get; }
         public M9SaveData Data { get; }
         public string Diagnostic { get; }
+        public bool WasMigrated { get; }
         public bool IsSuccess => Status == M9SaveDecodeStatus.Success && Data != null;
 
-        internal static M9SaveDecodeResult Succeeded(M9SaveData data)
+        internal static M9SaveDecodeResult Succeeded(
+            M9SaveData data,
+            bool wasMigrated = false)
         {
-            return new M9SaveDecodeResult(M9SaveDecodeStatus.Success, data, null);
+            return new M9SaveDecodeResult(
+                M9SaveDecodeStatus.Success,
+                data,
+                null,
+                wasMigrated);
         }
 
         internal static M9SaveDecodeResult Failed(
             M9SaveDecodeStatus status,
             string diagnostic)
         {
-            return new M9SaveDecodeResult(status, null, diagnostic);
+            return new M9SaveDecodeResult(status, null, diagnostic, false);
         }
     }
 
@@ -50,6 +61,28 @@ namespace IndustryTycoon.Persistence
         {
             public string schema = null;
             public int version = 0;
+        }
+
+        [Serializable]
+        private sealed class Version1SaveData
+        {
+            public string schema;
+            public int version;
+            public int walletCash;
+            public int cashPileStoredCash;
+            public M9CarrySaveRecord carry;
+            public M9PurchasePadSaveRecord[] purchasePads;
+            public bool lumberCampCompleted;
+            public int stockpileWood;
+            public int processorInputWood;
+            public int processorOutputPlanks;
+            public int packingInputPlanks;
+            public int packingOutputCrates;
+            public int pendingOfflineCash;
+            public long pendingOfflineAwaySeconds;
+            public bool returnScreenPending;
+            public long lastEvaluationUtcUnixSeconds;
+            public long lastWriteUtcUnixSeconds;
         }
 
         public static M9SaveDecodeResult Decode(
@@ -97,8 +130,13 @@ namespace IndustryTycoon.Persistence
             // Future schema migrations enter through this explicit version switch.
             switch (header.version)
             {
-                case 1:
+                case M9SaveSchema.Version1:
                     return DecodeVersion1(
+                        trimmedJson,
+                        validationSettings,
+                        fallbackUtcUnixSeconds);
+                case M9SaveSchema.Version2:
+                    return DecodeVersion2(
                         trimmedJson,
                         validationSettings,
                         fallbackUtcUnixSeconds);
@@ -158,6 +196,80 @@ namespace IndustryTycoon.Persistence
             M9SaveValidationSettings validationSettings,
             long fallbackUtcUnixSeconds)
         {
+            Version1SaveData legacy;
+            try
+            {
+                legacy = JsonUtility.FromJson<Version1SaveData>(json);
+            }
+            catch (Exception exception)
+            {
+                return M9SaveDecodeResult.Failed(
+                    M9SaveDecodeStatus.MalformedJson,
+                    $"Save body could not be decoded: {exception.Message}");
+            }
+
+            if (legacy == null)
+            {
+                return M9SaveDecodeResult.Failed(
+                    M9SaveDecodeStatus.ValidationFailed,
+                    "Version 1 save body is missing.");
+            }
+
+            var migrated = new M9SaveData
+            {
+                schema = legacy.schema,
+                version = M9SaveSchema.Version2,
+                walletCash = legacy.walletCash,
+                cashPileStoredCash = legacy.cashPileStoredCash,
+                carry = legacy.carry,
+                purchasePads = legacy.purchasePads,
+                lumberCampCompleted = legacy.lumberCampCompleted,
+                stockpileWood = legacy.stockpileWood,
+                processorInputWood = legacy.processorInputWood,
+                processorOutputPlanks = legacy.processorOutputPlanks,
+                packingInputPlanks = legacy.packingInputPlanks,
+                packingOutputCrates = legacy.packingOutputCrates,
+                pendingOfflineCash = legacy.pendingOfflineCash,
+                pendingOfflineAwaySeconds = legacy.pendingOfflineAwaySeconds,
+                returnScreenPending = legacy.returnScreenPending,
+                lastEvaluationUtcUnixSeconds = legacy.lastEvaluationUtcUnixSeconds,
+                lastWriteUtcUnixSeconds = legacy.lastWriteUtcUnixSeconds,
+                progression = M10ProgressionSaveData.CreateFresh()
+            };
+
+            if (!M9SaveValidator.TryNormalize(
+                    migrated,
+                    validationSettings,
+                    fallbackUtcUnixSeconds,
+                    out M9SaveData normalized,
+                    out string validationFailure))
+            {
+                return M9SaveDecodeResult.Failed(
+                    M9SaveDecodeStatus.ValidationFailed,
+                    validationFailure);
+            }
+
+            GrandfatherExactVersion1Achievements(normalized.progression);
+            if (!M9SaveValidator.TryNormalize(
+                    normalized,
+                    validationSettings,
+                    fallbackUtcUnixSeconds,
+                    out normalized,
+                    out validationFailure))
+            {
+                return M9SaveDecodeResult.Failed(
+                    M9SaveDecodeStatus.ValidationFailed,
+                    validationFailure);
+            }
+
+            return M9SaveDecodeResult.Succeeded(normalized, true);
+        }
+
+        private static M9SaveDecodeResult DecodeVersion2(
+            string json,
+            M9SaveValidationSettings validationSettings,
+            long fallbackUtcUnixSeconds)
+        {
             M9SaveData decoded;
             try
             {
@@ -183,6 +295,52 @@ namespace IndustryTycoon.Persistence
             }
 
             return M9SaveDecodeResult.Succeeded(normalized);
+        }
+
+        private static void GrandfatherExactVersion1Achievements(
+            M10ProgressionSaveData progression)
+        {
+            if (progression == null)
+            {
+                return;
+            }
+
+            if (progression.GetFlag(ProgressFlagId.WorkerUnlocked))
+            {
+                progression.GrandfatherAchievement(
+                    LumberCampAchievementId.FirstHire);
+            }
+
+            if (progression.GetFlag(ProgressFlagId.ProcessorUnlocked))
+            {
+                progression.GrandfatherAchievement(
+                    LumberCampAchievementId.ProcessingBegins);
+            }
+
+            if (progression.GetFlag(ProgressFlagId.AutoFeederUnlocked))
+            {
+                progression.GrandfatherAchievement(
+                    LumberCampAchievementId.AutomationOnline);
+            }
+
+            if (progression.GetFlag(ProgressFlagId.CourierUnlocked))
+            {
+                progression.GrandfatherAchievement(
+                    LumberCampAchievementId.DeliveryService);
+            }
+
+            if (progression.GetFlag(ProgressFlagId.WorkerUnlocked)
+                && progression.GetFlag(ProgressFlagId.AutoFeederUnlocked))
+            {
+                progression.GrandfatherAchievement(
+                    LumberCampAchievementId.FullyAutomatedInput);
+            }
+
+            if (progression.GetFlag(ProgressFlagId.LumberCampCompleted))
+            {
+                progression.GrandfatherAchievement(
+                    LumberCampAchievementId.LumberCampComplete);
+            }
         }
     }
 }

@@ -20,19 +20,23 @@ namespace IndustryTycoon.Persistence
         internal M9SaveLoadResult(
             M9SaveLoadStatus status,
             M9SaveData data,
-            string diagnostic)
+            string diagnostic,
+            bool wasMigrated = false)
         {
             Status = status;
             Data = data;
             Diagnostic = diagnostic ?? string.Empty;
+            WasMigrated = wasMigrated;
         }
 
         public M9SaveLoadStatus Status { get; }
         public M9SaveData Data { get; }
         public string Diagnostic { get; }
+        public bool WasMigrated { get; }
         public bool LoadedExisting => Status == M9SaveLoadStatus.LoadedPrimary
                                       || Status == M9SaveLoadStatus.RecoveredBackup;
-        public bool ShouldRewritePrimary => Status != M9SaveLoadStatus.LoadedPrimary;
+        public bool ShouldRewritePrimary => Status != M9SaveLoadStatus.LoadedPrimary
+                                            || WasMigrated;
     }
 
     public enum M9SaveWriteStatus
@@ -142,7 +146,8 @@ namespace IndustryTycoon.Persistence
                         return new M9SaveLoadResult(
                             M9SaveLoadStatus.LoadedPrimary,
                             primaryDecode.Data,
-                            null);
+                            null,
+                            primaryDecode.WasMigrated);
                     }
                 }
 
@@ -159,7 +164,8 @@ namespace IndustryTycoon.Persistence
                         backupDecode.Data,
                         JoinDiagnostics(
                             BuildDiagnostic(primaryDecode, primaryIoFailure),
-                            repairFailure));
+                            repairFailure),
+                        backupDecode.WasMigrated);
                 }
 
                 if (hasPrimary && primaryDecode != null && !primaryDecode.IsSuccess)

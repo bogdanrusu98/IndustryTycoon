@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using IndustryTycoon.Core;
 using IndustryTycoon.Persistence;
+using IndustryTycoon.Progression;
 using UnityEditor;
 using UnityEngine;
 
@@ -51,6 +52,9 @@ namespace IndustryTycoon.Editor
             Run("Corrupt and unsupported fallback", TestInvalidFileFallbacks);
             Run("Invalid value normalization/rejection", TestValidationBoundaries);
             Run("Reset returns exact fresh state", TestStoreReset);
+            Run("Schema v1 to v2 migration", TestVersion1Migration);
+            Run("Migrated v2 resave is idempotent", TestMigratedResave);
+            Run("Corrupt M10 structure fallback", TestCorruptM10Fallback);
 
             Run("Negative, invalid, capped elapsed and efficiency", TestElapsedRules);
             Run("Automation gates and Worker production", TestAutomationGates);
@@ -100,7 +104,7 @@ namespace IndustryTycoon.Editor
             string[] forbiddenTransientFields =
             {
                 "reservation",
-                "claim",
+                "resourceclaim",
                 "workertarget",
                 "couriertarget",
                 "inflight",
@@ -376,6 +380,153 @@ namespace IndustryTycoon.Editor
                 M9SaveLoadResult load = store.Load();
                 Require(load.Status == M9SaveLoadStatus.FreshNoSave,
                     "Reset save did not return to no-save state.");
+                AssertFresh(load.Data, BaselineUtc);
+            }
+        }
+
+        private static void TestVersion1Migration()
+        {
+            M9SaveDecodeResult result = M9SaveCodec.Decode(
+                BuildVersion1Fixture(),
+                CreateValidationSettings(),
+                BaselineUtc);
+            Require(result.IsSuccess && result.WasMigrated,
+                "A valid M9 v1 save did not take the explicit migration path.");
+            M9SaveData migrated = result.Data;
+            Require(migrated.version == M9SaveSchema.Version2,
+                "Migrated save did not become schema v2.");
+            Require(migrated.walletCash == 731
+                    && migrated.cashPileStoredCash == 219
+                    && migrated.carry.resourceType == ResourceType.Crate
+                    && migrated.carry.amount == 7,
+                "Migration changed M9 economy or CarryStack state.");
+            Require(migrated.stockpileWood == 17
+                    && migrated.processorInputWood == 9
+                    && migrated.processorOutputPlanks == 8
+                    && migrated.packingInputPlanks == 11
+                    && migrated.packingOutputCrates == 6
+                    && migrated.pendingOfflineCash == 240
+                    && migrated.pendingOfflineAwaySeconds == 7200L
+                    && migrated.returnScreenPending,
+                "Migration changed M9 buffers or pending-return state.");
+            for (int i = 0; i < M9PurchasePadIds.Count; i++)
+            {
+                Require(migrated.purchasePads[i].completed
+                        && migrated.purchasePads[i].paidCash
+                        == M9PurchasePadIds.GetTotalCost(i),
+                    $"Migration changed completed PurchasePad {i}.");
+            }
+
+            for (int i = 0; i < LumberCampProgressionCatalog.MetricCount; i++)
+            {
+                Require(migrated.progression.GetMetric((ProgressMetricId)i) == 0L,
+                    $"Migration invented historical metric {(ProgressMetricId)i}.");
+            }
+
+            Require(migrated.progression.GetFlag(
+                        ProgressFlagId.ProductionUpgradeUnlocked)
+                    && migrated.progression.GetFlag(ProgressFlagId.WorkerUnlocked)
+                    && migrated.progression.GetFlag(ProgressFlagId.ProcessorUnlocked)
+                    && migrated.progression.GetFlag(ProgressFlagId.AutoFeederUnlocked)
+                    && migrated.progression.GetFlag(
+                        ProgressFlagId.PackingStationUnlocked)
+                    && migrated.progression.GetFlag(ProgressFlagId.CourierUnlocked)
+                    && migrated.progression.GetFlag(
+                        ProgressFlagId.LumberCampCompleted),
+                "Migration did not seed exact canonical unlock/completion flags.");
+            Require(migrated.progression.objectiveIndex == 2,
+                "Zero historical metrics should stop migrated objectives at Produce Planks.");
+            Require(migrated.progression.activeContractIndex == 0
+                    && migrated.progression.activeContractBaseline == 0L
+                    && migrated.progression.activeContractState
+                    == ContractProgressState.Active,
+                "Migration did not create the safe first-contract baseline.");
+
+            LumberCampAchievementId[] grandfathered =
+            {
+                LumberCampAchievementId.FirstHire,
+                LumberCampAchievementId.ProcessingBegins,
+                LumberCampAchievementId.AutomationOnline,
+                LumberCampAchievementId.DeliveryService,
+                LumberCampAchievementId.FullyAutomatedInput,
+                LumberCampAchievementId.LumberCampComplete
+            };
+            for (int i = 0; i < grandfathered.Length; i++)
+            {
+                M10AchievementSaveRecord record = migrated.progression
+                    .FindAchievementRecord((int)grandfathered[i]);
+                Require(record != null && record.unlocked && record.rewarded,
+                    $"Exact migrated achievement {grandfathered[i]} was not grandfathered safely.");
+            }
+
+            Require(migrated.walletCash == 731,
+                "Grandfathered achievements changed the migrated Wallet.");
+        }
+
+        private static void TestMigratedResave()
+        {
+            using (var scope = new TemporarySaveScope())
+            {
+                var clock = new ManualUtcClock(BaselineUtc);
+                M9LocalSaveStore store = scope.CreateStore(clock);
+                Directory.CreateDirectory(store.DirectoryPath);
+                File.WriteAllText(store.PrimaryPath, BuildVersion1Fixture());
+
+                M9SaveLoadResult migrated = store.Load();
+                Require(migrated.LoadedExisting
+                        && migrated.WasMigrated
+                        && migrated.ShouldRewritePrimary,
+                    "Store did not expose the required v1 rewrite state.");
+                M9SaveWriteResult write = store.Save(migrated.Data);
+                Require(write.IsSuccess && write.PersistedData.version == 2,
+                    "Migrated state did not resave as schema v2.");
+
+                M9SaveLoadResult secondLoad = store.Load();
+                Require(secondLoad.Status == M9SaveLoadStatus.LoadedPrimary
+                        && !secondLoad.WasMigrated
+                        && !secondLoad.ShouldRewritePrimary,
+                    "A resaved v2 file remigrated destructively.");
+                AssertEquivalent(
+                    write.PersistedData,
+                    secondLoad.Data,
+                    includeWriteTimestamp: true);
+            }
+        }
+
+        private static void TestCorruptM10Fallback()
+        {
+            using (var scope = new TemporarySaveScope())
+            {
+                M9LocalSaveStore store = scope.CreateStore(
+                    new ManualUtcClock(BaselineUtc));
+                M9SaveData corrupt = M9SaveData.CreateFresh(BaselineUtc);
+                corrupt.progression.metrics = new M10MetricSaveRecord[0];
+                Directory.CreateDirectory(store.DirectoryPath);
+                File.WriteAllText(
+                    store.PrimaryPath,
+                    JsonUtility.ToJson(corrupt));
+
+                M9SaveLoadResult load = store.Load();
+                Require(load.Status == M9SaveLoadStatus.FreshInvalidSave,
+                    "Structurally corrupt M10 records bypassed controlled fallback.");
+                AssertFresh(load.Data, BaselineUtc);
+            }
+
+            using (var scope = new TemporarySaveScope())
+            {
+                M9LocalSaveStore store = scope.CreateStore(
+                    new ManualUtcClock(BaselineUtc));
+                M9SaveData contradictory = M9SaveData.CreateFresh(BaselineUtc);
+                contradictory.progression.flags[
+                    (int)ProgressFlagId.WorkerUnlocked].value = true;
+                Directory.CreateDirectory(store.DirectoryPath);
+                File.WriteAllText(
+                    store.PrimaryPath,
+                    JsonUtility.ToJson(contradictory));
+
+                M9SaveLoadResult load = store.Load();
+                Require(load.Status == M9SaveLoadStatus.FreshInvalidSave,
+                    "M10 unlock flag contradicting its PurchasePad bypassed fallback.");
                 AssertFresh(load.Data, BaselineUtc);
             }
         }
@@ -804,7 +955,59 @@ namespace IndustryTycoon.Editor
             data.pendingOfflineCash = 240;
             data.pendingOfflineAwaySeconds = 7200L;
             data.returnScreenPending = true;
+            M10ProgressionSaveData progression = data.progression;
+            for (int i = 0; i < LumberCampProgressionCatalog.MetricCount; i++)
+            {
+                progression.metrics[i].value = (i + 1L) * 17L;
+            }
+
+            for (int i = 0; i < LumberCampProgressionCatalog.FlagCount; i++)
+            {
+                progression.flags[i].value = true;
+            }
+
+            progression.claimedContracts[0] = true;
+            progression.objectiveIndex = LumberCampProgressionCatalog.ObjectiveCount;
+            progression.activeContractIndex = 1;
+            progression.activeContractBaseline = 80L;
+            progression.activeContractState = ContractProgressState.Active;
+            for (int i = 0; i < progression.achievements.Length; i++)
+            {
+                progression.achievements[i].unlocked = i < 6;
+                progression.achievements[i].rewarded = i < 5;
+            }
+
             return data;
+        }
+
+        private static string BuildVersion1Fixture()
+        {
+            // Literal legacy fixture: it intentionally contains no M10 fields.
+            return "{"
+                   + "\"schema\":\"industry-tycoon-local-save\","
+                   + "\"version\":1,"
+                   + "\"walletCash\":731,"
+                   + "\"cashPileStoredCash\":219,"
+                   + "\"carry\":{\"resourceType\":2,\"amount\":7},"
+                   + "\"purchasePads\":["
+                   + "{\"id\":\"production_upgrade\",\"paidCash\":120,\"completed\":true},"
+                   + "{\"id\":\"lumber_worker\",\"paidCash\":240,\"completed\":true},"
+                   + "{\"id\":\"wood_processor\",\"paidCash\":360,\"completed\":true},"
+                   + "{\"id\":\"auto_feeder\",\"paidCash\":600,\"completed\":true},"
+                   + "{\"id\":\"packing_station\",\"paidCash\":900,\"completed\":true},"
+                   + "{\"id\":\"delivery_courier\",\"paidCash\":1500,\"completed\":true}],"
+                   + "\"lumberCampCompleted\":true,"
+                   + "\"stockpileWood\":17,"
+                   + "\"processorInputWood\":9,"
+                   + "\"processorOutputPlanks\":8,"
+                   + "\"packingInputPlanks\":11,"
+                   + "\"packingOutputCrates\":6,"
+                   + "\"pendingOfflineCash\":240,"
+                   + "\"pendingOfflineAwaySeconds\":7200,"
+                   + "\"returnScreenPending\":true,"
+                   + "\"lastEvaluationUtcUnixSeconds\":2000000000,"
+                   + "\"lastWriteUtcUnixSeconds\":2000000000"
+                   + "}";
         }
 
         private static void CompletePad(M9SaveData data, int index)
@@ -851,6 +1054,47 @@ namespace IndustryTycoon.Editor
             Require(data.lastEvaluationUtcUnixSeconds == expectedTimestamp
                     && data.lastWriteUtcUnixSeconds == expectedTimestamp,
                 "Fresh timestamps were not initialized from the injected UTC clock.");
+            Require(data.progression != null
+                    && data.progression.metrics.Length
+                    == LumberCampProgressionCatalog.MetricCount
+                    && data.progression.flags.Length
+                    == LumberCampProgressionCatalog.FlagCount
+                    && data.progression.achievements.Length
+                    == LumberCampProgressionCatalog.AchievementCount
+                    && data.progression.claimedContracts.Length
+                    == LumberCampProgressionCatalog.ContractCount,
+                "Fresh M10 canonical record sets are missing.");
+            for (int i = 0; i < LumberCampProgressionCatalog.MetricCount; i++)
+            {
+                Require(data.progression.GetMetric((ProgressMetricId)i) == 0L,
+                    $"Fresh metric {(ProgressMetricId)i} is nonzero.");
+            }
+
+            for (int i = 0; i < LumberCampProgressionCatalog.FlagCount; i++)
+            {
+                Require(!data.progression.GetFlag((ProgressFlagId)i),
+                    $"Fresh flag {(ProgressFlagId)i} is set.");
+            }
+
+            Require(data.progression.objectiveIndex == 0
+                    && data.progression.activeContractIndex == 0
+                    && data.progression.activeContractBaseline == 0L
+                    && data.progression.activeContractState
+                    == ContractProgressState.Active,
+                "Fresh objective or first-contract state is not exact.");
+            for (int i = 0; i < LumberCampProgressionCatalog.ContractCount; i++)
+            {
+                Require(!data.progression.claimedContracts[i],
+                    $"Fresh contract {i} is already claimed.");
+            }
+
+            for (int i = 0; i < LumberCampProgressionCatalog.AchievementCount; i++)
+            {
+                M10AchievementSaveRecord record =
+                    data.progression.FindAchievementRecord(i);
+                Require(record != null && !record.unlocked && !record.rewarded,
+                    $"Fresh achievement {i} is not locked/unrewarded.");
+            }
         }
 
         private static void AssertEquivalent(
@@ -900,6 +1144,55 @@ namespace IndustryTycoon.Editor
                         == actual.lastWriteUtcUnixSeconds,
                     "Write timestamp changed unexpectedly.");
             }
+
+            AssertProgressionEquivalent(expected.progression, actual.progression);
+        }
+
+        private static void AssertProgressionEquivalent(
+            M10ProgressionSaveData expected,
+            M10ProgressionSaveData actual)
+        {
+            Require(expected != null && actual != null,
+                "M10 progression comparison received null data.");
+            for (int i = 0; i < LumberCampProgressionCatalog.MetricCount; i++)
+            {
+                ProgressMetricId metric = (ProgressMetricId)i;
+                Require(expected.GetMetric(metric) == actual.GetMetric(metric),
+                    $"Metric {metric} changed during persistence.");
+            }
+
+            for (int i = 0; i < LumberCampProgressionCatalog.FlagCount; i++)
+            {
+                ProgressFlagId flag = (ProgressFlagId)i;
+                Require(expected.GetFlag(flag) == actual.GetFlag(flag),
+                    $"Flag {flag} changed during persistence.");
+            }
+
+            Require(expected.objectiveIndex == actual.objectiveIndex
+                    && expected.activeContractIndex == actual.activeContractIndex
+                    && expected.activeContractBaseline
+                    == actual.activeContractBaseline
+                    && expected.activeContractState == actual.activeContractState,
+                "Objective or active Contract state changed during persistence.");
+            for (int i = 0; i < LumberCampProgressionCatalog.ContractCount; i++)
+            {
+                Require(expected.claimedContracts[i]
+                        == actual.claimedContracts[i],
+                    $"Contract claim flag {i} changed during persistence.");
+            }
+
+            for (int i = 0; i < LumberCampProgressionCatalog.AchievementCount; i++)
+            {
+                M10AchievementSaveRecord expectedRecord =
+                    expected.FindAchievementRecord(i);
+                M10AchievementSaveRecord actualRecord =
+                    actual.FindAchievementRecord(i);
+                Require(expectedRecord != null
+                        && actualRecord != null
+                        && expectedRecord.unlocked == actualRecord.unlocked
+                        && expectedRecord.rewarded == actualRecord.rewarded,
+                    $"Achievement state {i} changed during persistence.");
+            }
         }
 
         private static long CalculateLogicalChecksum(M9SaveData data)
@@ -918,6 +1211,25 @@ namespace IndustryTycoon.Editor
             {
                 checksum = (checksum * 397L) + data.purchasePads[i].paidCash;
                 checksum = (checksum * 397L) + (data.purchasePads[i].completed ? 1 : 0);
+            }
+
+            if (data.progression != null)
+            {
+                for (int i = 0; i < LumberCampProgressionCatalog.MetricCount; i++)
+                {
+                    checksum = (checksum * 397L)
+                               + data.progression.GetMetric((ProgressMetricId)i);
+                }
+
+                for (int i = 0; i < LumberCampProgressionCatalog.FlagCount; i++)
+                {
+                    checksum = (checksum * 397L)
+                               + (data.progression.GetFlag((ProgressFlagId)i) ? 1 : 0);
+                }
+
+                checksum = (checksum * 397L) + data.progression.objectiveIndex;
+                checksum = (checksum * 397L) + data.progression.activeContractIndex;
+                checksum = (checksum * 397L) + data.progression.activeContractBaseline;
             }
 
             return checksum;
