@@ -7,6 +7,7 @@ using IndustryTycoon.Economy;
 using IndustryTycoon.Feedback;
 using IndustryTycoon.Interaction;
 using IndustryTycoon.Logistics;
+using IndustryTycoon.Mining;
 using IndustryTycoon.Persistence;
 using IndustryTycoon.Player;
 using IndustryTycoon.Processing;
@@ -67,6 +68,35 @@ namespace IndustryTycoon.Editor
             public LumberCampCompletion Completion { get; }
             public LumberCampPacingProbe PacingProbe { get; }
             public ParticleSystem CompletionParticles { get; }
+        }
+
+        private readonly struct M11Services
+        {
+            public M11Services(
+                MineUnlock mineUnlock,
+                IronVein ironVein,
+                SmelterUnlock smelterUnlock,
+                Smelter smelter,
+                DrillUnlock drillUnlock,
+                AutomatedDrill drill,
+                OreStorage oreStorage)
+            {
+                MineUnlock = mineUnlock;
+                IronVein = ironVein;
+                SmelterUnlock = smelterUnlock;
+                Smelter = smelter;
+                DrillUnlock = drillUnlock;
+                Drill = drill;
+                OreStorage = oreStorage;
+            }
+
+            public MineUnlock MineUnlock { get; }
+            public IronVein IronVein { get; }
+            public SmelterUnlock SmelterUnlock { get; }
+            public Smelter Smelter { get; }
+            public DrillUnlock DrillUnlock { get; }
+            public AutomatedDrill Drill { get; }
+            public OreStorage OreStorage { get; }
         }
 
         [MenuItem("Industry Tycoon/Prototype/Rebuild Lumber Camp")]
@@ -255,6 +285,34 @@ namespace IndustryTycoon.Editor
                 MaterialFolder + "/Courier_Accent.mat",
                 new Color(1f, 0.70f, 0.16f),
                 0.26f);
+            Material ironOreMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Iron_Ore.mat",
+                new Color(0.38f, 0.16f, 0.08f),
+                0.12f);
+            Material ironOreAccentMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Iron_Ore_Accent.mat",
+                new Color(0.72f, 0.30f, 0.12f),
+                0.18f);
+            Material ironBarMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Iron_Bar.mat",
+                new Color(0.47f, 0.54f, 0.60f),
+                0.58f);
+            Material mineRockMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Mine_Rock.mat",
+                new Color(0.20f, 0.23f, 0.25f),
+                0.08f);
+            Material smelterMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Smelter.mat",
+                new Color(0.16f, 0.20f, 0.23f),
+                0.30f);
+            Material drillMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Mining_Drill.mat",
+                new Color(0.92f, 0.56f, 0.08f),
+                0.28f);
+            Material pathMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Mine_Path.mat",
+                new Color(0.58f, 0.48f, 0.32f),
+                0.02f);
             Material feedbackParticleMaterial = CreateOrUpdateParticleMaterial(
                 MaterialFolder + "/Feedback_Particle.mat");
 
@@ -264,7 +322,9 @@ namespace IndustryTycoon.Editor
                 plankMaterial,
                 plankAccentMaterial,
                 crateMaterial,
-                crateAccentMaterial);
+                crateAccentMaterial,
+                ironOreMaterial,
+                ironBarMaterial);
             BuildWoodResourcePrefab(barkMaterial, cutMaterial);
             GameObject cashVisualPrefab = BuildCashVisualPrefab(cashMaterial, cashAccentMaterial);
             GameObject playerPrefab = BuildPlayerPrefab(
@@ -277,6 +337,7 @@ namespace IndustryTycoon.Editor
             ConfigureEnvironment();
 
             CreateGround(scene, groundMaterial);
+            CreateMineAccessPath(scene, pathMaterial);
             CreateWalkableBounds(scene);
             GameObject player = InstantiatePrefabInScene(playerPrefab, scene);
             player.name = "Player";
@@ -430,6 +491,26 @@ namespace IndustryTycoon.Editor
                 sawBladeMaterial,
                 purchaseCompleteMaterial,
                 feedbackParticleMaterial);
+            M11Services m11Services = CreateM11Mining(
+                scene,
+                m8Services.Completion,
+                wallet,
+                player.GetComponent<CarryStack>(),
+                playerCollider,
+                cashCollectionTarget,
+                cashVisualPrefab,
+                purchaseMaterial,
+                purchaseCompleteMaterial,
+                cashAccentMaterial,
+                ironOreMaterial,
+                ironOreAccentMaterial,
+                ironBarMaterial,
+                mineRockMaterial,
+                smelterMaterial,
+                drillMaterial,
+                sawBladeMaterial,
+                feedbackParticleMaterial,
+                feedbackServices.Audio);
             LumberCampProgressionService progressionService =
                 CreateM10Progression(
                     scene,
@@ -444,7 +525,8 @@ namespace IndustryTycoon.Editor
                     packingStationUnlock,
                     courierUnlock,
                     courier,
-                    m8Services.Completion);
+                    m8Services.Completion,
+                    m11Services);
             LocalPersistenceService persistenceService = CreateM9Persistence(
                 scene,
                 wallet,
@@ -460,7 +542,8 @@ namespace IndustryTycoon.Editor
                 courier,
                 stockpile,
                 m8Services.Completion,
-                progressionService);
+                progressionService,
+                m11Services);
             CreateLighting(scene);
             NextUnlockGuidance nextUnlockGuidance = CreateHud(
                 scene,
@@ -512,6 +595,7 @@ namespace IndustryTycoon.Editor
             EnsureFolder("Assets/Game/Interaction");
             EnsureFolder("Assets/Game/Feedback");
             EnsureFolder("Assets/Game/Processing");
+            EnsureFolder("Assets/Game/Mining");
             EnsureFolder("Assets/Game/Persistence");
             EnsureFolder("Assets/Game/Camera");
             EnsureFolder("Assets/Game/UI");
@@ -625,7 +709,9 @@ namespace IndustryTycoon.Editor
             Material plankMaterial,
             Material plankAccentMaterial,
             Material crateMaterial,
-            Material crateAccentMaterial)
+            Material crateAccentMaterial,
+            Material ironOreMaterial,
+            Material ironBarMaterial)
         {
             GameObject root = new GameObject("WoodCarryVisual");
             try
@@ -644,10 +730,32 @@ namespace IndustryTycoon.Editor
                 CreateCrateGeometry(crateVisual.transform, crateMaterial, crateAccentMaterial);
                 crateVisual.SetActive(false);
 
+                GameObject ironOreVisual = CreatePrimitiveChild(
+                    "Iron Ore Visual",
+                    PrimitiveType.Sphere,
+                    root.transform,
+                    ironOreMaterial);
+                ironOreVisual.transform.localRotation =
+                    Quaternion.Euler(12f, 28f, -8f);
+                ironOreVisual.transform.localScale =
+                    new Vector3(0.78f, 0.54f, 0.66f);
+                ironOreVisual.SetActive(false);
+
+                GameObject ironBarVisual = CreatePrimitiveChild(
+                    "Iron Bar Visual",
+                    PrimitiveType.Cube,
+                    root.transform,
+                    ironBarMaterial);
+                ironBarVisual.transform.localScale =
+                    new Vector3(0.92f, 0.22f, 0.42f);
+                ironBarVisual.SetActive(false);
+
                 ResourceVisual resourceVisual = root.AddComponent<ResourceVisual>();
                 SetObjectReference(resourceVisual, "woodRoot", woodVisual);
                 SetObjectReference(resourceVisual, "plankRoot", plankVisual);
                 SetObjectReference(resourceVisual, "crateRoot", crateVisual);
+                SetObjectReference(resourceVisual, "ironOreRoot", ironOreVisual);
+                SetObjectReference(resourceVisual, "ironBarRoot", ironBarVisual);
                 root.transform.localScale = Vector3.one * 0.7f;
                 return SavePrefabAndReload(root, WoodVisualPrefabPath);
             }
@@ -924,9 +1032,53 @@ namespace IndustryTycoon.Editor
             GameObject ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
             ground.name = "Ground";
             SceneManager.MoveGameObjectToScene(ground, scene);
-            ground.transform.position = new Vector3(0f, -0.15f, 2f);
-            ground.transform.localScale = new Vector3(24f, 0.3f, 28f);
+            ground.transform.position = new Vector3(1.5f, -0.15f, 7.5f);
+            ground.transform.localScale = new Vector3(31f, 0.3f, 39f);
             ground.GetComponent<MeshRenderer>().sharedMaterial = groundMaterial;
+        }
+
+        private static void CreateMineAccessPath(Scene scene, Material pathMaterial)
+        {
+            GameObject root = new GameObject("Mine Access Path");
+            SceneManager.MoveGameObjectToScene(root, scene);
+            CreatePathSegment(
+                "Lumber Exit",
+                root.transform,
+                new Vector3(2.8f, 0.025f, 7.2f),
+                new Vector3(3.8f, 0.025f, 10.0f),
+                2.4f,
+                pathMaterial);
+            CreatePathSegment(
+                "Mine Approach",
+                root.transform,
+                new Vector3(3.8f, 0.025f, 10.0f),
+                new Vector3(7.2f, 0.025f, 16.2f),
+                2.4f,
+                pathMaterial);
+        }
+
+        private static void CreatePathSegment(
+            string name,
+            Transform parent,
+            Vector3 start,
+            Vector3 end,
+            float width,
+            Material material)
+        {
+            Vector3 direction = end - start;
+            GameObject segment = CreatePrimitiveChild(
+                name,
+                PrimitiveType.Cube,
+                parent,
+                material);
+            segment.transform.position = (start + end) * 0.5f;
+            segment.transform.rotation = Quaternion.LookRotation(
+                direction.normalized,
+                Vector3.up);
+            segment.transform.localScale = new Vector3(
+                width,
+                0.05f,
+                direction.magnitude);
         }
 
         private static void CreateWalkableBounds(Scene scene)
@@ -934,10 +1086,10 @@ namespace IndustryTycoon.Editor
             GameObject root = new GameObject("Walkable Bounds");
             SceneManager.MoveGameObjectToScene(root, scene);
 
-            CreateBoundary("West", root.transform, new Vector3(-12.5f, 1.5f, 2f), new Vector3(1f, 3f, 28f));
-            CreateBoundary("East", root.transform, new Vector3(12.5f, 1.5f, 2f), new Vector3(1f, 3f, 28f));
-            CreateBoundary("South", root.transform, new Vector3(0f, 1.5f, -12.5f), new Vector3(24f, 3f, 1f));
-            CreateBoundary("North", root.transform, new Vector3(0f, 1.5f, 16.5f), new Vector3(24f, 3f, 1f));
+            CreateBoundary("West", root.transform, new Vector3(-14.5f, 1.5f, 7.5f), new Vector3(1f, 3f, 39f));
+            CreateBoundary("East", root.transform, new Vector3(17.5f, 1.5f, 7.5f), new Vector3(1f, 3f, 39f));
+            CreateBoundary("South", root.transform, new Vector3(1.5f, 1.5f, -12.5f), new Vector3(31f, 3f, 1f));
+            CreateBoundary("North", root.transform, new Vector3(1.5f, 1.5f, 27.5f), new Vector3(31f, 3f, 1f));
         }
 
         private static void CreateBoundary(
@@ -972,6 +1124,7 @@ namespace IndustryTycoon.Editor
 
             SmoothFollowCamera followCamera = cameraObject.AddComponent<SmoothFollowCamera>();
             SetObjectReference(followCamera, "target", player);
+            SetVector3(followCamera, "offset", new Vector3(0f, 14f, -10.6f));
             SetFloat(followCamera, "impulseAmplitude", 0.06f);
             SetFloat(followCamera, "impulseDuration", 0.18f);
             followCamera.SnapToTarget();
@@ -1186,7 +1339,7 @@ namespace IndustryTycoon.Editor
             CreateWorldLabel(
                 "Sale Label",
                 root.transform,
-                "SELL MATERIALS\nWOOD $5  PLANK $15  CRATE $40",
+                "SELL MATERIALS\nWOOD $5  PLANK $15  CRATE $40\nORE $10  BAR $30",
                 new Vector3(0f, 1.55f, 0.15f),
                 Color.white);
 
@@ -1213,6 +1366,8 @@ namespace IndustryTycoon.Editor
             SetInteger(salePoint, "woodValue", 5);
             SetInteger(salePoint, "plankValue", 15);
             SetInteger(salePoint, "crateValue", 40);
+            SetInteger(salePoint, "ironOreValue", 10);
+            SetInteger(salePoint, "ironBarValue", 30);
             SetFloat(salePoint, "unloadInterval", 0.2f);
 
             SalePointFeedback saleFeedback = root.AddComponent<SalePointFeedback>();
@@ -2852,7 +3007,7 @@ namespace IndustryTycoon.Editor
         {
             GameObject mineRoot = new GameObject("Mine Teaser");
             SceneManager.MoveGameObjectToScene(mineRoot, scene);
-            mineRoot.transform.position = new Vector3(7.2f, 0f, 13.1f);
+            mineRoot.transform.position = new Vector3(7.2f, 0f, 17.3f);
 
             GameObject platform = CreatePrimitiveChild(
                 "Mine Preview Platform",
@@ -2862,10 +3017,13 @@ namespace IndustryTycoon.Editor
             platform.transform.localPosition = new Vector3(0f, 0.16f, 0f);
             platform.transform.localScale = new Vector3(4.1f, 0.30f, 2.35f);
 
+            GameObject lockedPresentationRoot = new GameObject("Mine Locked Presentation");
+            lockedPresentationRoot.transform.SetParent(mineRoot.transform, false);
+
             GameObject barrierLeft = CreatePrimitiveChild(
                 "Locked Barrier Left",
                 PrimitiveType.Cube,
-                mineRoot.transform,
+                lockedPresentationRoot.transform,
                 completionMaterial);
             barrierLeft.transform.localPosition = new Vector3(-1.35f, 0.72f, -0.62f);
             barrierLeft.transform.localScale = new Vector3(0.18f, 1.12f, 0.18f);
@@ -2873,7 +3031,7 @@ namespace IndustryTycoon.Editor
             GameObject barrierRight = CreatePrimitiveChild(
                 "Locked Barrier Right",
                 PrimitiveType.Cube,
-                mineRoot.transform,
+                lockedPresentationRoot.transform,
                 completionMaterial);
             barrierRight.transform.localPosition = new Vector3(1.35f, 0.72f, -0.62f);
             barrierRight.transform.localScale = new Vector3(0.18f, 1.12f, 0.18f);
@@ -2881,7 +3039,7 @@ namespace IndustryTycoon.Editor
             GameObject barrierBeam = CreatePrimitiveChild(
                 "Locked Barrier Beam",
                 PrimitiveType.Cube,
-                mineRoot.transform,
+                lockedPresentationRoot.transform,
                 completionMaterial);
             barrierBeam.transform.localPosition = new Vector3(0f, 0.88f, -0.62f);
             barrierBeam.transform.localRotation = Quaternion.Euler(0f, 0f, -8f);
@@ -2890,7 +3048,7 @@ namespace IndustryTycoon.Editor
             GameObject pickaxeHandle = CreatePrimitiveChild(
                 "Pickaxe Handle",
                 PrimitiveType.Cube,
-                mineRoot.transform,
+                lockedPresentationRoot.transform,
                 completionMaterial);
             pickaxeHandle.transform.localPosition = new Vector3(0f, 0.92f, 0.28f);
             pickaxeHandle.transform.localRotation = Quaternion.Euler(0f, 0f, -38f);
@@ -2899,7 +3057,7 @@ namespace IndustryTycoon.Editor
             GameObject pickaxeHead = CreatePrimitiveChild(
                 "Pickaxe Head",
                 PrimitiveType.Cube,
-                mineRoot.transform,
+                lockedPresentationRoot.transform,
                 metalMaterial);
             pickaxeHead.transform.localPosition = new Vector3(-0.52f, 1.58f, 0.28f);
             pickaxeHead.transform.localRotation = Quaternion.Euler(0f, 0f, -8f);
@@ -2907,7 +3065,7 @@ namespace IndustryTycoon.Editor
 
             TextMesh mineLabel = CreateWorldLabel(
                 "Mine Teaser Label",
-                mineRoot.transform,
+                lockedPresentationRoot.transform,
                 "\u26CF  MINE - LOCKED",
                 new Vector3(0f, 2.30f, 0.10f),
                 new Color(1f, 0.84f, 0.34f));
@@ -2950,6 +3108,440 @@ namespace IndustryTycoon.Editor
             return new M8Services(completion, pacingProbe, completionParticles);
         }
 
+        private static M11Services CreateM11Mining(
+            Scene scene,
+            LumberCampCompletion lumberCampCompletion,
+            Wallet wallet,
+            CarryStack carryStack,
+            Collider playerCollider,
+            Transform cashTokenOrigin,
+            GameObject cashVisualPrefab,
+            Material purchaseAvailableMaterial,
+            Material purchaseCompletedMaterial,
+            Material cashAccentMaterial,
+            Material ironOreMaterial,
+            Material ironOreAccentMaterial,
+            Material ironBarMaterial,
+            Material mineRockMaterial,
+            Material smelterMaterial,
+            Material drillMaterial,
+            Material metalMaterial,
+            Material particleMaterial,
+            AudioFeedback audioFeedback)
+        {
+            GameObject mineRoot = lumberCampCompletion != null
+                ? lumberCampCompletion.MineTeaserRoot
+                : null;
+            Transform lockedPresentation = mineRoot != null
+                ? mineRoot.transform.Find("Mine Locked Presentation")
+                : null;
+            Require(mineRoot != null && lockedPresentation != null,
+                "M11 requires the accepted M8 Mine teaser gateway.");
+
+            GameObject mineAreaRoot = new GameObject("Mine Area");
+            mineAreaRoot.transform.SetParent(mineRoot.transform, false);
+
+            CreateWorldLabel(
+                "Mine Area Label",
+                mineAreaRoot.transform,
+                "MINE  •  IRON DISTRICT",
+                new Vector3(0f, 2.35f, -0.15f),
+                new Color(0.92f, 0.74f, 0.36f));
+
+            GameObject rearRockLeft = CreatePrimitiveChild(
+                "Rear Rock Left",
+                PrimitiveType.Sphere,
+                mineAreaRoot.transform,
+                mineRockMaterial);
+            rearRockLeft.transform.localPosition = new Vector3(-2.15f, 0.62f, 7.15f);
+            rearRockLeft.transform.localScale = new Vector3(2.4f, 1.3f, 1.6f);
+            GameObject rearRockRight = CreatePrimitiveChild(
+                "Rear Rock Right",
+                PrimitiveType.Sphere,
+                mineAreaRoot.transform,
+                mineRockMaterial);
+            rearRockRight.transform.localPosition = new Vector3(2.15f, 0.72f, 7.05f);
+            rearRockRight.transform.localScale = new Vector3(2.7f, 1.5f, 1.8f);
+
+            GameObject veinRoot = new GameObject("Iron Vein");
+            veinRoot.transform.SetParent(mineAreaRoot.transform, false);
+            veinRoot.transform.localPosition = new Vector3(0f, 0f, 4.75f);
+            AddKinematicTrigger(veinRoot, new Vector3(3.8f, 2.4f, 3.8f));
+            CreateZoneDisc(
+                "Mining Radius",
+                veinRoot.transform,
+                ironOreAccentMaterial,
+                1.78f);
+            GameObject veinRock = CreatePrimitiveChild(
+                "Ore Deposit Rock",
+                PrimitiveType.Sphere,
+                veinRoot.transform,
+                mineRockMaterial);
+            veinRock.transform.localPosition = new Vector3(0f, 0.48f, 0.25f);
+            veinRock.transform.localRotation = Quaternion.Euler(8f, 24f, -6f);
+            veinRock.transform.localScale = new Vector3(2.45f, 1.12f, 1.62f);
+            GameObject exposedOre = CreatePrimitiveChild(
+                "Exposed Iron Ore",
+                PrimitiveType.Sphere,
+                veinRoot.transform,
+                ironOreMaterial);
+            exposedOre.transform.localPosition = new Vector3(0.15f, 0.66f, -0.52f);
+            exposedOre.transform.localRotation = Quaternion.Euler(15f, -18f, 12f);
+            exposedOre.transform.localScale = new Vector3(1.38f, 0.62f, 0.38f);
+            CreateWorldLabel(
+                "Iron Vein Label",
+                veinRoot.transform,
+                "IRON VEIN\nSTAND TO MINE  •  1.25s",
+                new Vector3(0f, 1.92f, 0f),
+                Color.white);
+            TextMesh miningStatusText = CreateWorldLabel(
+                "Mining Status",
+                veinRoot.transform,
+                "STAND IN RADIUS TO MINE",
+                new Vector3(0f, 1.34f, -0.12f),
+                new Color(1f, 0.78f, 0.42f));
+            miningStatusText.characterSize = 0.036f;
+            GameObject miningProgressTrack = CreatePrimitiveChild(
+                "Mining Progress Track",
+                PrimitiveType.Cube,
+                veinRoot.transform,
+                mineRockMaterial);
+            miningProgressTrack.transform.localPosition = new Vector3(0f, 0.22f, -1.36f);
+            miningProgressTrack.transform.localScale = new Vector3(2.55f, 0.08f, 0.18f);
+            GameObject miningProgressFill = CreatePrimitiveChild(
+                "Mining Progress Fill",
+                PrimitiveType.Cube,
+                veinRoot.transform,
+                ironOreAccentMaterial);
+            miningProgressFill.transform.localPosition = new Vector3(-1.2f, 0.27f, -1.36f);
+            miningProgressFill.transform.localScale = new Vector3(0f, 0.10f, 0.13f);
+            ParticleSystem miningParticles = CreateFeedbackParticleSystem(
+                "Mining Chips",
+                veinRoot.transform,
+                new Vector3(0f, 0.82f, -0.35f),
+                new Color(0.86f, 0.38f, 0.14f),
+                particleMaterial,
+                24,
+                0.32f,
+                1.15f,
+                0.10f);
+
+            GameObject mineProgressionRoot = new GameObject("Mine Progression");
+            SceneManager.MoveGameObjectToScene(mineProgressionRoot, scene);
+            MineUnlock mineUnlock = mineProgressionRoot.AddComponent<MineUnlock>();
+            SetObjectReference(
+                mineUnlock,
+                "lumberCampCompletion",
+                lumberCampCompletion);
+            SetObjectReference(
+                mineUnlock,
+                "lockedTeaserRoot",
+                lockedPresentation.gameObject);
+            SetObjectReference(mineUnlock, "mineAreaRoot", mineAreaRoot);
+
+            IronVein ironVein = veinRoot.AddComponent<IronVein>();
+            SetObjectReference(ironVein, "mineUnlock", mineUnlock);
+            SetObjectReference(ironVein, "carryStack", carryStack);
+            SetObjectReference(ironVein, "playerCollider", playerCollider);
+            SetObjectReference(ironVein, "miningParticles", miningParticles);
+            SetFloat(ironVein, "miningDuration", 1.25f);
+
+            GameObject smelterRoot = new GameObject("Iron Smelter");
+            smelterRoot.transform.SetParent(mineAreaRoot.transform, false);
+            smelterRoot.transform.localPosition = new Vector3(-5.0f, 0f, 4.55f);
+            GameObject smelterPlatform = CreatePrimitiveChild(
+                "Smelter Platform",
+                PrimitiveType.Cube,
+                smelterRoot.transform,
+                smelterMaterial);
+            smelterPlatform.transform.localPosition = new Vector3(0f, 0.16f, 0f);
+            smelterPlatform.transform.localScale = new Vector3(4.15f, 0.30f, 3.15f);
+            GameObject furnace = CreatePrimitiveChild(
+                "Furnace",
+                PrimitiveType.Cylinder,
+                smelterRoot.transform,
+                smelterMaterial);
+            furnace.transform.localPosition = new Vector3(0f, 1.05f, 0.40f);
+            furnace.transform.localScale = new Vector3(1.05f, 0.95f, 1.05f);
+            GameObject furnaceMouth = CreatePrimitiveChild(
+                "Furnace Heat",
+                PrimitiveType.Cube,
+                smelterRoot.transform,
+                ironOreAccentMaterial);
+            furnaceMouth.transform.localPosition = new Vector3(0f, 0.78f, -0.70f);
+            furnaceMouth.transform.localScale = new Vector3(0.72f, 0.72f, 0.16f);
+            GameObject chimney = CreatePrimitiveChild(
+                "Smelter Chimney",
+                PrimitiveType.Cylinder,
+                smelterRoot.transform,
+                metalMaterial);
+            chimney.transform.localPosition = new Vector3(0.55f, 2.05f, 0.52f);
+            chimney.transform.localScale = new Vector3(0.32f, 0.82f, 0.32f);
+            CreateWorldLabel(
+                "Smelter Label",
+                smelterRoot.transform,
+                "SMELTER\n2 ORE  →  1 BAR  •  1.5s",
+                new Vector3(0f, 3.02f, 0.28f),
+                Color.white);
+            TextMesh smelterStatusText = CreateWorldLabel(
+                "Smelter Status",
+                smelterRoot.transform,
+                "WAITING FOR 2 ORE",
+                new Vector3(0f, 2.54f, 0.24f),
+                new Color(1f, 0.65f, 0.26f));
+            smelterStatusText.characterSize = 0.038f;
+
+            Smelter smelter = smelterRoot.AddComponent<Smelter>();
+            SetInteger(smelter, "inputCapacity", 24);
+            SetInteger(smelter, "outputCapacity", 12);
+            SetFloat(smelter, "processingDuration", 1.5f);
+
+            GameObject smelterInputRoot = new GameObject("Smelter Input Zone");
+            smelterInputRoot.transform.SetParent(smelterRoot.transform, false);
+            smelterInputRoot.transform.localPosition = new Vector3(-1.45f, 0f, -1.65f);
+            AddKinematicTrigger(smelterInputRoot, new Vector3(2.2f, 2.4f, 2.2f));
+            CreateZoneDisc(
+                "Ore Input Area",
+                smelterInputRoot.transform,
+                ironOreMaterial,
+                1.02f);
+            TextMesh smelterInputText = CreateWorldLabel(
+                "Smelter Input Label",
+                smelterInputRoot.transform,
+                "ORE INPUT\n0 / 24",
+                new Vector3(0f, 1.35f, 0.12f),
+                new Color(1f, 0.72f, 0.40f));
+            SmelterInputZone smelterInputZone =
+                smelterInputRoot.AddComponent<SmelterInputZone>();
+            SetObjectReference(smelterInputZone, "smelter", smelter);
+            SetObjectReference(smelterInputZone, "carryStack", carryStack);
+            SetObjectReference(smelterInputZone, "playerCollider", playerCollider);
+            SetFloat(smelterInputZone, "transferInterval", 0.10f);
+
+            GameObject smelterOutputRoot = new GameObject("Smelter Output Zone");
+            smelterOutputRoot.transform.SetParent(smelterRoot.transform, false);
+            smelterOutputRoot.transform.localPosition = new Vector3(1.45f, 0f, -1.65f);
+            AddKinematicTrigger(smelterOutputRoot, new Vector3(2.2f, 2.4f, 2.2f));
+            CreateZoneDisc(
+                "Bar Output Area",
+                smelterOutputRoot.transform,
+                ironBarMaterial,
+                1.02f);
+            TextMesh smelterOutputText = CreateWorldLabel(
+                "Smelter Output Label",
+                smelterOutputRoot.transform,
+                "BAR OUTPUT\n0 / 12",
+                new Vector3(0f, 1.35f, 0.12f),
+                new Color(0.78f, 0.88f, 0.96f));
+            SmelterOutputZone smelterOutputZone =
+                smelterOutputRoot.AddComponent<SmelterOutputZone>();
+            SetObjectReference(smelterOutputZone, "smelter", smelter);
+            SetObjectReference(smelterOutputZone, "carryStack", carryStack);
+            SetObjectReference(smelterOutputZone, "playerCollider", playerCollider);
+            SetFloat(smelterOutputZone, "transferInterval", 0.10f);
+
+            PurchasePad smelterPurchasePad = CreatePurchasePad(
+                scene,
+                "Smelter Purchase Pad",
+                "IRON SMELTER",
+                new Vector3(2.2f, 0f, 17.75f),
+                1200,
+                false,
+                wallet,
+                playerCollider,
+                purchaseAvailableMaterial,
+                purchaseCompletedMaterial,
+                cashAccentMaterial,
+                cashVisualPrefab,
+                cashTokenOrigin,
+                particleMaterial,
+                audioFeedback);
+            smelterPurchasePad.transform.SetParent(mineAreaRoot.transform, true);
+
+            GameObject smelterAutomationRoot = new GameObject("Smelter Automation");
+            SceneManager.MoveGameObjectToScene(smelterAutomationRoot, scene);
+            SmelterUnlock smelterUnlock =
+                smelterAutomationRoot.AddComponent<SmelterUnlock>();
+            SetObjectReference(smelterUnlock, "mineUnlock", mineUnlock);
+            SetObjectReference(smelterUnlock, "ironVein", ironVein);
+            SetObjectReference(
+                smelterUnlock,
+                "smelterPurchasePad",
+                smelterPurchasePad);
+            SetObjectReference(
+                smelterUnlock,
+                "smelterPurchasePadRoot",
+                smelterPurchasePad.gameObject);
+            SetObjectReference(smelterUnlock, "smelterRoot", smelterRoot);
+            SetInteger(smelterUnlock, "requiredMinedOre", 10);
+
+            GameObject storageRoot = new GameObject("Ore Storage");
+            storageRoot.transform.SetParent(mineAreaRoot.transform, false);
+            storageRoot.transform.localPosition = new Vector3(4.70f, 0f, 1.75f);
+            AddKinematicTrigger(storageRoot, new Vector3(3.1f, 2.4f, 3.1f));
+            CreateZoneDisc(
+                "Ore Collection Area",
+                storageRoot.transform,
+                ironOreMaterial,
+                1.42f);
+            GameObject storageBin = CreatePrimitiveChild(
+                "Ore Bin",
+                PrimitiveType.Cube,
+                storageRoot.transform,
+                mineRockMaterial);
+            storageBin.transform.localPosition = new Vector3(0f, 0.35f, 0.22f);
+            storageBin.transform.localScale = new Vector3(2.55f, 0.55f, 1.70f);
+            GameObject storedOreVisual = CreatePrimitiveChild(
+                "Stored Ore",
+                PrimitiveType.Sphere,
+                storageRoot.transform,
+                ironOreMaterial);
+            storedOreVisual.transform.localPosition = new Vector3(0f, 0.72f, 0.10f);
+            storedOreVisual.transform.localScale = new Vector3(1.35f, 0.42f, 0.82f);
+            storedOreVisual.SetActive(false);
+            TextMesh oreStorageText = CreateWorldLabel(
+                "Ore Storage Label",
+                storageRoot.transform,
+                "ORE STORAGE\n0 / 30",
+                new Vector3(0f, 1.65f, 0.18f),
+                new Color(1f, 0.72f, 0.40f));
+            OreStorage oreStorage = storageRoot.AddComponent<OreStorage>();
+            SetInteger(oreStorage, "capacity", 30);
+            OreStorageCollector storageCollector =
+                storageRoot.AddComponent<OreStorageCollector>();
+            SetObjectReference(storageCollector, "storage", oreStorage);
+            SetObjectReference(storageCollector, "carryStack", carryStack);
+            SetObjectReference(storageCollector, "playerCollider", playerCollider);
+            SetFloat(storageCollector, "transferInterval", 0.10f);
+
+            GameObject drillRoot = new GameObject("Automated Mining Drill");
+            drillRoot.transform.SetParent(mineAreaRoot.transform, false);
+            drillRoot.transform.localPosition = new Vector3(4.65f, 0f, 5.15f);
+            GameObject drillBase = CreatePrimitiveChild(
+                "Drill Base",
+                PrimitiveType.Cube,
+                drillRoot.transform,
+                drillMaterial);
+            drillBase.transform.localPosition = new Vector3(0f, 0.24f, 0f);
+            drillBase.transform.localScale = new Vector3(2.75f, 0.42f, 2.35f);
+            GameObject drillTower = CreatePrimitiveChild(
+                "Drill Tower",
+                PrimitiveType.Cube,
+                drillRoot.transform,
+                drillMaterial);
+            drillTower.transform.localPosition = new Vector3(0f, 1.55f, 0.28f);
+            drillTower.transform.localScale = new Vector3(0.62f, 2.45f, 0.62f);
+            GameObject drillArm = CreatePrimitiveChild(
+                "Drill Arm",
+                PrimitiveType.Cube,
+                drillRoot.transform,
+                metalMaterial);
+            drillArm.transform.localPosition = new Vector3(0f, 2.35f, -0.78f);
+            drillArm.transform.localRotation = Quaternion.Euler(34f, 0f, 0f);
+            drillArm.transform.localScale = new Vector3(0.40f, 0.40f, 2.25f);
+            GameObject drillBit = CreatePrimitiveChild(
+                "Drill Bit",
+                PrimitiveType.Cylinder,
+                drillRoot.transform,
+                metalMaterial);
+            drillBit.transform.localPosition = new Vector3(0f, 1.10f, -1.58f);
+            drillBit.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            drillBit.transform.localScale = new Vector3(0.42f, 0.82f, 0.42f);
+            CreateWorldLabel(
+                "Drill Label",
+                drillRoot.transform,
+                "AUTOMATED DRILL\n1 ORE / 1.8s",
+                new Vector3(0f, 3.35f, 0.10f),
+                Color.white);
+            TextMesh drillStatusText = CreateWorldLabel(
+                "Drill Status",
+                drillRoot.transform,
+                "LOCKED",
+                new Vector3(0f, 2.92f, 0.08f),
+                new Color(1f, 0.76f, 0.24f));
+            drillStatusText.characterSize = 0.038f;
+            ParticleSystem drillParticles = CreateFeedbackParticleSystem(
+                "Drill Ore Chips",
+                drillRoot.transform,
+                new Vector3(0f, 0.65f, -1.45f),
+                new Color(0.82f, 0.34f, 0.12f),
+                particleMaterial,
+                24,
+                0.30f,
+                1.10f,
+                0.10f);
+            AutomatedDrill drill = drillRoot.AddComponent<AutomatedDrill>();
+            SetObjectReference(drill, "storage", oreStorage);
+            SetObjectReference(drill, "productionParticles", drillParticles);
+            SetFloat(drill, "cycleDuration", 1.8f);
+
+            PurchasePad drillPurchasePad = CreatePurchasePad(
+                scene,
+                "Drill Purchase Pad",
+                "AUTOMATED DRILL",
+                new Vector3(12.25f, 0f, 17.75f),
+                2400,
+                false,
+                wallet,
+                playerCollider,
+                purchaseAvailableMaterial,
+                purchaseCompletedMaterial,
+                cashAccentMaterial,
+                cashVisualPrefab,
+                cashTokenOrigin,
+                particleMaterial,
+                audioFeedback);
+            drillPurchasePad.transform.SetParent(mineAreaRoot.transform, true);
+
+            GameObject drillAutomationRoot = new GameObject("Drill Automation");
+            SceneManager.MoveGameObjectToScene(drillAutomationRoot, scene);
+            DrillUnlock drillUnlock =
+                drillAutomationRoot.AddComponent<DrillUnlock>();
+            SetObjectReference(drillUnlock, "smelterUnlock", smelterUnlock);
+            SetObjectReference(drillUnlock, "smelter", smelter);
+            SetObjectReference(drillUnlock, "drillPurchasePad", drillPurchasePad);
+            SetObjectReference(
+                drillUnlock,
+                "drillPurchasePadRoot",
+                drillPurchasePad.gameObject);
+            SetObjectReference(drillUnlock, "drillRoot", drillRoot);
+            SetInteger(drillUnlock, "requiredProducedBars", 5);
+
+            MiningWorldFeedback miningFeedback =
+                mineProgressionRoot.AddComponent<MiningWorldFeedback>();
+            SetObjectReference(miningFeedback, "ironVein", ironVein);
+            SetObjectReference(miningFeedback, "miningStatusText", miningStatusText);
+            SetObjectReference(
+                miningFeedback,
+                "miningProgressFill",
+                miningProgressFill.transform);
+            SetFloat(miningFeedback, "miningProgressWidth", 2.4f);
+            SetObjectReference(miningFeedback, "smelter", smelter);
+            SetObjectReference(miningFeedback, "smelterInputText", smelterInputText);
+            SetObjectReference(miningFeedback, "smelterOutputText", smelterOutputText);
+            SetObjectReference(miningFeedback, "smelterStatusText", smelterStatusText);
+            SetObjectReference(miningFeedback, "oreStorage", oreStorage);
+            SetObjectReference(miningFeedback, "oreStorageText", oreStorageText);
+            SetObjectReference(miningFeedback, "storedOreVisual", storedOreVisual);
+            SetObjectReference(miningFeedback, "drill", drill);
+            SetObjectReference(miningFeedback, "drillStatusText", drillStatusText);
+
+            mineAreaRoot.SetActive(false);
+            smelterRoot.SetActive(false);
+            smelterPurchasePad.gameObject.SetActive(false);
+            drillRoot.SetActive(false);
+            drillPurchasePad.gameObject.SetActive(false);
+
+            return new M11Services(
+                mineUnlock,
+                ironVein,
+                smelterUnlock,
+                smelter,
+                drillUnlock,
+                drill,
+                oreStorage);
+        }
+
         private static LumberCampProgressionService CreateM10Progression(
             Scene scene,
             Wallet wallet,
@@ -2963,7 +3555,8 @@ namespace IndustryTycoon.Editor
             FirstPackingStationUnlock packingStationUnlock,
             FirstCourierUnlock courierUnlock,
             CrateCourier courier,
-            LumberCampCompletion completion)
+            LumberCampCompletion completion,
+            M11Services m11Services)
         {
             GameObject root = FindRoot(scene, "Lumber Camp Progression");
             WoodProcessor processor = processorUnlock != null
@@ -2982,8 +3575,14 @@ namespace IndustryTycoon.Editor
                     && processor != null
                     && packingStation != null
                     && courier != null
-                    && completion != null,
-                "M10 progression requires all authoritative commit sources.");
+                    && completion != null
+                    && m11Services.MineUnlock != null
+                    && m11Services.IronVein != null
+                    && m11Services.SmelterUnlock != null
+                    && m11Services.Smelter != null
+                    && m11Services.DrillUnlock != null
+                    && m11Services.Drill != null,
+                "M11 progression requires all authoritative lumber and mining commit sources.");
 
             LumberCampProgressionService service =
                 root.AddComponent<LumberCampProgressionService>();
@@ -3001,6 +3600,12 @@ namespace IndustryTycoon.Editor
             SetObjectReference(service, "packingStationUnlock", packingStationUnlock);
             SetObjectReference(service, "courierUnlock", courierUnlock);
             SetObjectReference(service, "lumberCampCompletion", completion);
+            SetObjectReference(service, "mineUnlock", m11Services.MineUnlock);
+            SetObjectReference(service, "ironVein", m11Services.IronVein);
+            SetObjectReference(service, "smelterUnlock", m11Services.SmelterUnlock);
+            SetObjectReference(service, "smelter", m11Services.Smelter);
+            SetObjectReference(service, "drillUnlock", m11Services.DrillUnlock);
+            SetObjectReference(service, "automatedDrill", m11Services.Drill);
             return service;
         }
 
@@ -3019,7 +3624,8 @@ namespace IndustryTycoon.Editor
             CrateCourier courier,
             WoodStockpile stockpile,
             LumberCampCompletion completion,
-            LumberCampProgressionService progressionService)
+            LumberCampProgressionService progressionService,
+            M11Services m11Services)
         {
             LumberWorker worker = workerUnlock != null && workerUnlock.WorkerRoot != null
                 ? workerUnlock.WorkerRoot.GetComponent<LumberWorker>()
@@ -3048,8 +3654,15 @@ namespace IndustryTycoon.Editor
                     && packingStation != null
                     && courier != null
                     && completion != null
-                    && progressionService != null,
-                "M9 persistence requires the complete authoritative M1-M8 state graph.");
+                    && progressionService != null
+                    && m11Services.MineUnlock != null
+                    && m11Services.IronVein != null
+                    && m11Services.SmelterUnlock != null
+                    && m11Services.Smelter != null
+                    && m11Services.DrillUnlock != null
+                    && m11Services.Drill != null
+                    && m11Services.OreStorage != null,
+                "M11 persistence requires the complete authoritative lumber and mining state graph.");
 
             GameObject root = new GameObject("Local Persistence");
             SceneManager.MoveGameObjectToScene(root, scene);
@@ -3080,6 +3693,13 @@ namespace IndustryTycoon.Editor
             SetObjectReference(service, "autoFeeder", feeder);
             SetObjectReference(service, "packingStation", packingStation);
             SetObjectReference(service, "courier", courier);
+            SetObjectReference(service, "mineUnlock", m11Services.MineUnlock);
+            SetObjectReference(service, "ironVein", m11Services.IronVein);
+            SetObjectReference(service, "smelterUnlock", m11Services.SmelterUnlock);
+            SetObjectReference(service, "smelter", m11Services.Smelter);
+            SetObjectReference(service, "drillUnlock", m11Services.DrillUnlock);
+            SetObjectReference(service, "automatedDrill", m11Services.Drill);
+            SetObjectReference(service, "oreStorage", m11Services.OreStorage);
             SetFloat(service, "saveDebounceSeconds", 3f);
             SetFloat(service, "returnScreenThresholdSeconds", 300f);
             SetFloat(service, "maximumCreditedAwaySeconds", 14400f);
@@ -3760,6 +4380,14 @@ namespace IndustryTycoon.Editor
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
         }
 
+        private static void SetVector3(Object target, string propertyName, Vector3 value)
+        {
+            var serializedObject = new SerializedObject(target);
+            SerializedProperty property = GetRequiredProperty(serializedObject, target, propertyName);
+            property.vector3Value = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         private static void SetEnum(Object target, string propertyName, int enumIndex)
         {
             var serializedObject = new SerializedObject(target);
@@ -3832,9 +4460,14 @@ namespace IndustryTycoon.Editor
                 "Player requires a cash collection target.");
 
             GameObject walkableBounds = FindRoot(scene, "Walkable Bounds");
+            GameObject ground = FindRoot(scene, "Ground");
             Require(walkableBounds != null, "The prototype scene has no walkable bounds.");
             Require(walkableBounds.GetComponentsInChildren<BoxCollider>(true).Length == 4,
                 "Walkable bounds require four boundary colliders.");
+            Require(ground != null
+                    && ground.transform.position == new Vector3(1.5f, -0.15f, 7.5f)
+                    && ground.transform.localScale == new Vector3(31f, 0.3f, 39f),
+                "M11 world expansion must preserve Lumber Camp and extend the ground north/east.");
 
             UnityEngine.Camera mainCamera = cameraObject != null
                 ? cameraObject.GetComponent<UnityEngine.Camera>()
@@ -3843,6 +4476,12 @@ namespace IndustryTycoon.Editor
             SmoothFollowCamera followCamera = mainCamera.GetComponent<SmoothFollowCamera>();
             Require(followCamera != null, "Camera requires smooth follow.");
             Require(GetObjectReference(followCamera, "target") != null, "Camera follow target is not assigned.");
+            Require(Mathf.Approximately(mainCamera.fieldOfView, 43f)
+                    && Vector3.Distance(
+                        followCamera.Offset,
+                        new Vector3(0f, 14f, -10.6f)) < 0.001f
+                    && followCamera.LookAtOffset == new Vector3(0f, 1f, 0f),
+                "M11 camera must preserve FOV 43 and use the expanded portrait offset (0, 14, -10.6).");
             Require(Mathf.Approximately(followCamera.ImpulseAmplitude, 0.06f)
                     && Mathf.Approximately(followCamera.ImpulseDuration, 0.18f),
                 "Camera impulse tuning must remain subtle at 0.06 / 0.18 seconds.");
@@ -4194,8 +4833,15 @@ namespace IndustryTycoon.Editor
             Require(resourceVisual != null
                     && resourceVisual.WoodRoot != null
                     && resourceVisual.PlankRoot != null
-                    && resourceVisual.CrateRoot != null,
-                "Carried resource visuals must contain reusable Wood, Plank, and Crate variants.");
+                    && resourceVisual.CrateRoot != null
+                    && resourceVisual.IronOreRoot != null
+                    && resourceVisual.IronBarRoot != null,
+                "Carried resource visuals must contain all reusable Lumber and Mining variants.");
+            Require(resourceVisual.IronOreRoot.GetComponentsInChildren<MeshRenderer>(
+                        true).Length == 1
+                    && resourceVisual.IronBarRoot.GetComponentsInChildren<MeshRenderer>(
+                        true).Length == 1,
+                "M11 Mining carry variants must stay at one renderer each for mobile reuse.");
 
             GameObject cashVisualPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CashVisualPrefabPath);
             Require(cashVisualPrefab != null, "CashBundleVisual prefab is missing.");
@@ -4282,6 +4928,7 @@ namespace IndustryTycoon.Editor
                 productionUpgrade,
                 workerAutomation);
             ValidateM10Scene(scene);
+            ValidateM11Scene(scene, carryStack, salePoint, playerCollider);
             ValidateCoreLoopLogic();
             ValidateM3Logic();
             ValidateM4Logic();
@@ -4515,6 +5162,183 @@ namespace IndustryTycoon.Editor
                     && hudRoot
                         .GetComponentsInChildren<AchievementToastView>(true).Length == 1,
                 "M10 created duplicate progression services or HUD systems.");
+        }
+
+        private static void ValidateM11Scene(
+            Scene scene,
+            CarryStack carryStack,
+            SalePoint salePoint,
+            Collider playerCollider)
+        {
+            GameObject mineRoot = FindRoot(scene, "Mine Teaser");
+            GameObject mineProgressionRoot = FindRoot(scene, "Mine Progression");
+            GameObject smelterAutomationRoot = FindRoot(scene, "Smelter Automation");
+            GameObject drillAutomationRoot = FindRoot(scene, "Drill Automation");
+            GameObject pathRoot = FindRoot(scene, "Mine Access Path");
+            GameObject progressionRoot = FindRoot(scene, "Lumber Camp Progression");
+            GameObject persistenceRoot = FindRoot(scene, "Local Persistence");
+            Require(mineRoot != null
+                    && mineProgressionRoot != null
+                    && smelterAutomationRoot != null
+                    && drillAutomationRoot != null
+                    && pathRoot != null
+                    && progressionRoot != null
+                    && persistenceRoot != null,
+                "M11 mine, access path, progression, or persistence roots are missing.");
+
+            Transform lockedPresentation = mineRoot.transform.Find(
+                "Mine Locked Presentation");
+            Transform mineArea = mineRoot.transform.Find("Mine Area");
+            MineUnlock mineUnlock = mineProgressionRoot.GetComponent<MineUnlock>();
+            IronVein ironVein = mineArea != null
+                ? mineArea.GetComponentInChildren<IronVein>(true)
+                : null;
+            Smelter smelter = mineArea != null
+                ? mineArea.GetComponentInChildren<Smelter>(true)
+                : null;
+            OreStorage oreStorage = mineArea != null
+                ? mineArea.GetComponentInChildren<OreStorage>(true)
+                : null;
+            OreStorageCollector storageCollector = null;
+            int storageCollectorCount = 0;
+            GameObject[] sceneRoots = scene.GetRootGameObjects();
+            for (int i = 0; i < sceneRoots.Length; i++)
+            {
+                OreStorageCollector[] rootCollectors = sceneRoots[i]
+                    .GetComponentsInChildren<OreStorageCollector>(true);
+                storageCollectorCount += rootCollectors.Length;
+                if (rootCollectors.Length > 0)
+                {
+                    storageCollector = rootCollectors[0];
+                }
+            }
+            Require(storageCollectorCount == 1 && storageCollector != null,
+                "M11 requires exactly one Ore Storage Collector in the scene.");
+            AutomatedDrill drill = mineArea != null
+                ? mineArea.GetComponentInChildren<AutomatedDrill>(true)
+                : null;
+            SmelterUnlock smelterUnlock =
+                smelterAutomationRoot.GetComponent<SmelterUnlock>();
+            DrillUnlock drillUnlock =
+                drillAutomationRoot.GetComponent<DrillUnlock>();
+            LumberCampCompletion completion =
+                progressionRoot.GetComponent<LumberCampCompletion>();
+
+            Require(lockedPresentation != null
+                    && mineArea != null
+                    && mineUnlock != null
+                    && ironVein != null
+                    && smelter != null
+                    && oreStorage != null
+                    && drill != null
+                    && smelterUnlock != null
+                    && drillUnlock != null
+                    && completion != null,
+                "M11 mining runtime components or presentations are incomplete.");
+            Require(mineRoot.transform.position == new Vector3(7.2f, 0f, 17.3f)
+                    && !mineRoot.activeSelf
+                    && !mineArea.gameObject.activeSelf,
+                "M11 must preserve the M8 mine gateway and start it locked.");
+            Require(mineUnlock.LumberCampCompletion == completion
+                    && mineUnlock.LockedTeaserRoot == lockedPresentation.gameObject
+                    && mineUnlock.MineAreaRoot == mineArea.gameObject,
+                "M11 mine unlock is not driven by Lumber Camp completion.");
+            Require(ironVein.MineUnlock == mineUnlock
+                    && ironVein.CarryStack == carryStack
+                    && ironVein.PlayerCollider == playerCollider
+                    && Mathf.Approximately(ironVein.MiningDuration, 1.25f),
+                "M11 Iron Vein interaction contract is invalid.");
+            ValidateTriggerZone(ironVein.gameObject, "Iron Vein");
+
+            Require(smelter.InputCapacity == 24
+                    && smelter.OutputCapacity == 12
+                    && smelter.RecipeInputOre == 2
+                    && smelter.RecipeOutputBars == 1
+                    && Mathf.Approximately(smelter.ProcessingDuration, 1.5f)
+                    && !smelter.gameObject.activeSelf,
+                "M11 Smelter recipe, buffers, duration, or initial state changed.");
+            SmelterInputZone inputZone =
+                smelter.GetComponentInChildren<SmelterInputZone>(true);
+            SmelterOutputZone outputZone =
+                smelter.GetComponentInChildren<SmelterOutputZone>(true);
+            Require(inputZone != null
+                    && outputZone != null
+                    && inputZone.Smelter == smelter
+                    && outputZone.Smelter == smelter
+                    && inputZone.CarryStack == carryStack
+                    && outputZone.CarryStack == carryStack
+                    && Vector3.Distance(
+                        inputZone.transform.position,
+                        outputZone.transform.position) >= 2.8f,
+                "M11 Smelter input/output zones are missing, crossed, or too close.");
+            ValidateTriggerZone(inputZone.gameObject, "Smelter Input Zone");
+            ValidateTriggerZone(outputZone.gameObject, "Smelter Output Zone");
+
+            PurchasePad smelterPad = smelterUnlock.SmelterPurchasePad;
+            PurchasePad drillPad = drillUnlock.DrillPurchasePad;
+            Require(smelterUnlock.MineUnlock == mineUnlock
+                    && smelterUnlock.IronVein == ironVein
+                    && smelterUnlock.SmelterRoot == smelter.gameObject
+                    && smelterUnlock.RequiredMinedOre == 10
+                    && smelterPad != null
+                    && smelterPad.TotalCost == 1200
+                    && !smelterPad.StartsAvailable
+                    && !smelterPad.gameObject.activeSelf,
+                "M11 Smelter unlock threshold or purchase pad is invalid.");
+            Require(oreStorage.Capacity == 30
+                    && oreStorage.StoredOre == 0
+                    && storageCollector.Storage == oreStorage
+                    && storageCollector.CarryStack == carryStack
+                    && storageCollector.PlayerCollider == playerCollider
+                    && Mathf.Approximately(
+                        storageCollector.TransferInterval,
+                        0.10f)
+                    && drill.Storage == oreStorage
+                    && Mathf.Approximately(drill.CycleDuration, 1.8f)
+                    && !drill.gameObject.activeSelf,
+                "M11 automated mining storage, collector wiring, or production tuning is invalid.");
+            ValidateTriggerZone(
+                storageCollector.gameObject,
+                "Ore Storage Collector");
+            Require(drillUnlock.SmelterUnlock == smelterUnlock
+                    && drillUnlock.Smelter == smelter
+                    && drillUnlock.DrillRoot == drill.gameObject
+                    && drillUnlock.RequiredProducedBars == 5
+                    && drillPad != null
+                    && drillPad.TotalCost == 2400
+                    && !drillPad.StartsAvailable
+                    && !drillPad.gameObject.activeSelf,
+                "M11 Drill unlock threshold or purchase pad is invalid.");
+
+            LumberCampProgressionService progression =
+                progressionRoot.GetComponent<LumberCampProgressionService>();
+            LocalPersistenceService persistence =
+                persistenceRoot.GetComponent<LocalPersistenceService>();
+            Require(progression != null
+                    && progression.MineUnlock == mineUnlock
+                    && progression.IronVein == ironVein
+                    && progression.SmelterUnlock == smelterUnlock
+                    && progression.Smelter == smelter
+                    && progression.DrillUnlock == drillUnlock
+                    && progression.AutomatedDrill == drill,
+                "M11 progression is not wired to authoritative mining commits.");
+            Require(persistence != null
+                    && persistence.MineUnlock == mineUnlock
+                    && persistence.IronVein == ironVein
+                    && persistence.SmelterUnlock == smelterUnlock
+                    && persistence.Smelter == smelter
+                    && persistence.DrillUnlock == drillUnlock
+                    && persistence.AutomatedDrill == drill
+                    && persistence.OreStorage == oreStorage,
+                "M11 persistence is not wired to the mining state graph.");
+            Require(salePoint.IronOreValue == 10
+                    && salePoint.IronBarValue == 30,
+                "M11 sale values must remain $10 per Iron Ore and $30 per Iron Bar.");
+            Require(pathRoot.GetComponentsInChildren<MeshRenderer>(true).Length == 2
+                    && pathRoot.GetComponentsInChildren<Collider>(true).Length == 0,
+                "M11 Mine access path must be a clear, collider-free two-segment route.");
+            Require(mineArea.GetComponentsInChildren<LumberWorker>(true).Length == 0,
+                "M11 automated mining must use a distinct Drill, not reuse Lumber workers.");
         }
 
         private static void ValidateM4Scene(
@@ -5249,10 +6073,8 @@ namespace IndustryTycoon.Editor
                     && !completion.IsCompleted
                     && completion.CompletionCount == 0,
                 "Lumber Camp completion must start incomplete and reference authoritative Courier state.");
-            Require(!mineRoot.activeSelf
-                    && mineRoot.GetComponentsInChildren<Collider>(true).Length == 0
-                    && mineRoot.GetComponentsInChildren<Rigidbody>(true).Length == 0,
-                "Mine teaser must begin hidden and remain presentation-only.");
+            Require(!mineRoot.activeSelf,
+                "Mine gateway and M11 area must begin hidden until authoritative completion.");
             TextMesh mineLabel = mineRoot.GetComponentInChildren<TextMesh>(true);
             Require(mineLabel != null
                     && mineLabel.text.Contains("MINE")
@@ -5399,8 +6221,8 @@ namespace IndustryTycoon.Editor
                 particleSystems.AddRange(rootParticles);
             }
 
-            Require(particleSystems.Count == 22,
-                $"The prototype requires twenty-two reusable feedback emitters; found {particleSystems.Count}.");
+            Require(particleSystems.Count == 26,
+                $"The M11 prototype requires twenty-six bounded feedback emitters; found {particleSystems.Count}.");
             for (int i = 0; i < particleSystems.Count; i++)
             {
                 ParticleSystem particles = particleSystems[i];
@@ -6546,15 +7368,47 @@ namespace IndustryTycoon.Editor
 
         private static void ValidateM10Logic()
         {
-            Require(M9SaveSchema.CurrentVersion == M9SaveSchema.Version2,
-                "M10 requires local save schema version 2.");
-            Require(LumberCampProgressionCatalog.MetricCount == 10
-                    && LumberCampProgressionCatalog.FlagCount == 7
-                    && LumberCampProgressionCatalog.ObjectiveCount == 9
+            Require(M9SaveSchema.CurrentVersion == M9SaveSchema.Version3,
+                "M11 requires local save schema version 3.");
+            Require(LumberCampProgressionCatalog.MetricCount == 17
+                    && LumberCampProgressionCatalog.FlagCount == 8
+                    && LumberCampProgressionCatalog.ObjectiveCount == 13
                     && LumberCampProgressionCatalog.ContractCount == 5
                     && LumberCampProgressionCatalog.AchievementCount == 15,
-                "M10 catalog sizes changed unexpectedly.");
+                "M11 progression catalog sizes changed unexpectedly.");
 
+            MainObjectiveId[] objectiveIds =
+            {
+                MainObjectiveId.UnlockWorker,
+                MainObjectiveId.UnlockProcessor,
+                MainObjectiveId.ProduceTenPlanks,
+                MainObjectiveId.UnlockAutoFeeder,
+                MainObjectiveId.UnlockPackingStation,
+                MainObjectiveId.ProduceFiveCrates,
+                MainObjectiveId.UnlockCourier,
+                MainObjectiveId.CompleteLumberCamp,
+                MainObjectiveId.CompleteFiveCourierDeliveries,
+                MainObjectiveId.MineTenIronOre,
+                MainObjectiveId.UnlockSmelter,
+                MainObjectiveId.ProduceFiveIronBars,
+                MainObjectiveId.UnlockAutomatedDrill
+            };
+            ObjectiveConditionKind[] objectiveKinds =
+            {
+                ObjectiveConditionKind.Flag,
+                ObjectiveConditionKind.Flag,
+                ObjectiveConditionKind.Metric,
+                ObjectiveConditionKind.Flag,
+                ObjectiveConditionKind.Flag,
+                ObjectiveConditionKind.Metric,
+                ObjectiveConditionKind.Flag,
+                ObjectiveConditionKind.Flag,
+                ObjectiveConditionKind.Metric,
+                ObjectiveConditionKind.Metric,
+                ObjectiveConditionKind.Flag,
+                ObjectiveConditionKind.Metric,
+                ObjectiveConditionKind.Metric
+            };
             ProgressFlagId[] objectiveFlags =
             {
                 ProgressFlagId.WorkerUnlocked,
@@ -6564,22 +7418,68 @@ namespace IndustryTycoon.Editor
                 ProgressFlagId.PackingStationUnlocked,
                 default,
                 ProgressFlagId.CourierUnlocked,
+                ProgressFlagId.LumberCampCompleted,
                 default,
-                ProgressFlagId.LumberCampCompleted
+                default,
+                ProgressFlagId.SmelterUnlocked,
+                default,
+                default
             };
-            long[] objectiveTargets = { 1L, 1L, 10L, 1L, 1L, 5L, 1L, 5L, 1L };
+            ProgressMetricId[] objectiveMetrics =
+            {
+                default,
+                default,
+                ProgressMetricId.PlanksProduced,
+                default,
+                default,
+                ProgressMetricId.CratesProduced,
+                default,
+                default,
+                ProgressMetricId.CourierTripsCompleted,
+                ProgressMetricId.IronOreMined,
+                default,
+                ProgressMetricId.IronBarsProduced,
+                ProgressMetricId.DrillUnlocked
+            };
+            long[] objectiveTargets =
+            {
+                1L, 1L, 10L, 1L, 1L, 5L, 1L, 1L, 5L, 10L, 1L, 5L, 1L
+            };
             for (int i = 0; i < LumberCampProgressionCatalog.ObjectiveCount; i++)
             {
                 MainObjectiveDefinition objective =
                     LumberCampProgressionCatalog.GetObjective(i);
-                Require((int)objective.Id == i
+                Require(objective.Id == objectiveIds[i]
+                        && objective.ConditionKind == objectiveKinds[i]
                         && objective.Target == objectiveTargets[i],
-                    $"M10 objective {i} order/target changed.");
+                    $"M11 objective {i} order, condition, or target changed.");
                 if (objective.ConditionKind == ObjectiveConditionKind.Flag)
                 {
                     Require(objective.Flag == objectiveFlags[i],
-                        $"M10 objective {i} uses the wrong unlock flag.");
+                        $"M11 objective {i} uses the wrong unlock flag.");
                 }
+                else
+                {
+                    Require(objective.Metric == objectiveMetrics[i],
+                        $"M11 objective {i} uses the wrong progress metric.");
+                }
+            }
+
+            var stableCatalogIds = new HashSet<string>(StringComparer.Ordinal);
+            for (int i = 0; i < LumberCampProgressionCatalog.MetricCount; i++)
+            {
+                Require(stableCatalogIds.Add(
+                        LumberCampProgressionCatalog.GetMetricStableId(
+                            (ProgressMetricId)i)),
+                    $"M11 metric stable ID {i} is duplicated.");
+            }
+            stableCatalogIds.Clear();
+            for (int i = 0; i < LumberCampProgressionCatalog.FlagCount; i++)
+            {
+                Require(stableCatalogIds.Add(
+                        LumberCampProgressionCatalog.GetFlagStableId(
+                            (ProgressFlagId)i)),
+                    $"M11 flag stable ID {i} is duplicated.");
             }
 
             long[] contractTargets = { 20L, 15L, 20L, 10L, 10L };

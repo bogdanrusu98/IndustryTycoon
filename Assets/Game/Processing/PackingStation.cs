@@ -27,7 +27,7 @@ namespace IndustryTycoon.Processing
         internal uint Token => _token;
     }
 
-    public sealed class PackingStation : MonoBehaviour
+    public class PackingStation : MonoBehaviour
     {
         private const int PlanksRequiredPerRecipe = 2;
         private const int CratesProducedPerRecipe = 1;
@@ -78,15 +78,23 @@ namespace IndustryTycoon.Processing
         public int RecipeOutputCrates => CratesProducedPerRecipe;
         public float ProcessingDuration => processingDuration;
         public bool IsProcessing => _isProcessing;
+        public bool IsStarved => !_isProcessing
+                                 && _inputPlanks < PlanksRequiredPerRecipe;
+        public bool IsOutputFull => !_isProcessing
+                                    && _outputCrates + _reservedOutputCapacity
+                                    + CratesProducedPerRecipe > outputCapacity;
         public int CompletedRecipeCount => _completedRecipeCount;
 
-        private void Awake()
+        protected virtual ResourceType InputResourceType => ResourceType.Plank;
+        protected virtual ResourceType OutputResourceType => ResourceType.Crate;
+
+        protected virtual void Awake()
         {
             RebuildProcessingWait();
             AssertInvariants();
         }
 
-        private void OnEnable()
+        protected virtual void OnEnable()
         {
             if (Application.isPlaying && !TryStartProcessing())
             {
@@ -94,7 +102,7 @@ namespace IndustryTycoon.Processing
             }
         }
 
-        private void OnDisable()
+        protected virtual void OnDisable()
         {
             bool reservationChanged = _reservedCourierOutputCrates > 0;
             InvalidateCourierOutputReservation();
@@ -118,7 +126,7 @@ namespace IndustryTycoon.Processing
                 || _isInputTransferInProgress
                 || carryStack == null
                 || AvailableInputCapacity <= 0
-                || !carryStack.CanRemove(ResourceType.Plank, 1))
+                || !carryStack.CanRemove(InputResourceType, 1))
             {
                 return false;
             }
@@ -127,7 +135,7 @@ namespace IndustryTycoon.Processing
             bool transferred = false;
             try
             {
-                if (!carryStack.TryRemove(ResourceType.Plank, 1))
+                if (!carryStack.TryRemove(InputResourceType, 1))
                 {
                     return false;
                 }
@@ -157,7 +165,7 @@ namespace IndustryTycoon.Processing
                 || _isOutputTransferInProgress
                 || carryStack == null
                 || _outputCrates <= 0
-                || !carryStack.TryReserveCapacity(ResourceType.Crate, 1))
+                || !carryStack.TryReserveCapacity(OutputResourceType, 1))
             {
                 return false;
             }
@@ -172,7 +180,7 @@ namespace IndustryTycoon.Processing
                 _outputCrates--;
                 outputRemoved = true;
 
-                if (!carryStack.TryCommitReservedAdd(ResourceType.Crate, 1))
+                if (!carryStack.TryCommitReservedAdd(OutputResourceType, 1))
                 {
                     return false;
                 }
@@ -388,6 +396,23 @@ namespace IndustryTycoon.Processing
             return true;
         }
 
+        public bool CompleteProcessingImmediatelyForTests()
+        {
+            if (!isActiveAndEnabled
+                || (!_isProcessing && !TryStartProcessing()))
+            {
+                return false;
+            }
+
+            if (_processingCoroutine != null)
+            {
+                StopCoroutine(_processingCoroutine);
+                _processingCoroutine = null;
+            }
+
+            return CompleteReservedRecipe();
+        }
+
         private IEnumerator ProcessReservedRecipe()
         {
             yield return _processingWait;
@@ -396,7 +421,7 @@ namespace IndustryTycoon.Processing
             CompleteReservedRecipe();
         }
 
-        private void CompleteReservedRecipe()
+        private bool CompleteReservedRecipe()
         {
             bool hasValidOwnership = _isProcessing
                                      && _processingInputPlanks == PlanksRequiredPerRecipe
@@ -415,7 +440,7 @@ namespace IndustryTycoon.Processing
                 NotifyBufferChanged();
                 AssertInvariants();
                 TryStartProcessing();
-                return;
+                return false;
             }
 
             _processingInputPlanks = 0;
@@ -429,6 +454,7 @@ namespace IndustryTycoon.Processing
             RecipeCompleted?.Invoke(_inputPlanks, _outputCrates);
             NotifyBufferChanged();
             TryStartProcessing();
+            return true;
         }
 
         private bool StopProcessingAndResolveOwnership()
@@ -539,7 +565,7 @@ namespace IndustryTycoon.Processing
             _processingWait = new WaitForSeconds(processingDuration);
         }
 
-        private void OnValidate()
+        protected virtual void OnValidate()
         {
             inputCapacity = Mathf.Max(PlanksRequiredPerRecipe, inputCapacity);
             outputCapacity = Mathf.Max(CratesProducedPerRecipe, outputCapacity);

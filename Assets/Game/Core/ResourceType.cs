@@ -4,6 +4,8 @@ namespace IndustryTycoon.Core
     {
         Wood = 0,
         Plank = 1,
-        Crate = 2
+        Crate = 2,
+        IronOre = 3,
+        IronBar = 4
     }
 }

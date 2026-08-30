@@ -15,7 +15,14 @@ namespace IndustryTycoon.Progression
         CratesProduced = 6,
         CratesSold = 7,
         CourierTripsCompleted = 8,
-        CratesDelivered = 9
+        CratesDelivered = 9,
+        IronOreMined = 10,
+        IronOreProduced = 11,
+        IronOreSold = 12,
+        IronBarsProduced = 13,
+        IronBarsSold = 14,
+        MineUnlocked = 15,
+        DrillUnlocked = 16
     }
 
     public enum ProgressFlagId
@@ -26,7 +33,8 @@ namespace IndustryTycoon.Progression
         AutoFeederUnlocked = 3,
         PackingStationUnlocked = 4,
         CourierUnlocked = 5,
-        LumberCampCompleted = 6
+        LumberCampCompleted = 6,
+        SmelterUnlocked = 7
     }
 
     public enum MainObjectiveId
@@ -39,7 +47,11 @@ namespace IndustryTycoon.Progression
         ProduceFiveCrates = 5,
         UnlockCourier = 6,
         CompleteFiveCourierDeliveries = 7,
-        CompleteLumberCamp = 8
+        CompleteLumberCamp = 8,
+        MineTenIronOre = 9,
+        UnlockSmelter = 10,
+        ProduceFiveIronBars = 11,
+        UnlockAutomatedDrill = 12
     }
 
     public enum LumberCampContractId
@@ -182,7 +194,14 @@ namespace IndustryTycoon.Progression
             "crates_produced",
             "crates_sold",
             "courier_trips_completed",
-            "crates_delivered"
+            "crates_delivered",
+            "iron_ore_mined",
+            "iron_ore_produced",
+            "iron_ore_sold",
+            "iron_bars_produced",
+            "iron_bars_sold",
+            "mine_unlocked",
+            "drill_unlocked"
         };
 
         private static readonly string[] FlagStableIds =
@@ -193,7 +212,8 @@ namespace IndustryTycoon.Progression
             "auto_feeder_unlocked",
             "packing_station_unlocked",
             "courier_unlocked",
-            "lumber_camp_completed"
+            "lumber_camp_completed",
+            "smelter_unlocked"
         };
 
         private static readonly MainObjectiveDefinition[] Objectives =
@@ -229,14 +249,33 @@ namespace IndustryTycoon.Progression
                 "UNLOCK COURIER",
                 ProgressFlagId.CourierUnlocked),
             new MainObjectiveDefinition(
+                MainObjectiveId.CompleteLumberCamp,
+                "COMPLETE LUMBER CAMP",
+                ProgressFlagId.LumberCampCompleted),
+            new MainObjectiveDefinition(
                 MainObjectiveId.CompleteFiveCourierDeliveries,
                 "COMPLETE COURIER DELIVERIES",
                 ProgressMetricId.CourierTripsCompleted,
                 5L),
             new MainObjectiveDefinition(
-                MainObjectiveId.CompleteLumberCamp,
-                "COMPLETE LUMBER CAMP",
-                ProgressFlagId.LumberCampCompleted)
+                MainObjectiveId.MineTenIronOre,
+                "MINE IRON ORE",
+                ProgressMetricId.IronOreMined,
+                10L),
+            new MainObjectiveDefinition(
+                MainObjectiveId.UnlockSmelter,
+                "UNLOCK SMELTER",
+                ProgressFlagId.SmelterUnlocked),
+            new MainObjectiveDefinition(
+                MainObjectiveId.ProduceFiveIronBars,
+                "PRODUCE IRON BARS",
+                ProgressMetricId.IronBarsProduced,
+                5L),
+            new MainObjectiveDefinition(
+                MainObjectiveId.UnlockAutomatedDrill,
+                "UNLOCK AUTOMATED DRILL",
+                ProgressMetricId.DrillUnlocked,
+                1L)
         };
 
         private static readonly LumberCampContractDefinition[] Contracts =

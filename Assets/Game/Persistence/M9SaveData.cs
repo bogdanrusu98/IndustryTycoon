@@ -9,7 +9,8 @@ namespace IndustryTycoon.Persistence
         public const string Id = "industry-tycoon-local-save";
         public const int Version1 = 1;
         public const int Version2 = 2;
-        public const int CurrentVersion = Version2;
+        public const int Version3 = 3;
+        public const int CurrentVersion = Version3;
     }
 
     public static class M9PurchasePadIds
@@ -22,6 +23,7 @@ namespace IndustryTycoon.Persistence
         public const string DeliveryCourier = "delivery_courier";
 
         public const int Count = 6;
+        public const int DeliveryCourierIndex = 5;
 
         public static string GetId(int index)
         {
@@ -81,6 +83,60 @@ namespace IndustryTycoon.Persistence
         }
     }
 
+    public static class M11MiningPurchasePadIds
+    {
+        public const string Smelter = "iron_smelter";
+        public const string AutomatedDrill = "automated_drill";
+
+        public const long SmelterRequiredMinedOre = 10L;
+        public const long AutomatedDrillRequiredProducedBars = 5L;
+
+        public const int Count = 2;
+        public const int SmelterIndex = 0;
+        public const int AutomatedDrillIndex = 1;
+
+        public static string GetId(int index)
+        {
+            switch (index)
+            {
+                case SmelterIndex:
+                    return Smelter;
+                case AutomatedDrillIndex:
+                    return AutomatedDrill;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(index));
+            }
+        }
+
+        public static int GetTotalCost(int index)
+        {
+            switch (index)
+            {
+                case SmelterIndex:
+                    return 1200;
+                case AutomatedDrillIndex:
+                    return 2400;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(index));
+            }
+        }
+
+        public static bool TryGetIndex(string id, out int index)
+        {
+            for (int candidate = 0; candidate < Count; candidate++)
+            {
+                if (string.Equals(id, GetId(candidate), StringComparison.Ordinal))
+                {
+                    index = candidate;
+                    return true;
+                }
+            }
+
+            index = -1;
+            return false;
+        }
+    }
+
     [Serializable]
     public sealed class M9CarrySaveRecord
     {
@@ -94,6 +150,56 @@ namespace IndustryTycoon.Persistence
         public string id;
         public int paidCash;
         public bool completed;
+    }
+
+    [Serializable]
+    public sealed class M11MiningSaveData
+    {
+        public bool mineUnlocked;
+        public M9PurchasePadSaveRecord[] purchasePads;
+        public int smelterInputIronOre;
+        public int smelterOutputIronBars;
+        public int oreStorageIronOre;
+
+        public static M11MiningSaveData CreateFresh()
+        {
+            var data = new M11MiningSaveData
+            {
+                purchasePads = new M9PurchasePadSaveRecord[
+                    M11MiningPurchasePadIds.Count]
+            };
+            for (int i = 0; i < data.purchasePads.Length; i++)
+            {
+                data.purchasePads[i] = new M9PurchasePadSaveRecord
+                {
+                    id = M11MiningPurchasePadIds.GetId(i)
+                };
+            }
+
+            return data;
+        }
+
+        public bool TryGetPurchasePad(
+            string id,
+            out M9PurchasePadSaveRecord record)
+        {
+            if (purchasePads != null)
+            {
+                for (int i = 0; i < purchasePads.Length; i++)
+                {
+                    M9PurchasePadSaveRecord candidate = purchasePads[i];
+                    if (candidate != null
+                        && string.Equals(candidate.id, id, StringComparison.Ordinal))
+                    {
+                        record = candidate;
+                        return true;
+                    }
+                }
+            }
+
+            record = null;
+            return false;
+        }
     }
 
     [Serializable]
@@ -123,6 +229,7 @@ namespace IndustryTycoon.Persistence
 
         public M10ProgressionSaveData progression =
             M10ProgressionSaveData.CreateFresh();
+        public M11MiningSaveData mining = M11MiningSaveData.CreateFresh();
 
         public static M9SaveData CreateFresh(long utcNowUnixSeconds)
         {
@@ -133,6 +240,7 @@ namespace IndustryTycoon.Persistence
             {
                 purchasePads = new M9PurchasePadSaveRecord[M9PurchasePadIds.Count],
                 progression = M10ProgressionSaveData.CreateFresh(),
+                mining = M11MiningSaveData.CreateFresh(),
                 lastEvaluationUtcUnixSeconds = safeTimestamp,
                 lastWriteUtcUnixSeconds = safeTimestamp
             };
@@ -177,6 +285,9 @@ namespace IndustryTycoon.Persistence
         public int processorOutputCapacity = 12;
         public int packingInputCapacity = 24;
         public int packingOutputCapacity = 12;
+        public int smelterInputCapacity = 24;
+        public int smelterOutputCapacity = 12;
+        public int oreStorageCapacity = 30;
         public long maximumPendingAwaySeconds = 365L * 24L * 60L * 60L;
 
         public static M9SaveValidationSettings CreateDefault()
@@ -302,12 +413,24 @@ namespace IndustryTycoon.Persistence
 
             bool normalizedLumberCampCompleted = source.lumberCampCompleted
                                                   && orderedPads[
-                                                      M9PurchasePadIds.Count - 1]
+                                                      M9PurchasePadIds
+                                                          .DeliveryCourierIndex]
                                                       .completed;
+            if (!TryNormalizeMining(
+                    source.mining,
+                    normalizedLumberCampCompleted,
+                    settings,
+                    out M11MiningSaveData normalizedMining,
+                    out failureReason))
+            {
+                return false;
+            }
+
             if (!ValidateExactProgressionFlags(
                     normalizedProgression,
                     orderedPads,
                     normalizedLumberCampCompleted,
+                    normalizedMining,
                     out failureReason))
             {
                 return false;
@@ -316,7 +439,8 @@ namespace IndustryTycoon.Persistence
             SeedExactProgressionFlags(
                 normalizedProgression,
                 orderedPads,
-                normalizedLumberCampCompleted);
+                normalizedLumberCampCompleted,
+                normalizedMining);
             if (!M10ProgressionSaveValidator.TryNormalize(
                     normalizedProgression,
                     out normalizedProgression,
@@ -366,7 +490,8 @@ namespace IndustryTycoon.Persistence
                 returnScreenPending = source.returnScreenPending,
                 lastEvaluationUtcUnixSeconds = lastEvaluation,
                 lastWriteUtcUnixSeconds = lastWrite,
-                progression = normalizedProgression
+                progression = normalizedProgression,
+                mining = normalizedMining
             };
             return true;
         }
@@ -375,6 +500,7 @@ namespace IndustryTycoon.Persistence
             M10ProgressionSaveData progression,
             M9PurchasePadSaveRecord[] orderedPads,
             bool lumberCampCompleted,
+            M11MiningSaveData mining,
             out string failureReason)
         {
             failureReason = null;
@@ -406,13 +532,63 @@ namespace IndustryTycoon.Persistence
                 return false;
             }
 
+            bool mineUnlocked = mining != null && mining.mineUnlocked;
+            bool smelterUnlocked = IsMiningPadCompleted(
+                mining,
+                M11MiningPurchasePadIds.Smelter);
+            bool drillUnlocked = IsMiningPadCompleted(
+                mining,
+                M11MiningPurchasePadIds.AutomatedDrill);
+            if (progression.GetMetric(ProgressMetricId.MineUnlocked) > 0L
+                && !mineUnlocked)
+            {
+                failureReason =
+                    "M11 Mine unlock metric contradicts canonical Mining state.";
+                return false;
+            }
+
+            if (progression.GetFlag(ProgressFlagId.SmelterUnlocked)
+                && !smelterUnlocked)
+            {
+                failureReason =
+                    "M11 Smelter flag contradicts its PurchasePad.";
+                return false;
+            }
+
+            if (progression.GetMetric(ProgressMetricId.DrillUnlocked) > 0L
+                && !drillUnlocked)
+            {
+                failureReason =
+                    "M11 Drill unlock metric contradicts its PurchasePad.";
+                return false;
+            }
+
+            if (smelterUnlocked
+                && progression.GetMetric(ProgressMetricId.IronOreMined)
+                < M11MiningPurchasePadIds.SmelterRequiredMinedOre)
+            {
+                failureReason =
+                    "M11 completed Smelter PurchasePad contradicts the manual Mining threshold.";
+                return false;
+            }
+
+            if (drillUnlocked
+                && progression.GetMetric(ProgressMetricId.IronBarsProduced)
+                < M11MiningPurchasePadIds.AutomatedDrillRequiredProducedBars)
+            {
+                failureReason =
+                    "M11 completed Drill PurchasePad contradicts the Iron Bar threshold.";
+                return false;
+            }
+
             return true;
         }
 
         private static void SeedExactProgressionFlags(
             M10ProgressionSaveData progression,
             M9PurchasePadSaveRecord[] orderedPads,
-            bool lumberCampCompleted)
+            bool lumberCampCompleted,
+            M11MiningSaveData mining)
         {
             if (progression == null || orderedPads == null)
             {
@@ -453,6 +629,127 @@ namespace IndustryTycoon.Persistence
             {
                 progression.SetFlag(ProgressFlagId.LumberCampCompleted);
             }
+
+            if (mining != null && mining.mineUnlocked)
+            {
+                progression.SetMetricOnce(ProgressMetricId.MineUnlocked);
+            }
+
+            if (IsMiningPadCompleted(
+                    mining,
+                    M11MiningPurchasePadIds.Smelter))
+            {
+                progression.SetFlag(ProgressFlagId.SmelterUnlocked);
+            }
+
+            if (IsMiningPadCompleted(
+                    mining,
+                    M11MiningPurchasePadIds.AutomatedDrill))
+            {
+                progression.SetMetricOnce(ProgressMetricId.DrillUnlocked);
+            }
+        }
+
+        private static bool TryNormalizeMining(
+            M11MiningSaveData source,
+            bool lumberCampCompleted,
+            M9SaveValidationSettings settings,
+            out M11MiningSaveData normalized,
+            out string failureReason)
+        {
+            normalized = null;
+            failureReason = null;
+            if (source == null
+                || source.purchasePads == null
+                || source.purchasePads.Length != M11MiningPurchasePadIds.Count)
+            {
+                failureReason =
+                    "M11 Mining state must contain exactly two PurchasePad records.";
+                return false;
+            }
+
+            normalized = M11MiningSaveData.CreateFresh();
+            normalized.mineUnlocked = lumberCampCompleted;
+            var seenPads = new bool[M11MiningPurchasePadIds.Count];
+            for (int i = 0; i < source.purchasePads.Length; i++)
+            {
+                M9PurchasePadSaveRecord sourcePad = source.purchasePads[i];
+                if (sourcePad == null
+                    || !M11MiningPurchasePadIds.TryGetIndex(
+                        sourcePad.id,
+                        out int padIndex)
+                    || seenPads[padIndex])
+                {
+                    failureReason =
+                        "M11 Mining PurchasePads contain a missing, unknown, or duplicate stable ID.";
+                    normalized = null;
+                    return false;
+                }
+
+                seenPads[padIndex] = true;
+                int totalCost = M11MiningPurchasePadIds.GetTotalCost(padIndex);
+                normalized.purchasePads[padIndex].completed = sourcePad.completed;
+                normalized.purchasePads[padIndex].paidCash = sourcePad.completed
+                    ? totalCost
+                    : Clamp(sourcePad.paidCash, 0, totalCost - 1);
+            }
+
+            if (!normalized.mineUnlocked)
+            {
+                ClearPurchasePad(normalized.purchasePads[0]);
+                ClearPurchasePad(normalized.purchasePads[1]);
+            }
+            else if (!normalized.purchasePads[
+                         M11MiningPurchasePadIds.SmelterIndex].completed)
+            {
+                ClearPurchasePad(
+                    normalized.purchasePads[
+                        M11MiningPurchasePadIds.AutomatedDrillIndex]);
+            }
+
+            bool smelterCompleted = normalized.purchasePads[
+                M11MiningPurchasePadIds.SmelterIndex].completed;
+            bool drillCompleted = normalized.purchasePads[
+                M11MiningPurchasePadIds.AutomatedDrillIndex].completed;
+            normalized.smelterInputIronOre = smelterCompleted
+                ? Clamp(
+                    source.smelterInputIronOre,
+                    0,
+                    Math.Max(1, settings.smelterInputCapacity))
+                : 0;
+            normalized.smelterOutputIronBars = smelterCompleted
+                ? Clamp(
+                    source.smelterOutputIronBars,
+                    0,
+                    Math.Max(1, settings.smelterOutputCapacity))
+                : 0;
+            normalized.oreStorageIronOre = drillCompleted
+                ? Clamp(
+                    source.oreStorageIronOre,
+                    0,
+                    Math.Max(1, settings.oreStorageCapacity))
+                : 0;
+            return true;
+        }
+
+        private static void ClearPurchasePad(M9PurchasePadSaveRecord record)
+        {
+            if (record == null)
+            {
+                return;
+            }
+
+            record.paidCash = 0;
+            record.completed = false;
+        }
+
+        private static bool IsMiningPadCompleted(
+            M11MiningSaveData mining,
+            string id)
+        {
+            return mining != null
+                   && mining.TryGetPurchasePad(id, out M9PurchasePadSaveRecord pad)
+                   && pad.completed;
         }
 
         private static long NormalizeTimestamp(long value, long fallback)
@@ -464,7 +761,9 @@ namespace IndustryTycoon.Persistence
         {
             return resourceType == ResourceType.Wood
                    || resourceType == ResourceType.Plank
-                   || resourceType == ResourceType.Crate;
+                   || resourceType == ResourceType.Crate
+                   || resourceType == ResourceType.IronOre
+                   || resourceType == ResourceType.IronBar;
         }
 
         private static int Clamp(int value, int minimum, int maximum)

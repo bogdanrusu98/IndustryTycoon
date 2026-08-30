@@ -66,12 +66,12 @@ namespace IndustryTycoon.Editor
 
         private static void TestCatalog()
         {
-            Require(LumberCampProgressionCatalog.MetricCount == 10,
+            Require(LumberCampProgressionCatalog.MetricCount == 17,
                 "Metric catalog count changed unexpectedly.");
-            Require(LumberCampProgressionCatalog.FlagCount == 7,
+            Require(LumberCampProgressionCatalog.FlagCount == 8,
                 "Flag catalog count changed unexpectedly.");
-            Require(LumberCampProgressionCatalog.ObjectiveCount == 9,
-                "Objective catalog must contain exactly the M10 sequence.");
+            Require(LumberCampProgressionCatalog.ObjectiveCount == 13,
+                "Objective catalog must contain the corrected M10 and M11 sequence.");
             Require(LumberCampProgressionCatalog.ContractCount == 5,
                 "Contract catalog must contain exactly the M10 sequence.");
             Require(LumberCampProgressionCatalog.AchievementCount == 15,
@@ -86,10 +86,18 @@ namespace IndustryTycoon.Editor
                 MainObjectiveId.UnlockPackingStation,
                 MainObjectiveId.ProduceFiveCrates,
                 MainObjectiveId.UnlockCourier,
+                MainObjectiveId.CompleteLumberCamp,
                 MainObjectiveId.CompleteFiveCourierDeliveries,
-                MainObjectiveId.CompleteLumberCamp
+                MainObjectiveId.MineTenIronOre,
+                MainObjectiveId.UnlockSmelter,
+                MainObjectiveId.ProduceFiveIronBars,
+                MainObjectiveId.UnlockAutomatedDrill
             };
-            long[] objectiveTargets = { 1L, 1L, 10L, 1L, 1L, 5L, 1L, 5L, 1L };
+            long[] objectiveTargets =
+            {
+                1L, 1L, 10L, 1L, 1L, 5L, 1L,
+                1L, 5L, 10L, 1L, 5L, 1L
+            };
             for (int i = 0; i < objectiveIds.Length; i++)
             {
                 MainObjectiveDefinition definition =
@@ -331,47 +339,69 @@ namespace IndustryTycoon.Editor
                 M10ProgressionSaveData.CreateFresh(),
                 amount => amount > 0);
 
-            Require(model.ObjectiveIndex == (int)MainObjectiveId.UnlockWorker,
+            Require(CurrentObjectiveIs(model, MainObjectiveId.UnlockWorker),
                 "Fresh progression did not start at Unlock Worker.");
             Require(model.BuildObjectiveDisplayText() == "OBJECTIVE: UNLOCK WORKER",
                 "Fresh objective HUD text is wrong.");
 
             model.RecordFlag(ProgressFlagId.WorkerUnlocked);
-            Require(model.ObjectiveIndex == (int)MainObjectiveId.UnlockProcessor,
+            Require(CurrentObjectiveIs(model, MainObjectiveId.UnlockProcessor),
                 "Worker unlock did not advance to Unlock Processor.");
             model.RecordFlag(ProgressFlagId.ProcessorUnlocked);
-            Require(model.ObjectiveIndex == (int)MainObjectiveId.ProduceTenPlanks,
+            Require(CurrentObjectiveIs(model, MainObjectiveId.ProduceTenPlanks),
                 "Processor unlock did not advance to Produce 10 Planks.");
             model.RecordPlanksProduced(10);
-            Require(model.ObjectiveIndex == (int)MainObjectiveId.UnlockAutoFeeder,
+            Require(CurrentObjectiveIs(model, MainObjectiveId.UnlockAutoFeeder),
                 "Ten Planks did not advance to Unlock Auto Feeder.");
             model.RecordFlag(ProgressFlagId.AutoFeederUnlocked);
-            Require(model.ObjectiveIndex == (int)MainObjectiveId.UnlockPackingStation,
+            Require(CurrentObjectiveIs(model, MainObjectiveId.UnlockPackingStation),
                 "Auto Feeder unlock did not advance to Unlock Packing Station.");
             model.RecordFlag(ProgressFlagId.PackingStationUnlocked);
-            Require(model.ObjectiveIndex == (int)MainObjectiveId.ProduceFiveCrates,
+            Require(CurrentObjectiveIs(model, MainObjectiveId.ProduceFiveCrates),
                 "Packing Station unlock did not advance to Produce 5 Crates.");
             model.RecordCratesProduced(5);
-            Require(model.ObjectiveIndex == (int)MainObjectiveId.UnlockCourier,
+            Require(CurrentObjectiveIs(model, MainObjectiveId.UnlockCourier),
                 "Five Crates did not advance to Unlock Courier.");
             model.RecordFlag(ProgressFlagId.CourierUnlocked);
-            Require(model.ObjectiveIndex
-                    == (int)MainObjectiveId.CompleteFiveCourierDeliveries,
-                "Courier unlock did not advance to five Courier deliveries.");
-            for (int i = 0; i < 5; i++)
+            Require(CurrentObjectiveIs(model, MainObjectiveId.CompleteLumberCamp),
+                "Courier unlock did not advance to Complete Lumber Camp.");
+            model.RecordCourierDelivery(1, 40);
+            Require(CurrentObjectiveIs(model, MainObjectiveId.CompleteLumberCamp),
+                "A Courier trip bypassed the authoritative Lumber Camp flag.");
+            model.RecordFlag(ProgressFlagId.LumberCampCompleted);
+            Require(CurrentObjectiveIs(
+                    model,
+                    MainObjectiveId.CompleteFiveCourierDeliveries),
+                "Lumber Camp completion did not advance to five Courier deliveries.");
+            model.GetObjectiveProgress(out long courierCurrent, out long courierTarget);
+            Require(courierCurrent == 1L && courierTarget == 5L,
+                "The first completion trip was not retained by the reordered objective.");
+            for (int i = 0; i < 4; i++)
             {
                 model.RecordCourierDelivery(1, 40);
             }
 
-            Require(model.ObjectiveIndex == (int)MainObjectiveId.CompleteLumberCamp,
-                "Five Courier trips did not advance to Complete Lumber Camp.");
-            model.RecordFlag(ProgressFlagId.LumberCampCompleted);
+            Require(CurrentObjectiveIs(model, MainObjectiveId.MineTenIronOre),
+                "Five Courier trips did not advance to manual Mining.");
+            Require(model.RecordMineUnlocked() && !model.RecordMineUnlocked(),
+                "Mine unlock metric was not binary and once-only.");
+            model.RecordIronOreMined(10);
+            Require(CurrentObjectiveIs(model, MainObjectiveId.UnlockSmelter),
+                "Ten manually mined Ore did not advance to Unlock Smelter.");
+            model.RecordFlag(ProgressFlagId.SmelterUnlocked);
+            Require(CurrentObjectiveIs(model, MainObjectiveId.ProduceFiveIronBars),
+                "Smelter unlock did not advance to Produce Iron Bars.");
+            model.RecordIronBarsProduced(5);
+            Require(CurrentObjectiveIs(model, MainObjectiveId.UnlockAutomatedDrill),
+                "Five Iron Bars did not advance to Unlock Automated Drill.");
+            Require(model.RecordDrillUnlocked() && !model.RecordDrillUnlocked(),
+                "Drill unlock metric was not binary and once-only.");
             Require(model.AreAllObjectivesCompleted
                     && model.ObjectiveIndex
                     == LumberCampProgressionCatalog.ObjectiveCount,
-                "Lumber Camp completion did not finish the objective sequence.");
+                "Automated Drill unlock did not finish the objective sequence.");
             Require(model.BuildObjectiveDisplayText()
-                    == "OBJECTIVE: LUMBER CAMP COMPLETE",
+                    == "OBJECTIVE: MINING COMPLETE",
                 "Completed objective HUD text is wrong.");
             model.GetObjectiveProgress(out long current, out long target);
             Require(current == 1L && target == 1L,
@@ -393,8 +423,7 @@ namespace IndustryTycoon.Editor
                     == "OBJECTIVE: PRODUCE PLANKS — 6 / 10",
                 "Numeric objective HUD text is wrong.");
             numericModel.RecordPlanksProduced(4);
-            Require(numericModel.ObjectiveIndex
-                    == (int)MainObjectiveId.UnlockAutoFeeder,
+            Require(CurrentObjectiveIs(numericModel, MainObjectiveId.UnlockAutoFeeder),
                 "Exact numeric target did not advance once.");
 
             var futureModel = new LumberCampProgressionModel(
@@ -411,10 +440,14 @@ namespace IndustryTycoon.Editor
             }
 
             futureModel.RecordFlag(ProgressFlagId.LumberCampCompleted);
-            Require(futureModel.ObjectiveIndex == (int)MainObjectiveId.UnlockWorker,
+            futureModel.RecordIronOreMined(10);
+            futureModel.RecordFlag(ProgressFlagId.SmelterUnlocked);
+            futureModel.RecordIronBarsProduced(5);
+            futureModel.RecordDrillUnlocked();
+            Require(CurrentObjectiveIs(futureModel, MainObjectiveId.UnlockWorker),
                 "Future progress skipped an earlier unsatisfied objective.");
             futureModel.RecordFlag(ProgressFlagId.WorkerUnlocked);
-            Require(futureModel.ObjectiveIndex == (int)MainObjectiveId.UnlockProcessor,
+            Require(CurrentObjectiveIs(futureModel, MainObjectiveId.UnlockProcessor),
                 "Ordered progression skipped Unlock Processor.");
             futureModel.RecordFlag(ProgressFlagId.ProcessorUnlocked);
             Require(futureModel.AreAllObjectivesCompleted,
@@ -814,6 +847,19 @@ namespace IndustryTycoon.Editor
                     && nonNegative.GetMetric(ProgressMetricId.WoodCollected) == 0L,
                 "Validator did not deterministically clamp a negative metric.");
 
+            M10ProgressionSaveData binary = M10ProgressionSaveData.CreateFresh();
+            SetMetric(binary, ProgressMetricId.MineUnlocked, 100L);
+            SetMetric(binary, ProgressMetricId.DrillUnlocked, -10L);
+            Require(M10ProgressionSaveValidator.TryNormalize(
+                        binary,
+                        out M10ProgressionSaveData normalizedBinary,
+                        out failure)
+                    && normalizedBinary.GetMetric(
+                        ProgressMetricId.MineUnlocked) == 1L
+                    && normalizedBinary.GetMetric(
+                        ProgressMetricId.DrillUnlocked) == 0L,
+                "Binary Mining unlock metrics were not normalized to 0/1.");
+
             M10ProgressionSaveData duplicate = M10ProgressionSaveData.CreateFresh();
             duplicate.metrics[1].id = duplicate.metrics[0].id;
             Require(!M10ProgressionSaveValidator.TryNormalize(
@@ -910,6 +956,17 @@ namespace IndustryTycoon.Editor
             ProgressFlagId flag)
         {
             state.flags[(int)flag].value = true;
+        }
+
+        private static bool CurrentObjectiveIs(
+            LumberCampProgressionModel model,
+            MainObjectiveId objectiveId)
+        {
+            return model != null
+                   && !model.AreAllObjectivesCompleted
+                   && LumberCampProgressionCatalog
+                       .GetObjective(model.ObjectiveIndex)
+                       .Id == objectiveId;
         }
 
         private static int Count(List<int> values, int expected)

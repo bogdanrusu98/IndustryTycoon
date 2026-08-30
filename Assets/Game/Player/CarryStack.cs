@@ -469,7 +469,9 @@ namespace IndustryTycoon.Player
         {
             return resourceType == ResourceType.Wood
                    || resourceType == ResourceType.Plank
-                   || resourceType == ResourceType.Crate;
+                   || resourceType == ResourceType.Crate
+                   || resourceType == ResourceType.IronOre
+                   || resourceType == ResourceType.IronBar;
         }
 
         private void OnValidate()

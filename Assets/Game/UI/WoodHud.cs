@@ -50,6 +50,12 @@ namespace IndustryTycoon.UI
                 case ResourceType.Crate:
                     resourceLabel = "Crate";
                     break;
+                case ResourceType.IronOre:
+                    resourceLabel = "Iron Ore";
+                    break;
+                case ResourceType.IronBar:
+                    resourceLabel = "Iron Bar";
+                    break;
                 default:
                     resourceLabel = "Wood";
                     break;

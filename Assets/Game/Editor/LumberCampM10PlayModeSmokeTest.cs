@@ -243,7 +243,8 @@ namespace IndustryTycoon.Editor
             _worker = FindSingleIncludingInactive<LumberWorker>();
             _autoFeeder = FindSingleIncludingInactive<WoodAutoFeeder>();
             _processor = FindSingleIncludingInactive<WoodProcessor>();
-            _packingStation = FindSingleIncludingInactive<PackingStation>();
+            _packingStation =
+                FindSingleExactTypeIncludingInactive<PackingStation>();
             _courier = FindSingleIncludingInactive<CrateCourier>();
             _completion = FindSingleIncludingInactive<LumberCampCompletion>();
 
@@ -759,6 +760,7 @@ namespace IndustryTycoon.Editor
             // fabricated, but the exact flag, objective, achievement, and reward must
             // reach a fixed point before Welcome Back cash is collected.
             _completion.RestoreCompleted(false);
+            _persistence.MineUnlock.RestoreUnlocked(false);
             _courier.RestoreIdleState();
             int completionReward = LumberCampProgressionCatalog.GetAchievement(
                 (int)LumberCampAchievementId.LumberCampComplete).RewardCash;
@@ -768,6 +770,7 @@ namespace IndustryTycoon.Editor
             state.flags[(int)ProgressFlagId.LumberCampCompleted].value = false;
             state.metrics[(int)ProgressMetricId.CourierTripsCompleted].value = 0L;
             state.metrics[(int)ProgressMetricId.CratesDelivered].value = 0L;
+            state.metrics[(int)ProgressMetricId.MineUnlocked].value = 0L;
             M10AchievementSaveRecord campAchievement = state.FindAchievementRecord(
                 (int)LumberCampAchievementId.LumberCampComplete);
             Require(campAchievement != null,
@@ -795,12 +798,14 @@ namespace IndustryTycoon.Editor
                 "Offline Courier settlement did not create a pending return.");
             Require(_completion.IsCompleted
                     && _progression.GetFlag(ProgressFlagId.LumberCampCompleted)
+                    && _progression.GetMetric(ProgressMetricId.MineUnlocked) == 1L
                     && _progression.IsAchievementUnlocked(
                         (int)LumberCampAchievementId.LumberCampComplete)
                     && _progression.IsAchievementRewarded(
                         (int)LumberCampAchievementId.LumberCampComplete)
                     && _wallet.Balance == walletBeforeSettlement + completionReward,
                 "Offline completion did not resolve/reward M10 before COLLECT.");
+            _offlineMetricSnapshot[(int)ProgressMetricId.MineUnlocked] = 1L;
             RequireMetricsEqual(_offlineMetricSnapshot,
                 "Offline settlement fabricated an M10 lifetime metric.");
 
@@ -968,6 +973,27 @@ namespace IndustryTycoon.Editor
             Require(matches.Length == 1,
                 $"M10 smoke expected one {typeof(T).Name}, found {matches.Length}.");
             return matches[0];
+        }
+
+        private static T FindSingleExactTypeIncludingInactive<T>() where T : Object
+        {
+            T[] matches = Object.FindObjectsByType<T>(FindObjectsInactive.Include);
+            T result = null;
+            int exactMatchCount = 0;
+            for (int i = 0; i < matches.Length; i++)
+            {
+                if (matches[i].GetType() != typeof(T))
+                {
+                    continue;
+                }
+
+                result = matches[i];
+                exactMatchCount++;
+            }
+
+            Require(exactMatchCount == 1,
+                $"M10 smoke expected one concrete {typeof(T).Name}, found {exactMatchCount}.");
+            return result;
         }
 
         private static void MovePlayerTo(Vector3 position)

@@ -211,6 +211,26 @@ namespace IndustryTycoon.Progression
             return metrics[index].value != current;
         }
 
+        internal bool SetMetricOnce(ProgressMetricId metric)
+        {
+            if (metrics == null)
+            {
+                return false;
+            }
+
+            int index = (int)metric;
+            if (index < 0
+                || index >= metrics.Length
+                || metrics[index] == null
+                || metrics[index].value >= 1L)
+            {
+                return false;
+            }
+
+            metrics[index].value = 1L;
+            return true;
+        }
+
         internal bool SetFlag(ProgressFlagId flag)
         {
             if (flags == null)
@@ -300,6 +320,12 @@ namespace IndustryTycoon.Progression
                         data.GetMetric(ProgressMetricId.WoodSold),
                         data.GetMetric(ProgressMetricId.PlanksSold),
                         data.GetMetric(ProgressMetricId.CratesSold));
+                    current = SaturatingAdd(
+                        current,
+                        data.GetMetric(ProgressMetricId.IronOreSold));
+                    current = SaturatingAdd(
+                        current,
+                        data.GetMetric(ProgressMetricId.IronBarsSold));
                     break;
                 case LumberCampAchievementId.FirstHire:
                     current = BoolToLong(data.GetFlag(ProgressFlagId.WorkerUnlocked));
@@ -541,11 +567,19 @@ namespace IndustryTycoon.Progression
                 normalized[index] = new M10MetricSaveRecord
                 {
                     id = LumberCampProgressionCatalog.GetMetricStableId(metric),
-                    value = Math.Max(0L, record.value)
+                    value = IsBinaryMetric(metric)
+                        ? ClampLong(record.value, 0L, 1L)
+                        : Math.Max(0L, record.value)
                 };
             }
 
             return true;
+        }
+
+        private static bool IsBinaryMetric(ProgressMetricId metric)
+        {
+            return metric == ProgressMetricId.MineUnlocked
+                   || metric == ProgressMetricId.DrillUnlocked;
         }
 
         private static bool TryNormalizeFlags(

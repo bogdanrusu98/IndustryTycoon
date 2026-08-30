@@ -63,6 +63,8 @@ namespace IndustryTycoon.Interaction
         [SerializeField, Min(1)] private int woodValue = 5;
         [SerializeField, Min(1)] private int plankValue = 15;
         [SerializeField, Min(1)] private int crateValue = 40;
+        [SerializeField, Min(1)] private int ironOreValue = 10;
+        [SerializeField, Min(1)] private int ironBarValue = 30;
         [SerializeField, Min(0.02f)] private float unloadInterval = 0.2f;
 
         private WaitForSeconds _unloadWait;
@@ -79,6 +81,8 @@ namespace IndustryTycoon.Interaction
         public int WoodValue => woodValue;
         public int PlankValue => plankValue;
         public int CrateValue => crateValue;
+        public int IronOreValue => ironOreValue;
+        public int IronBarValue => ironBarValue;
         public float UnloadInterval => unloadInterval;
         public bool IsPlayerInside => _isPlayerInside;
 
@@ -228,6 +232,10 @@ namespace IndustryTycoon.Interaction
                     return plankValue;
                 case ResourceType.Crate:
                     return crateValue;
+                case ResourceType.IronOre:
+                    return ironOreValue;
+                case ResourceType.IronBar:
+                    return ironBarValue;
                 default:
                     return 0;
             }
@@ -255,6 +263,8 @@ namespace IndustryTycoon.Interaction
             woodValue = Mathf.Max(1, woodValue);
             plankValue = Mathf.Max(1, plankValue);
             crateValue = Mathf.Max(1, crateValue);
+            ironOreValue = Mathf.Max(1, ironOreValue);
+            ironBarValue = Mathf.Max(1, ironBarValue);
             unloadInterval = Mathf.Max(0.02f, unloadInterval);
         }
     }

@@ -3,6 +3,7 @@ using IndustryTycoon.Core;
 using IndustryTycoon.Economy;
 using IndustryTycoon.Interaction;
 using IndustryTycoon.Logistics;
+using IndustryTycoon.Mining;
 using IndustryTycoon.Player;
 using IndustryTycoon.Processing;
 using IndustryTycoon.ResourceSystem;
@@ -24,6 +25,9 @@ namespace IndustryTycoon.Progression
         [SerializeField] private WoodProcessor processor;
         [SerializeField] private PackingStation packingStation;
         [SerializeField] private CrateCourier courier;
+        [SerializeField] private IronVein ironVein;
+        [SerializeField] private Smelter smelter;
+        [SerializeField] private AutomatedDrill automatedDrill;
 
         [Header("Authoritative Unlocks")]
         [SerializeField] private WoodProductionUpgrade productionUpgrade;
@@ -33,6 +37,9 @@ namespace IndustryTycoon.Progression
         [SerializeField] private FirstPackingStationUnlock packingStationUnlock;
         [SerializeField] private FirstCourierUnlock courierUnlock;
         [SerializeField] private LumberCampCompletion lumberCampCompletion;
+        [SerializeField] private MineUnlock mineUnlock;
+        [SerializeField] private SmelterUnlock smelterUnlock;
+        [SerializeField] private DrillUnlock drillUnlock;
 
         private LumberCampProgressionModel _model;
         private bool _hasStarted;
@@ -48,6 +55,9 @@ namespace IndustryTycoon.Progression
         public WoodProcessor Processor => processor;
         public PackingStation PackingStation => packingStation;
         public CrateCourier Courier => courier;
+        public IronVein IronVein => ironVein;
+        public Smelter Smelter => smelter;
+        public AutomatedDrill AutomatedDrill => automatedDrill;
         public WoodProductionUpgrade ProductionUpgrade => productionUpgrade;
         public FirstWorkerUnlock WorkerUnlock => workerUnlock;
         public FirstProcessorUnlock ProcessorUnlock => processorUnlock;
@@ -55,6 +65,9 @@ namespace IndustryTycoon.Progression
         public FirstPackingStationUnlock PackingStationUnlock => packingStationUnlock;
         public FirstCourierUnlock CourierUnlock => courierUnlock;
         public LumberCampCompletion LumberCampCompletion => lumberCampCompletion;
+        public MineUnlock MineUnlock => mineUnlock;
+        public SmelterUnlock SmelterUnlock => smelterUnlock;
+        public DrillUnlock DrillUnlock => drillUnlock;
         public bool IsRuntimeReady => _hasStarted;
         public int ObjectiveIndex => _model != null ? _model.ObjectiveIndex : 0;
         public bool AreAllObjectivesCompleted => _model != null
@@ -262,6 +275,21 @@ namespace IndustryTycoon.Progression
                 courier.DeliveryCompleted += HandleCourierDeliveryCompleted;
             }
 
+            if (ironVein != null)
+            {
+                ironVein.OreMined += HandleIronOreMined;
+            }
+
+            if (smelter != null)
+            {
+                smelter.RecipeCompleted += HandleSmelterRecipeCompleted;
+            }
+
+            if (automatedDrill != null)
+            {
+                automatedDrill.OreProduced += HandleAutomatedDrillOreProduced;
+            }
+
             SetPurchaseSubscription(
                 productionUpgrade != null ? productionUpgrade.PurchasePad : null,
                 HandleProductionUpgradeCompleted,
@@ -288,10 +316,23 @@ namespace IndustryTycoon.Progression
                 courierUnlock != null ? courierUnlock.CourierPurchasePad : null,
                 HandleCourierCompleted,
                 true);
+            SetPurchaseSubscription(
+                smelterUnlock != null ? smelterUnlock.SmelterPurchasePad : null,
+                HandleSmelterCompleted,
+                true);
+            SetPurchaseSubscription(
+                drillUnlock != null ? drillUnlock.DrillPurchasePad : null,
+                HandleDrillCompleted,
+                true);
 
             if (lumberCampCompletion != null)
             {
                 lumberCampCompletion.Completed += HandleLumberCampCompleted;
+            }
+
+            if (mineUnlock != null)
+            {
+                mineUnlock.Unlocked += HandleMineUnlocked;
             }
 
             if (wallet != null)
@@ -339,6 +380,22 @@ namespace IndustryTycoon.Progression
                 courier.DeliveryCompleted -= HandleCourierDeliveryCompleted;
             }
 
+
+            if (ironVein != null)
+            {
+                ironVein.OreMined -= HandleIronOreMined;
+            }
+
+            if (smelter != null)
+            {
+                smelter.RecipeCompleted -= HandleSmelterRecipeCompleted;
+            }
+
+            if (automatedDrill != null)
+            {
+                automatedDrill.OreProduced -= HandleAutomatedDrillOreProduced;
+            }
+
             SetPurchaseSubscription(
                 productionUpgrade != null ? productionUpgrade.PurchasePad : null,
                 HandleProductionUpgradeCompleted,
@@ -365,10 +422,23 @@ namespace IndustryTycoon.Progression
                 courierUnlock != null ? courierUnlock.CourierPurchasePad : null,
                 HandleCourierCompleted,
                 false);
+            SetPurchaseSubscription(
+                smelterUnlock != null ? smelterUnlock.SmelterPurchasePad : null,
+                HandleSmelterCompleted,
+                false);
+            SetPurchaseSubscription(
+                drillUnlock != null ? drillUnlock.DrillPurchasePad : null,
+                HandleDrillCompleted,
+                false);
 
             if (lumberCampCompletion != null)
             {
                 lumberCampCompletion.Completed -= HandleLumberCampCompleted;
+            }
+
+            if (mineUnlock != null)
+            {
+                mineUnlock.Unlocked -= HandleMineUnlocked;
             }
 
             if (wallet != null)
@@ -420,6 +490,21 @@ namespace IndustryTycoon.Progression
             if (lumberCampCompletion != null && lumberCampCompletion.IsCompleted)
             {
                 _model.RecordFlag(ProgressFlagId.LumberCampCompleted);
+            }
+
+            if (mineUnlock != null && mineUnlock.IsUnlocked)
+            {
+                _model.RecordMineUnlocked();
+            }
+
+            if (smelterUnlock != null && smelterUnlock.IsSmelterActivated)
+            {
+                _model.RecordFlag(ProgressFlagId.SmelterUnlocked);
+            }
+
+            if (drillUnlock != null && drillUnlock.IsDrillActivated)
+            {
+                _model.RecordDrillUnlocked();
             }
         }
 
@@ -478,6 +563,24 @@ namespace IndustryTycoon.Progression
             _model.RecordCourierDelivery(crateCount, cashValue);
         }
 
+        private void HandleIronOreMined(int amount)
+        {
+            _model.RecordIronOreMined(amount);
+        }
+
+        private void HandleSmelterRecipeCompleted(
+            int resultingInputOre,
+            int resultingOutputBars)
+        {
+            _model.RecordIronBarsProduced(
+                smelter != null ? smelter.RecipeOutputBars : 1);
+        }
+
+        private void HandleAutomatedDrillOreProduced(int amount)
+        {
+            _model.RecordIronOreProduced(amount);
+        }
+
         private void HandleProductionUpgradeCompleted()
         {
             _model.RecordFlag(ProgressFlagId.ProductionUpgradeUnlocked);
@@ -511,6 +614,21 @@ namespace IndustryTycoon.Progression
         private void HandleLumberCampCompleted()
         {
             _model.RecordFlag(ProgressFlagId.LumberCampCompleted);
+        }
+
+        private void HandleMineUnlocked()
+        {
+            _model.RecordMineUnlocked();
+        }
+
+        private void HandleSmelterCompleted()
+        {
+            _model.RecordFlag(ProgressFlagId.SmelterUnlocked);
+        }
+
+        private void HandleDrillCompleted()
+        {
+            _model.RecordDrillUnlocked();
         }
 
         private void HandleWalletBalanceChanged(int balance)

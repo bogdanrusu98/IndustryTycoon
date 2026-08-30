@@ -52,9 +52,11 @@ namespace IndustryTycoon.Editor
             Run("Corrupt and unsupported fallback", TestInvalidFileFallbacks);
             Run("Invalid value normalization/rejection", TestValidationBoundaries);
             Run("Reset returns exact fresh state", TestStoreReset);
-            Run("Schema v1 to v2 migration", TestVersion1Migration);
-            Run("Migrated v2 resave is idempotent", TestMigratedResave);
+            Run("Schema v1 to v3 migration", TestVersion1Migration);
+            Run("Schema v2 to v3 migration", TestVersion2Migration);
+            Run("Migrated v3 resave is idempotent", TestMigratedResave);
             Run("Corrupt M10 structure fallback", TestCorruptM10Fallback);
+            Run("Mining purchase threshold contradictions", TestMiningThresholdContradictions);
 
             Run("Negative, invalid, capped elapsed and efficiency", TestElapsedRules);
             Run("Automation gates and Worker production", TestAutomationGates);
@@ -135,6 +137,11 @@ namespace IndustryTycoon.Editor
                     && decoded.Data.packingInputPlanks == 11
                     && decoded.Data.packingOutputCrates == 6,
                 "Authoritative Stockpile/Processor/Packing buffers did not round-trip.");
+            Require(decoded.Data.mining.mineUnlocked
+                    && decoded.Data.mining.smelterInputIronOre == 13
+                    && decoded.Data.mining.smelterOutputIronBars == 7
+                    && decoded.Data.mining.oreStorageIronOre == 19,
+                "Canonical M11 Mining state did not round-trip.");
         }
 
         private static void TestPartialPurchasePadRoundTrip()
@@ -300,6 +307,10 @@ namespace IndustryTycoon.Editor
             source.processorOutputPlanks = int.MaxValue;
             source.packingInputPlanks = -1;
             source.packingOutputCrates = int.MaxValue;
+            source.mining.mineUnlocked = true;
+            source.mining.smelterInputIronOre = int.MaxValue;
+            source.mining.smelterOutputIronBars = int.MaxValue;
+            source.mining.oreStorageIronOre = int.MaxValue;
             source.pendingOfflineCash = -1;
             source.pendingOfflineAwaySeconds = long.MaxValue;
             source.lastEvaluationUtcUnixSeconds = -99;
@@ -334,6 +345,11 @@ namespace IndustryTycoon.Editor
                     && normalized.packingInputPlanks == 0
                     && normalized.packingOutputCrates == settings.packingOutputCapacity,
                 "Negative/out-of-range machine buffers were not clamped.");
+            Require(!normalized.mining.mineUnlocked
+                    && normalized.mining.smelterInputIronOre == 0
+                    && normalized.mining.smelterOutputIronBars == 0
+                    && normalized.mining.oreStorageIronOre == 0,
+                "Locked Mining state retained unlock/buffer inventory.");
             Require(normalized.pendingOfflineCash == 0
                     && normalized.pendingOfflineAwaySeconds == 1000L,
                 "Pending reward bounds were not normalized.");
@@ -393,8 +409,8 @@ namespace IndustryTycoon.Editor
             Require(result.IsSuccess && result.WasMigrated,
                 "A valid M9 v1 save did not take the explicit migration path.");
             M9SaveData migrated = result.Data;
-            Require(migrated.version == M9SaveSchema.Version2,
-                "Migrated save did not become schema v2.");
+            Require(migrated.version == M9SaveSchema.Version3,
+                "Migrated save did not become schema v3.");
             Require(migrated.walletCash == 731
                     && migrated.cashPileStoredCash == 219
                     && migrated.carry.resourceType == ResourceType.Crate
@@ -417,10 +433,25 @@ namespace IndustryTycoon.Editor
                     $"Migration changed completed PurchasePad {i}.");
             }
 
-            for (int i = 0; i < LumberCampProgressionCatalog.MetricCount; i++)
+            for (int i = 0; i < 10; i++)
             {
                 Require(migrated.progression.GetMetric((ProgressMetricId)i) == 0L,
                     $"Migration invented historical metric {(ProgressMetricId)i}.");
+            }
+
+            Require(migrated.mining != null
+                    && migrated.mining.mineUnlocked
+                    && migrated.progression.GetMetric(
+                        ProgressMetricId.MineUnlocked) == 1L
+                    && migrated.progression.GetMetric(
+                        ProgressMetricId.DrillUnlocked) == 0L,
+                "Completed legacy Lumber Camp did not seed the exact Mine unlock.");
+            for (int i = (int)ProgressMetricId.IronOreMined;
+                 i <= (int)ProgressMetricId.IronBarsSold;
+                 i++)
+            {
+                Require(migrated.progression.GetMetric((ProgressMetricId)i) == 0L,
+                    $"Migration invented historical Mining metric {(ProgressMetricId)i}.");
             }
 
             Require(migrated.progression.GetFlag(
@@ -434,6 +465,8 @@ namespace IndustryTycoon.Editor
                     && migrated.progression.GetFlag(
                         ProgressFlagId.LumberCampCompleted),
                 "Migration did not seed exact canonical unlock/completion flags.");
+            Require(!migrated.progression.GetFlag(ProgressFlagId.SmelterUnlocked),
+                "Legacy migration invented a Smelter unlock.");
             Require(migrated.progression.objectiveIndex == 2,
                 "Zero historical metrics should stop migrated objectives at Produce Planks.");
             Require(migrated.progression.activeContractIndex == 0
@@ -470,27 +503,90 @@ namespace IndustryTycoon.Editor
                 var clock = new ManualUtcClock(BaselineUtc);
                 M9LocalSaveStore store = scope.CreateStore(clock);
                 Directory.CreateDirectory(store.DirectoryPath);
-                File.WriteAllText(store.PrimaryPath, BuildVersion1Fixture());
+                File.WriteAllText(store.PrimaryPath, BuildVersion2Fixture());
 
                 M9SaveLoadResult migrated = store.Load();
                 Require(migrated.LoadedExisting
                         && migrated.WasMigrated
                         && migrated.ShouldRewritePrimary,
-                    "Store did not expose the required v1 rewrite state.");
+                    "Store did not expose the required v2 rewrite state.");
                 M9SaveWriteResult write = store.Save(migrated.Data);
-                Require(write.IsSuccess && write.PersistedData.version == 2,
-                    "Migrated state did not resave as schema v2.");
+                Require(write.IsSuccess
+                        && write.PersistedData.version == M9SaveSchema.Version3,
+                    "Migrated state did not resave as schema v3.");
 
                 M9SaveLoadResult secondLoad = store.Load();
                 Require(secondLoad.Status == M9SaveLoadStatus.LoadedPrimary
                         && !secondLoad.WasMigrated
                         && !secondLoad.ShouldRewritePrimary,
-                    "A resaved v2 file remigrated destructively.");
+                    "A resaved v3 file remigrated destructively.");
                 AssertEquivalent(
                     write.PersistedData,
                     secondLoad.Data,
                     includeWriteTimestamp: true);
             }
+        }
+
+        private static void TestVersion2Migration()
+        {
+            M9SaveDecodeResult result = M9SaveCodec.Decode(
+                BuildVersion2Fixture(),
+                CreateValidationSettings(),
+                BaselineUtc);
+            Require(result.IsSuccess && result.WasMigrated,
+                "A valid v2 save did not take the explicit v2-to-v3 path: "
+                + result.Diagnostic);
+            M9SaveData migrated = result.Data;
+            Require(migrated.version == M9SaveSchema.Version3,
+                "The v2 migration did not produce schema v3.");
+            Require(migrated.walletCash == 731
+                    && migrated.cashPileStoredCash == 219
+                    && migrated.lumberCampCompleted,
+                "The v2 migration changed legacy economy/completion state.");
+            for (int i = 0; i < 10; i++)
+            {
+                Require(migrated.progression.GetMetric((ProgressMetricId)i)
+                        == (i + 1L) * 17L,
+                    $"The v2 migration changed metric {(ProgressMetricId)i}.");
+            }
+
+            Require(migrated.mining != null
+                    && migrated.mining.mineUnlocked
+                    && migrated.mining.purchasePads.Length
+                    == M11MiningPurchasePadIds.Count
+                    && migrated.mining.smelterInputIronOre == 0
+                    && migrated.mining.smelterOutputIronBars == 0
+                    && migrated.mining.oreStorageIronOre == 0
+                    && migrated.progression.GetMetric(
+                        ProgressMetricId.MineUnlocked) == 1L
+                    && migrated.progression.GetMetric(
+                        ProgressMetricId.DrillUnlocked) == 0L
+                    && !migrated.progression.GetFlag(
+                        ProgressFlagId.SmelterUnlocked),
+                "The v2 migration did not create exact fresh Mining state.");
+            for (int i = 0; i < migrated.mining.purchasePads.Length; i++)
+            {
+                Require(!migrated.mining.purchasePads[i].completed
+                        && migrated.mining.purchasePads[i].paidCash == 0,
+                    $"The v2 migration invented Mining purchase progress at {i}.");
+            }
+
+            Require(LumberCampProgressionCatalog
+                        .GetObjective(migrated.progression.objectiveIndex)
+                        .Id == MainObjectiveId.MineTenIronOre,
+                "The v2 migration did not recalculate the corrected objective cursor.");
+
+            string invalidLegacyCarry = BuildVersion2Fixture().Replace(
+                "\"resourceType\":2",
+                "\"resourceType\":3");
+            M9SaveDecodeResult sanitizedCarry = M9SaveCodec.Decode(
+                invalidLegacyCarry,
+                CreateValidationSettings(),
+                BaselineUtc);
+            Require(sanitizedCarry.IsSuccess
+                    && sanitizedCarry.Data.carry.resourceType == ResourceType.Wood
+                    && sanitizedCarry.Data.carry.amount == 0,
+                "A resource enum unavailable in v2 was reinterpreted as Iron.");
         }
 
         private static void TestCorruptM10Fallback()
@@ -529,6 +625,48 @@ namespace IndustryTycoon.Editor
                     "M10 unlock flag contradicting its PurchasePad bypassed fallback.");
                 AssertFresh(load.Data, BaselineUtc);
             }
+        }
+
+        private static void TestMiningThresholdContradictions()
+        {
+            M9SaveValidationSettings settings = CreateValidationSettings();
+            M9SaveData invalidSmelter = CreateLumberCompleteSave();
+            CompleteMiningPad(
+                invalidSmelter,
+                M11MiningPurchasePadIds.SmelterIndex);
+            invalidSmelter.progression.metrics[
+                (int)ProgressMetricId.IronOreMined].value =
+                M11MiningPurchasePadIds.SmelterRequiredMinedOre - 1L;
+            Require(!M9SaveValidator.TryNormalize(
+                    invalidSmelter,
+                    settings,
+                    BaselineUtc,
+                    out _,
+                    out string smelterFailure)
+                    && smelterFailure.Contains("Mining threshold"),
+                "A completed Smelter pad bypassed its ten-Ore Mining threshold.");
+
+            M9SaveData invalidDrill = CreateLumberCompleteSave();
+            CompleteMiningPad(
+                invalidDrill,
+                M11MiningPurchasePadIds.SmelterIndex);
+            CompleteMiningPad(
+                invalidDrill,
+                M11MiningPurchasePadIds.AutomatedDrillIndex);
+            invalidDrill.progression.metrics[
+                (int)ProgressMetricId.IronOreMined].value =
+                M11MiningPurchasePadIds.SmelterRequiredMinedOre;
+            invalidDrill.progression.metrics[
+                (int)ProgressMetricId.IronBarsProduced].value =
+                M11MiningPurchasePadIds.AutomatedDrillRequiredProducedBars - 1L;
+            Require(!M9SaveValidator.TryNormalize(
+                    invalidDrill,
+                    settings,
+                    BaselineUtc,
+                    out _,
+                    out string drillFailure)
+                    && drillFailure.Contains("Iron Bar threshold"),
+                "A completed Drill pad bypassed its five-Bar production threshold.");
         }
 
         private static void TestElapsedRules()
@@ -930,7 +1068,10 @@ namespace IndustryTycoon.Editor
                 processorInputCapacity = 24,
                 processorOutputCapacity = 12,
                 packingInputCapacity = 24,
-                packingOutputCapacity = 12
+                packingOutputCapacity = 12,
+                smelterInputCapacity = 24,
+                smelterOutputCapacity = 12,
+                oreStorageCapacity = 30
             };
         }
 
@@ -952,13 +1093,27 @@ namespace IndustryTycoon.Editor
             data.processorOutputPlanks = 8;
             data.packingInputPlanks = 11;
             data.packingOutputCrates = 6;
+            data.mining.mineUnlocked = true;
+            for (int i = 0; i < M11MiningPurchasePadIds.Count; i++)
+            {
+                CompleteMiningPad(data, i);
+            }
+
+            data.mining.smelterInputIronOre = 13;
+            data.mining.smelterOutputIronBars = 7;
+            data.mining.oreStorageIronOre = 19;
             data.pendingOfflineCash = 240;
             data.pendingOfflineAwaySeconds = 7200L;
             data.returnScreenPending = true;
             M10ProgressionSaveData progression = data.progression;
             for (int i = 0; i < LumberCampProgressionCatalog.MetricCount; i++)
             {
-                progression.metrics[i].value = (i + 1L) * 17L;
+                ProgressMetricId metric = (ProgressMetricId)i;
+                progression.metrics[i].value = metric == ProgressMetricId.MineUnlocked
+                                                || metric
+                                                == ProgressMetricId.DrillUnlocked
+                    ? 1L
+                    : (i + 1L) * 17L;
             }
 
             for (int i = 0; i < LumberCampProgressionCatalog.FlagCount; i++)
@@ -977,6 +1132,19 @@ namespace IndustryTycoon.Editor
                 progression.achievements[i].rewarded = i < 5;
             }
 
+            return data;
+        }
+
+        private static M9SaveData CreateLumberCompleteSave()
+        {
+            M9SaveData data = M9SaveData.CreateFresh(BaselineUtc);
+            for (int i = 0; i < M9PurchasePadIds.Count; i++)
+            {
+                CompletePad(data, i);
+            }
+
+            data.lumberCampCompleted = true;
+            data.mining.mineUnlocked = true;
             return data;
         }
 
@@ -1007,13 +1175,34 @@ namespace IndustryTycoon.Editor
                    + "\"returnScreenPending\":true,"
                    + "\"lastEvaluationUtcUnixSeconds\":2000000000,"
                    + "\"lastWriteUtcUnixSeconds\":2000000000"
-                   + "}";
+                    + "}";
+        }
+
+        private static string BuildVersion2Fixture()
+        {
+            M9SaveData data = CreateFullyPopulatedSave();
+            data.version = M9SaveSchema.Version2;
+            var version2Metrics = new M10MetricSaveRecord[10];
+            Array.Copy(data.progression.metrics, version2Metrics, version2Metrics.Length);
+            data.progression.metrics = version2Metrics;
+            var version2Flags = new M10FlagSaveRecord[7];
+            Array.Copy(data.progression.flags, version2Flags, version2Flags.Length);
+            data.progression.flags = version2Flags;
+            data.mining = null;
+            return JsonUtility.ToJson(data);
         }
 
         private static void CompletePad(M9SaveData data, int index)
         {
             data.purchasePads[index].completed = true;
             data.purchasePads[index].paidCash = M9PurchasePadIds.GetTotalCost(index);
+        }
+
+        private static void CompleteMiningPad(M9SaveData data, int index)
+        {
+            data.mining.purchasePads[index].completed = true;
+            data.mining.purchasePads[index].paidCash =
+                M11MiningPurchasePadIds.GetTotalCost(index);
         }
 
         private static void AssertFresh(M9SaveData data, long expectedTimestamp)
@@ -1047,6 +1236,23 @@ namespace IndustryTycoon.Editor
                     && data.packingInputPlanks == 0
                     && data.packingOutputCrates == 0,
                 "Fresh progression/buffer state differs from M8.");
+            Require(data.mining != null
+                    && !data.mining.mineUnlocked
+                    && data.mining.purchasePads != null
+                    && data.mining.purchasePads.Length
+                    == M11MiningPurchasePadIds.Count
+                    && data.mining.smelterInputIronOre == 0
+                    && data.mining.smelterOutputIronBars == 0
+                    && data.mining.oreStorageIronOre == 0,
+                "Fresh M11 Mining state is not exact.");
+            for (int i = 0; i < data.mining.purchasePads.Length; i++)
+            {
+                Require(data.mining.purchasePads[i].id
+                        == M11MiningPurchasePadIds.GetId(i)
+                        && data.mining.purchasePads[i].paidCash == 0
+                        && !data.mining.purchasePads[i].completed,
+                    $"Fresh Mining PurchasePad {i} is not exact.");
+            }
             Require(data.pendingOfflineCash == 0
                     && data.pendingOfflineAwaySeconds == 0L
                     && !data.returnScreenPending,
@@ -1130,6 +1336,30 @@ namespace IndustryTycoon.Editor
                     && expected.packingInputPlanks == actual.packingInputPlanks
                     && expected.packingOutputCrates == actual.packingOutputCrates,
                 "Completion or machine buffers changed during persistence.");
+            Require(expected.mining != null
+                    && actual.mining != null
+                    && expected.mining.mineUnlocked
+                    == actual.mining.mineUnlocked
+                    && expected.mining.smelterInputIronOre
+                    == actual.mining.smelterInputIronOre
+                    && expected.mining.smelterOutputIronBars
+                    == actual.mining.smelterOutputIronBars
+                    && expected.mining.oreStorageIronOre
+                    == actual.mining.oreStorageIronOre,
+                "Canonical Mining unlock/buffers changed during persistence.");
+            Require(expected.mining.purchasePads.Length
+                    == actual.mining.purchasePads.Length,
+                "Mining PurchasePad count changed during persistence.");
+            for (int i = 0; i < expected.mining.purchasePads.Length; i++)
+            {
+                Require(expected.mining.purchasePads[i].id
+                        == actual.mining.purchasePads[i].id
+                        && expected.mining.purchasePads[i].paidCash
+                        == actual.mining.purchasePads[i].paidCash
+                        && expected.mining.purchasePads[i].completed
+                        == actual.mining.purchasePads[i].completed,
+                    $"Mining PurchasePad {i} changed during persistence.");
+            }
             Require(expected.pendingOfflineCash == actual.pendingOfflineCash
                     && expected.pendingOfflineAwaySeconds
                     == actual.pendingOfflineAwaySeconds
@@ -1211,6 +1441,21 @@ namespace IndustryTycoon.Editor
             {
                 checksum = (checksum * 397L) + data.purchasePads[i].paidCash;
                 checksum = (checksum * 397L) + (data.purchasePads[i].completed ? 1 : 0);
+            }
+
+            if (data.mining != null)
+            {
+                checksum = (checksum * 397L) + (data.mining.mineUnlocked ? 1 : 0);
+                checksum = (checksum * 397L) + data.mining.smelterInputIronOre;
+                checksum = (checksum * 397L) + data.mining.smelterOutputIronBars;
+                checksum = (checksum * 397L) + data.mining.oreStorageIronOre;
+                for (int i = 0; i < data.mining.purchasePads.Length; i++)
+                {
+                    checksum = (checksum * 397L)
+                               + data.mining.purchasePads[i].paidCash;
+                    checksum = (checksum * 397L)
+                               + (data.mining.purchasePads[i].completed ? 1 : 0);
+                }
             }
 
             if (data.progression != null)

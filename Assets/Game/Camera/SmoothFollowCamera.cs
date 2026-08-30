@@ -6,7 +6,7 @@ namespace IndustryTycoon.CameraSystem
     public sealed class SmoothFollowCamera : MonoBehaviour
     {
         [SerializeField] private Transform target;
-        [SerializeField] private Vector3 offset = new Vector3(0f, 12f, -9f);
+        [SerializeField] private Vector3 offset = new Vector3(0f, 14f, -10.6f);
         [SerializeField] private Vector3 lookAtOffset = new Vector3(0f, 1f, 0f);
         [SerializeField, Min(0.01f)] private float followSmoothTime = 0.18f;
         [SerializeField, Min(0f)] private float maximumFollowSpeed = 60f;
@@ -22,6 +22,8 @@ namespace IndustryTycoon.CameraSystem
         private float _impulseElapsed;
 
         public Vector3 BasePosition => _basePosition;
+        public Vector3 Offset => offset;
+        public Vector3 LookAtOffset => lookAtOffset;
         public Vector3 CurrentImpulseOffset => _currentImpulseOffset;
         public bool IsImpulseActive => _activeImpulseDuration > 0f
             && _impulseElapsed < _activeImpulseDuration;

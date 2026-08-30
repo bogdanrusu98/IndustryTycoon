@@ -649,7 +649,8 @@ namespace IndustryTycoon.Editor
         private static void PrepareExactM10StateForReload()
         {
             M10ProgressionSaveData state = _progression.CapturePersistentState();
-            for (int i = 0; i < LumberCampProgressionCatalog.FlagCount; i++)
+            const int m10FlagCount = 7;
+            for (int i = 0; i < m10FlagCount; i++)
             {
                 state.flags[i].value = true;
             }
@@ -680,7 +681,11 @@ namespace IndustryTycoon.Editor
             for (int i = 0; i < LumberCampProgressionCatalog.MetricCount; i++)
             {
                 ProgressMetricId metric = (ProgressMetricId)i;
-                Require(_progression.GetMetric(metric) == 0L,
+                long expected = metric == ProgressMetricId.MineUnlocked
+                                && _service.LumberCampCompletion.IsCompleted
+                    ? 1L
+                    : 0L;
+                Require(_progression.GetMetric(metric) == expected,
                     $"Restore/offline flow fabricated M10 metric {metric}.");
             }
         }

@@ -247,7 +247,8 @@ namespace IndustryTycoon.Editor
             _worker = FindSingleIncludingInactive<LumberWorker>();
             _processor = FindSingleIncludingInactive<WoodProcessor>();
             _autoFeeder = FindSingleIncludingInactive<WoodAutoFeeder>();
-            _packingStation = FindSingleIncludingInactive<PackingStation>();
+            _packingStation =
+                FindSingleExactTypeIncludingInactive<PackingStation>();
             _courier = FindSingleIncludingInactive<CrateCourier>();
             _guidance = Object.FindAnyObjectByType<NextUnlockGuidance>();
             _guidance?.Refresh();
@@ -844,6 +845,28 @@ namespace IndustryTycoon.Editor
             Require(matches.Length == 1,
                 $"M8 smoke expected one {typeof(T).Name}, found {matches.Length}.");
             return matches[0];
+        }
+
+        private static T FindSingleExactTypeIncludingInactive<T>() where T : Object
+        {
+            T[] matches = Object.FindObjectsByType<T>(
+                FindObjectsInactive.Include);
+            T result = null;
+            int exactMatchCount = 0;
+            for (int i = 0; i < matches.Length; i++)
+            {
+                if (matches[i].GetType() != typeof(T))
+                {
+                    continue;
+                }
+
+                result = matches[i];
+                exactMatchCount++;
+            }
+
+            Require(exactMatchCount == 1,
+                $"M8 smoke expected one concrete {typeof(T).Name}, found {exactMatchCount}.");
+            return result;
         }
 
         private static void MovePlayerTo(Vector3 position)

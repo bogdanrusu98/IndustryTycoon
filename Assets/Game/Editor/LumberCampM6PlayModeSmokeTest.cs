@@ -249,7 +249,8 @@ namespace IndustryTycoon.Editor
             _processorInputZone = FindSingleIncludingInactive<ProcessorInputZone>();
             _processorOutputZone = FindSingleIncludingInactive<ProcessorOutputZone>();
             _autoFeeder = FindSingleIncludingInactive<WoodAutoFeeder>();
-            _packingStation = FindSingleIncludingInactive<PackingStation>();
+            _packingStation =
+                FindSingleExactTypeIncludingInactive<PackingStation>();
             _packingInputZone = FindSingleIncludingInactive<PackingStationInputZone>();
             _packingOutputZone = FindSingleIncludingInactive<PackingStationOutputZone>();
             _packingFeedback = FindSingleIncludingInactive<PackingStationFeedback>();
@@ -1112,6 +1113,27 @@ namespace IndustryTycoon.Editor
             Require(matches.Length == 1,
                 $"M6 smoke expected exactly one {typeof(T).Name}, found {matches.Length}.");
             return matches[0];
+        }
+
+        private static T FindSingleExactTypeIncludingInactive<T>() where T : Object
+        {
+            T[] matches = Object.FindObjectsByType<T>(FindObjectsInactive.Include);
+            T result = null;
+            int exactMatchCount = 0;
+            for (int i = 0; i < matches.Length; i++)
+            {
+                if (matches[i].GetType() != typeof(T))
+                {
+                    continue;
+                }
+
+                result = matches[i];
+                exactMatchCount++;
+            }
+
+            Require(exactMatchCount == 1,
+                $"M6 smoke expected exactly one concrete {typeof(T).Name}, found {exactMatchCount}.");
+            return result;
         }
 
         private static void MovePlayerTo(Vector3 position)

@@ -89,7 +89,7 @@ namespace IndustryTycoon.Progression
         {
             if (AreAllObjectivesCompleted)
             {
-                return "OBJECTIVE: LUMBER CAMP COMPLETE";
+                return "OBJECTIVE: MINING COMPLETE";
             }
 
             MainObjectiveDefinition objective =
@@ -199,6 +199,12 @@ namespace IndustryTycoon.Progression
                 case ResourceType.Crate:
                     soldMetric = ProgressMetricId.CratesSold;
                     break;
+                case ResourceType.IronOre:
+                    soldMetric = ProgressMetricId.IronOreSold;
+                    break;
+                case ResourceType.IronBar:
+                    soldMetric = ProgressMetricId.IronBarsSold;
+                    break;
                 default:
                     return false;
             }
@@ -218,6 +224,33 @@ namespace IndustryTycoon.Progression
         public bool RecordCratesProduced(int amount)
         {
             return RecordSingleMetric(ProgressMetricId.CratesProduced, amount);
+        }
+
+        public bool RecordIronOreMined(int amount)
+        {
+            return RecordSingleMetric(ProgressMetricId.IronOreMined, amount);
+        }
+
+        public bool RecordIronOreProduced(int amount)
+        {
+            return RecordSingleMetric(ProgressMetricId.IronOreProduced, amount);
+        }
+
+        public bool RecordIronBarsProduced(int amount)
+        {
+            return RecordSingleMetric(ProgressMetricId.IronBarsProduced, amount);
+        }
+
+        public bool RecordMineUnlocked()
+        {
+            return FinishAuthoritativeMutation(
+                _state.SetMetricOnce(ProgressMetricId.MineUnlocked));
+        }
+
+        public bool RecordDrillUnlocked()
+        {
+            return FinishAuthoritativeMutation(
+                _state.SetMetricOnce(ProgressMetricId.DrillUnlocked));
         }
 
         public bool RecordCourierDelivery(int crateCount, int cashValue)

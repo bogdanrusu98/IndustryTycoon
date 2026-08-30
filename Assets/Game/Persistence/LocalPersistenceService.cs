@@ -3,6 +3,7 @@ using IndustryTycoon.Core;
 using IndustryTycoon.Economy;
 using IndustryTycoon.Interaction;
 using IndustryTycoon.Logistics;
+using IndustryTycoon.Mining;
 using IndustryTycoon.Player;
 using IndustryTycoon.Processing;
 using IndustryTycoon.Progression;
@@ -34,6 +35,9 @@ namespace IndustryTycoon.Persistence
         [SerializeField] private LumberCampCompletion lumberCampCompletion;
         [SerializeField] private LumberCampProgressionService progressionService;
         [SerializeField] private NextUnlockGuidance nextUnlockGuidance;
+        [SerializeField] private MineUnlock mineUnlock;
+        [SerializeField] private SmelterUnlock smelterUnlock;
+        [SerializeField] private DrillUnlock drillUnlock;
 
         [Header("Authoritative Production")]
         [SerializeField] private WoodSpawner woodSpawner;
@@ -43,6 +47,10 @@ namespace IndustryTycoon.Persistence
         [SerializeField] private WoodAutoFeeder autoFeeder;
         [SerializeField] private PackingStation packingStation;
         [SerializeField] private CrateCourier courier;
+        [SerializeField] private IronVein ironVein;
+        [SerializeField] private Smelter smelter;
+        [SerializeField] private OreStorage oreStorage;
+        [SerializeField] private AutomatedDrill automatedDrill;
 
         [Header("Save Cadence")]
         [SerializeField, Min(0.25f)] private float saveDebounceSeconds = 3f;
@@ -92,12 +100,19 @@ namespace IndustryTycoon.Persistence
         public FirstCourierUnlock CourierUnlock => courierUnlock;
         public LumberCampCompletion LumberCampCompletion => lumberCampCompletion;
         public LumberCampProgressionService ProgressionService => progressionService;
+        public MineUnlock MineUnlock => mineUnlock;
+        public SmelterUnlock SmelterUnlock => smelterUnlock;
+        public DrillUnlock DrillUnlock => drillUnlock;
         public WoodStockpile Stockpile => stockpile;
         public WoodProcessor Processor => processor;
         public PackingStation PackingStation => packingStation;
         public LumberWorker LumberWorker => lumberWorker;
         public WoodAutoFeeder AutoFeeder => autoFeeder;
         public CrateCourier Courier => courier;
+        public IronVein IronVein => ironVein;
+        public Smelter Smelter => smelter;
+        public OreStorage OreStorage => oreStorage;
+        public AutomatedDrill AutomatedDrill => automatedDrill;
         public float SaveDebounceSeconds => saveDebounceSeconds;
         public float ReturnScreenThresholdSeconds => returnScreenThresholdSeconds;
         public float MaximumCreditedAwaySeconds => maximumCreditedAwaySeconds;
@@ -542,6 +557,13 @@ namespace IndustryTycoon.Persistence
             {
                 data.lumberCampCompleted = true;
                 data.progression?.SetFlag(ProgressFlagId.LumberCampCompleted);
+                if (data.mining == null)
+                {
+                    data.mining = M11MiningSaveData.CreateFresh();
+                }
+
+                data.mining.mineUnlocked = true;
+                data.progression?.SetMetricOnce(ProgressMetricId.MineUnlocked);
             }
         }
 
@@ -553,6 +575,10 @@ namespace IndustryTycoon.Persistence
             bool feederEnabled = autoFeeder != null && autoFeeder.enabled;
             bool packingEnabled = packingStation != null && packingStation.enabled;
             bool courierEnabled = courier != null && courier.enabled;
+            bool ironVeinEnabled = ironVein != null && ironVein.enabled;
+            bool smelterEnabled = smelter != null && smelter.enabled;
+            bool automatedDrillEnabled = automatedDrill != null
+                                         && automatedDrill.enabled;
             bool cashPlayerInside = false;
             try
             {
@@ -568,6 +594,9 @@ namespace IndustryTycoon.Persistence
                 SetEnabled(courier, false);
                 SetEnabled(processor, false);
                 SetEnabled(packingStation, false);
+                SetEnabled(ironVein, false);
+                SetEnabled(smelter, false);
+                SetEnabled(automatedDrill, false);
 
                 wallet?.RestoreBalance(data.walletCash);
                 cashPile?.RestoreStoredCash(data.cashPileStoredCash);
@@ -604,6 +633,14 @@ namespace IndustryTycoon.Persistence
                     courierUnlock != null ? courierUnlock.CourierPurchasePad : null,
                     data,
                     M9PurchasePadIds.DeliveryCourier);
+                RestoreMiningPurchasePad(
+                    smelterUnlock != null ? smelterUnlock.SmelterPurchasePad : null,
+                    data.mining,
+                    M11MiningPurchasePadIds.Smelter);
+                RestoreMiningPurchasePad(
+                    drillUnlock != null ? drillUnlock.DrillPurchasePad : null,
+                    data.mining,
+                    M11MiningPurchasePadIds.AutomatedDrill);
 
                 stockpile?.RestoreStableState(data.stockpileWood);
                 processor?.RestoreStableState(
@@ -612,8 +649,29 @@ namespace IndustryTycoon.Persistence
                 packingStation?.RestoreStableState(
                     data.packingInputPlanks,
                     data.packingOutputCrates);
+                if (data.mining != null)
+                {
+                    smelter?.RestoreStableState(
+                        data.mining.smelterInputIronOre,
+                        data.mining.smelterOutputIronBars);
+                    oreStorage?.RestoreStableState(data.mining.oreStorageIronOre);
+                }
+
                 lumberWorker?.RestoreIdleState();
                 courier?.RestoreIdleState();
+                ironVein?.ResetTransientState();
+                automatedDrill?.RestoreIdleState();
+
+                long minedOre = data.progression != null
+                    ? data.progression.GetMetric(ProgressMetricId.IronOreMined)
+                    : 0L;
+                long producedBars = data.progression != null
+                    ? data.progression.GetMetric(ProgressMetricId.IronBarsProduced)
+                    : 0L;
+                smelterUnlock?.RestoreMinedOreCount(
+                    minedOre > int.MaxValue ? int.MaxValue : (int)minedOre);
+                drillUnlock?.RestoreProducedBarCount(
+                    producedBars > int.MaxValue ? int.MaxValue : (int)producedBars);
 
                 productionUpgrade?.SynchronizeFromPurchaseState();
                 workerUnlock?.SynchronizeFromPurchaseState();
@@ -622,6 +680,10 @@ namespace IndustryTycoon.Persistence
                 packingStationUnlock?.SynchronizeFromPurchaseState();
                 courierUnlock?.SynchronizeFromPurchaseState();
                 lumberCampCompletion?.RestoreCompleted(data.lumberCampCompleted);
+                mineUnlock?.RestoreUnlocked(
+                    data.mining != null && data.mining.mineUnlocked);
+                smelterUnlock?.SynchronizeFromPurchaseState();
+                drillUnlock?.SynchronizeFromPurchaseState();
                 nextUnlockGuidance?.Refresh();
             }
             finally
@@ -631,6 +693,9 @@ namespace IndustryTycoon.Persistence
                 SetEnabled(lumberWorker, workerEnabled);
                 SetEnabled(autoFeeder, feederEnabled);
                 SetEnabled(courier, courierEnabled);
+                SetEnabled(ironVein, ironVeinEnabled);
+                SetEnabled(smelter, smelterEnabled);
+                SetEnabled(automatedDrill, automatedDrillEnabled);
                 cashPileCollector?.ResumeAfterPersistenceRestore(cashPlayerInside);
                 _isApplyingState = false;
             }
@@ -649,7 +714,16 @@ namespace IndustryTycoon.Persistence
                 || carryStack == null
                 || stockpile == null
                 || processor == null
-                || packingStation == null)
+                || packingStation == null
+                || mineUnlock == null
+                || ironVein == null
+                || smelterUnlock == null
+                || smelterUnlock.SmelterPurchasePad == null
+                || smelter == null
+                || drillUnlock == null
+                || drillUnlock.DrillPurchasePad == null
+                || oreStorage == null
+                || automatedDrill == null)
             {
                 failure = "Persistence references are incomplete.";
                 return false;
@@ -686,8 +760,11 @@ namespace IndustryTycoon.Persistence
                                    + (lumberWorker != null && lumberWorker.IsCarrying ? 1L : 0L);
             long stablePackingInput = (long)packingStation.InputPlanks
                                       + packingStation.ProcessingInputPlanks;
+            long stableSmelterInput = (long)smelter.InputOre
+                                      + smelter.ProcessingInputOre;
             if (stableStockpile > stockpile.Capacity
-                || stablePackingInput > packingStation.InputCapacity)
+                || stablePackingInput > packingStation.InputCapacity
+                || stableSmelterInput > smelter.InputCapacity)
             {
                 failure = "Transient resource ownership cannot fit its stable authoritative buffer.";
                 return false;
@@ -736,11 +813,39 @@ namespace IndustryTycoon.Persistence
             {
                 snapshot.progression.SetFlag(ProgressFlagId.LumberCampCompleted);
             }
+            snapshot.mining.mineUnlocked = mineUnlock.IsUnlocked
+                                           || snapshot.lumberCampCompleted;
+            SnapshotMiningPurchasePad(
+                snapshot.mining,
+                M11MiningPurchasePadIds.SmelterIndex,
+                smelterUnlock.SmelterPurchasePad);
+            SnapshotMiningPurchasePad(
+                snapshot.mining,
+                M11MiningPurchasePadIds.AutomatedDrillIndex,
+                drillUnlock.DrillPurchasePad);
+            if (snapshot.mining.mineUnlocked)
+            {
+                snapshot.progression.SetMetricOnce(ProgressMetricId.MineUnlocked);
+            }
+
+            if (smelterUnlock.SmelterPurchasePad.IsCompleted)
+            {
+                snapshot.progression.SetFlag(ProgressFlagId.SmelterUnlocked);
+            }
+
+            if (drillUnlock.DrillPurchasePad.IsCompleted)
+            {
+                snapshot.progression.SetMetricOnce(ProgressMetricId.DrillUnlocked);
+            }
+
             snapshot.stockpileWood = (int)stableStockpile;
             snapshot.processorInputWood = processor.InputWood;
             snapshot.processorOutputPlanks = processor.OutputPlanks;
             snapshot.packingInputPlanks = (int)stablePackingInput;
             snapshot.packingOutputCrates = packingStation.OutputCrates;
+            snapshot.mining.smelterInputIronOre = (int)stableSmelterInput;
+            snapshot.mining.smelterOutputIronBars = smelter.OutputBars;
+            snapshot.mining.oreStorageIronOre = oreStorage.StoredOre;
             snapshot.pendingOfflineCash = _state.pendingOfflineCash;
             snapshot.pendingOfflineAwaySeconds = _state.pendingOfflineAwaySeconds;
             snapshot.returnScreenPending = _state.returnScreenPending;
@@ -792,7 +897,10 @@ namespace IndustryTycoon.Persistence
                 processorInputCapacity = processor != null ? processor.InputCapacity : 24,
                 processorOutputCapacity = processor != null ? processor.OutputCapacity : 12,
                 packingInputCapacity = packingStation != null ? packingStation.InputCapacity : 24,
-                packingOutputCapacity = packingStation != null ? packingStation.OutputCapacity : 12
+                packingOutputCapacity = packingStation != null ? packingStation.OutputCapacity : 12,
+                smelterInputCapacity = smelter != null ? smelter.InputCapacity : 24,
+                smelterOutputCapacity = smelter != null ? smelter.OutputCapacity : 12,
+                oreStorageCapacity = oreStorage != null ? oreStorage.Capacity : 30
             };
         }
 
@@ -845,6 +953,8 @@ namespace IndustryTycoon.Persistence
             if (packingStation != null) packingStation.BufferChanged += HandleFourIntsChanged;
             if (lumberWorker != null) lumberWorker.CargoChanged += HandleBoolChanged;
             if (courier != null) courier.CargoChanged += HandleIntChanged;
+            if (smelter != null) smelter.BufferChanged += HandleFourIntsChanged;
+            if (oreStorage != null) oreStorage.StateChanged += HandleTwoIntsChanged;
             if (progressionService != null)
             {
                 progressionService.StateChanged += HandleChanged;
@@ -853,6 +963,10 @@ namespace IndustryTycoon.Persistence
             if (lumberCampCompletion != null)
             {
                 lumberCampCompletion.Completed += RequestCriticalSave;
+            }
+            if (mineUnlock != null)
+            {
+                mineUnlock.Unlocked += RequestCriticalSave;
             }
 
             _isSubscribed = true;
@@ -873,6 +987,8 @@ namespace IndustryTycoon.Persistence
             if (packingStation != null) packingStation.BufferChanged -= HandleFourIntsChanged;
             if (lumberWorker != null) lumberWorker.CargoChanged -= HandleBoolChanged;
             if (courier != null) courier.CargoChanged -= HandleIntChanged;
+            if (smelter != null) smelter.BufferChanged -= HandleFourIntsChanged;
+            if (oreStorage != null) oreStorage.StateChanged -= HandleTwoIntsChanged;
             if (progressionService != null)
             {
                 progressionService.StateChanged -= HandleChanged;
@@ -881,6 +997,10 @@ namespace IndustryTycoon.Persistence
             if (lumberCampCompletion != null)
             {
                 lumberCampCompletion.Completed -= RequestCriticalSave;
+            }
+            if (mineUnlock != null)
+            {
+                mineUnlock.Unlocked -= RequestCriticalSave;
             }
 
             _isSubscribed = false;
@@ -907,6 +1027,12 @@ namespace IndustryTycoon.Persistence
                 subscribe);
             SetPurchasePadSubscription(
                 courierUnlock != null ? courierUnlock.CourierPurchasePad : null,
+                subscribe);
+            SetPurchasePadSubscription(
+                smelterUnlock != null ? smelterUnlock.SmelterPurchasePad : null,
+                subscribe);
+            SetPurchasePadSubscription(
+                drillUnlock != null ? drillUnlock.DrillPurchasePad : null,
                 subscribe);
         }
 
@@ -963,6 +1089,21 @@ namespace IndustryTycoon.Persistence
             }
         }
 
+        private static void RestoreMiningPurchasePad(
+            PurchasePad purchasePad,
+            M11MiningSaveData data,
+            string id)
+        {
+            if (purchasePad != null
+                && data != null
+                && data.TryGetPurchasePad(
+                    id,
+                    out M9PurchasePadSaveRecord record))
+            {
+                purchasePad.RestorePaidAmount(record.paidCash, record.completed);
+            }
+        }
+
         private static void SnapshotPurchasePad(
             M9SaveData snapshot,
             int index,
@@ -974,6 +1115,28 @@ namespace IndustryTycoon.Persistence
                 return;
             }
 
+            record.paidCash = Mathf.Clamp(
+                purchasePad.TotalCost - purchasePad.RemainingCost,
+                0,
+                purchasePad.TotalCost);
+            record.completed = purchasePad.IsCompleted;
+        }
+
+        private static void SnapshotMiningPurchasePad(
+            M11MiningSaveData snapshot,
+            int index,
+            PurchasePad purchasePad)
+        {
+            if (snapshot == null
+                || snapshot.purchasePads == null
+                || index < 0
+                || index >= snapshot.purchasePads.Length
+                || purchasePad == null)
+            {
+                return;
+            }
+
+            M9PurchasePadSaveRecord record = snapshot.purchasePads[index];
             record.paidCash = Mathf.Clamp(
                 purchasePad.TotalCost - purchasePad.RemainingCost,
                 0,
