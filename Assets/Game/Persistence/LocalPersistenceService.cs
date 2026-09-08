@@ -38,6 +38,7 @@ namespace IndustryTycoon.Persistence
         [SerializeField] private MineUnlock mineUnlock;
         [SerializeField] private SmelterUnlock smelterUnlock;
         [SerializeField] private DrillUnlock drillUnlock;
+        [SerializeField] private ToolWorkshopUnlock toolWorkshopUnlock;
 
         [Header("Authoritative Production")]
         [SerializeField] private WoodSpawner woodSpawner;
@@ -51,6 +52,7 @@ namespace IndustryTycoon.Persistence
         [SerializeField] private Smelter smelter;
         [SerializeField] private OreStorage oreStorage;
         [SerializeField] private AutomatedDrill automatedDrill;
+        [SerializeField] private ToolWorkshop toolWorkshop;
 
         [Header("Save Cadence")]
         [SerializeField, Min(0.25f)] private float saveDebounceSeconds = 3f;
@@ -103,6 +105,7 @@ namespace IndustryTycoon.Persistence
         public MineUnlock MineUnlock => mineUnlock;
         public SmelterUnlock SmelterUnlock => smelterUnlock;
         public DrillUnlock DrillUnlock => drillUnlock;
+        public ToolWorkshopUnlock ToolWorkshopUnlock => toolWorkshopUnlock;
         public WoodStockpile Stockpile => stockpile;
         public WoodProcessor Processor => processor;
         public PackingStation PackingStation => packingStation;
@@ -113,6 +116,7 @@ namespace IndustryTycoon.Persistence
         public Smelter Smelter => smelter;
         public OreStorage OreStorage => oreStorage;
         public AutomatedDrill AutomatedDrill => automatedDrill;
+        public ToolWorkshop ToolWorkshop => toolWorkshop;
         public float SaveDebounceSeconds => saveDebounceSeconds;
         public float ReturnScreenThresholdSeconds => returnScreenThresholdSeconds;
         public float MaximumCreditedAwaySeconds => maximumCreditedAwaySeconds;
@@ -473,6 +477,27 @@ namespace IndustryTycoon.Persistence
                 PackingInputCapacity = packingStation != null ? packingStation.InputCapacity : 24,
                 PackingOutputCrates = data.packingOutputCrates,
                 PackingOutputCapacity = packingStation != null ? packingStation.OutputCapacity : 12,
+                ToolWorkshopUnlocked = data.workshop != null
+                                       && data.workshop.purchasePad != null
+                                       && data.workshop.purchasePad.completed,
+                ToolWorkshopInputPlanks = data.workshop != null
+                    ? data.workshop.inputPlanks
+                    : 0,
+                ToolWorkshopPlankCapacity = toolWorkshop != null
+                    ? toolWorkshop.PlankInputCapacity
+                    : 24,
+                ToolWorkshopInputIronBars = data.workshop != null
+                    ? data.workshop.inputIronBars
+                    : 0,
+                ToolWorkshopIronBarCapacity = toolWorkshop != null
+                    ? toolWorkshop.IronBarInputCapacity
+                    : 12,
+                ToolWorkshopOutputTools = data.workshop != null
+                    ? data.workshop.outputTools
+                    : 0,
+                ToolWorkshopOutputCapacity = toolWorkshop != null
+                    ? toolWorkshop.OutputCapacity
+                    : 12,
                 PendingOfflineCash = data.pendingOfflineCash,
                 PendingOfflineAwaySeconds = data.pendingOfflineAwaySeconds,
                 ReturnScreenPending = data.returnScreenPending
@@ -500,6 +525,9 @@ namespace IndustryTycoon.Persistence
             rules.PackingSecondsPerRecipe = packingStation != null
                 ? packingStation.ProcessingDuration
                 : rules.PackingSecondsPerRecipe;
+            rules.ToolWorkshopSecondsPerRecipe = toolWorkshop != null
+                ? toolWorkshop.ProcessingDuration
+                : rules.ToolWorkshopSecondsPerRecipe;
             rules.CourierSecondsPerTrip = ResolveCourierSecondsPerTrip();
             rules.CourierCratesPerTrip = courier != null ? courier.Capacity : 2;
             rules.CashPerDeliveredCrate = courier != null ? courier.CashPerCrate : 40;
@@ -549,6 +577,14 @@ namespace IndustryTycoon.Persistence
             data.processorOutputPlanks = result.ProcessorOutputPlanks;
             data.packingInputPlanks = result.PackingInputPlanks;
             data.packingOutputCrates = result.PackingOutputCrates;
+            if (data.workshop == null)
+            {
+                data.workshop = M12WorkshopSaveData.CreateFresh();
+            }
+
+            data.workshop.inputPlanks = result.ToolWorkshopInputPlanks;
+            data.workshop.inputIronBars = result.ToolWorkshopInputIronBars;
+            data.workshop.outputTools = result.ToolWorkshopOutputTools;
             data.pendingOfflineCash = result.PendingOfflineCash;
             data.pendingOfflineAwaySeconds = result.PendingOfflineAwaySeconds;
             data.returnScreenPending = result.ReturnScreenPending;
@@ -579,6 +615,8 @@ namespace IndustryTycoon.Persistence
             bool smelterEnabled = smelter != null && smelter.enabled;
             bool automatedDrillEnabled = automatedDrill != null
                                          && automatedDrill.enabled;
+            bool toolWorkshopEnabled = toolWorkshop != null
+                                       && toolWorkshop.enabled;
             bool cashPlayerInside = false;
             try
             {
@@ -597,6 +635,7 @@ namespace IndustryTycoon.Persistence
                 SetEnabled(ironVein, false);
                 SetEnabled(smelter, false);
                 SetEnabled(automatedDrill, false);
+                SetEnabled(toolWorkshop, false);
 
                 wallet?.RestoreBalance(data.walletCash);
                 cashPile?.RestoreStoredCash(data.cashPileStoredCash);
@@ -641,6 +680,11 @@ namespace IndustryTycoon.Persistence
                     drillUnlock != null ? drillUnlock.DrillPurchasePad : null,
                     data.mining,
                     M11MiningPurchasePadIds.AutomatedDrill);
+                RestoreWorkshopPurchasePad(
+                    toolWorkshopUnlock != null
+                        ? toolWorkshopUnlock.WorkshopPurchasePad
+                        : null,
+                    data.workshop);
 
                 stockpile?.RestoreStableState(data.stockpileWood);
                 processor?.RestoreStableState(
@@ -655,6 +699,14 @@ namespace IndustryTycoon.Persistence
                         data.mining.smelterInputIronOre,
                         data.mining.smelterOutputIronBars);
                     oreStorage?.RestoreStableState(data.mining.oreStorageIronOre);
+                }
+
+                if (data.workshop != null)
+                {
+                    toolWorkshop?.RestoreStableState(
+                        data.workshop.inputPlanks,
+                        data.workshop.inputIronBars,
+                        data.workshop.outputTools);
                 }
 
                 lumberWorker?.RestoreIdleState();
@@ -684,6 +736,7 @@ namespace IndustryTycoon.Persistence
                     data.mining != null && data.mining.mineUnlocked);
                 smelterUnlock?.SynchronizeFromPurchaseState();
                 drillUnlock?.SynchronizeFromPurchaseState();
+                toolWorkshopUnlock?.SynchronizeFromPurchaseState();
                 nextUnlockGuidance?.Refresh();
             }
             finally
@@ -696,6 +749,7 @@ namespace IndustryTycoon.Persistence
                 SetEnabled(ironVein, ironVeinEnabled);
                 SetEnabled(smelter, smelterEnabled);
                 SetEnabled(automatedDrill, automatedDrillEnabled);
+                SetEnabled(toolWorkshop, toolWorkshopEnabled);
                 cashPileCollector?.ResumeAfterPersistenceRestore(cashPlayerInside);
                 _isApplyingState = false;
             }
@@ -723,7 +777,10 @@ namespace IndustryTycoon.Persistence
                 || drillUnlock == null
                 || drillUnlock.DrillPurchasePad == null
                 || oreStorage == null
-                || automatedDrill == null)
+                || automatedDrill == null
+                || toolWorkshopUnlock == null
+                || toolWorkshopUnlock.WorkshopPurchasePad == null
+                || toolWorkshop == null)
             {
                 failure = "Persistence references are incomplete.";
                 return false;
@@ -762,9 +819,15 @@ namespace IndustryTycoon.Persistence
                                       + packingStation.ProcessingInputPlanks;
             long stableSmelterInput = (long)smelter.InputOre
                                       + smelter.ProcessingInputOre;
+            long stableWorkshopPlanks = (long)toolWorkshop.InputPlanks
+                                        + toolWorkshop.ProcessingInputPlanks;
+            long stableWorkshopIronBars = (long)toolWorkshop.InputIronBars
+                                          + toolWorkshop.ProcessingInputIronBars;
             if (stableStockpile > stockpile.Capacity
                 || stablePackingInput > packingStation.InputCapacity
-                || stableSmelterInput > smelter.InputCapacity)
+                || stableSmelterInput > smelter.InputCapacity
+                || stableWorkshopPlanks > toolWorkshop.PlankInputCapacity
+                || stableWorkshopIronBars > toolWorkshop.IronBarInputCapacity)
             {
                 failure = "Transient resource ownership cannot fit its stable authoritative buffer.";
                 return false;
@@ -838,6 +901,15 @@ namespace IndustryTycoon.Persistence
                 snapshot.progression.SetMetricOnce(ProgressMetricId.DrillUnlocked);
             }
 
+            SnapshotWorkshopPurchasePad(
+                snapshot.workshop,
+                toolWorkshopUnlock.WorkshopPurchasePad);
+            if (toolWorkshopUnlock.WorkshopPurchasePad.IsCompleted)
+            {
+                snapshot.progression.SetMetricOnce(
+                    ProgressMetricId.ToolWorkshopUnlocked);
+            }
+
             snapshot.stockpileWood = (int)stableStockpile;
             snapshot.processorInputWood = processor.InputWood;
             snapshot.processorOutputPlanks = processor.OutputPlanks;
@@ -846,6 +918,9 @@ namespace IndustryTycoon.Persistence
             snapshot.mining.smelterInputIronOre = (int)stableSmelterInput;
             snapshot.mining.smelterOutputIronBars = smelter.OutputBars;
             snapshot.mining.oreStorageIronOre = oreStorage.StoredOre;
+            snapshot.workshop.inputPlanks = (int)stableWorkshopPlanks;
+            snapshot.workshop.inputIronBars = (int)stableWorkshopIronBars;
+            snapshot.workshop.outputTools = toolWorkshop.OutputTools;
             snapshot.pendingOfflineCash = _state.pendingOfflineCash;
             snapshot.pendingOfflineAwaySeconds = _state.pendingOfflineAwaySeconds;
             snapshot.returnScreenPending = _state.returnScreenPending;
@@ -900,7 +975,16 @@ namespace IndustryTycoon.Persistence
                 packingOutputCapacity = packingStation != null ? packingStation.OutputCapacity : 12,
                 smelterInputCapacity = smelter != null ? smelter.InputCapacity : 24,
                 smelterOutputCapacity = smelter != null ? smelter.OutputCapacity : 12,
-                oreStorageCapacity = oreStorage != null ? oreStorage.Capacity : 30
+                oreStorageCapacity = oreStorage != null ? oreStorage.Capacity : 30,
+                workshopPlankInputCapacity = toolWorkshop != null
+                    ? toolWorkshop.PlankInputCapacity
+                    : 24,
+                workshopIronBarInputCapacity = toolWorkshop != null
+                    ? toolWorkshop.IronBarInputCapacity
+                    : 12,
+                workshopToolOutputCapacity = toolWorkshop != null
+                    ? toolWorkshop.OutputCapacity
+                    : 12
             };
         }
 
@@ -955,6 +1039,7 @@ namespace IndustryTycoon.Persistence
             if (courier != null) courier.CargoChanged += HandleIntChanged;
             if (smelter != null) smelter.BufferChanged += HandleFourIntsChanged;
             if (oreStorage != null) oreStorage.StateChanged += HandleTwoIntsChanged;
+            if (toolWorkshop != null) toolWorkshop.BufferChanged += HandleSixIntsChanged;
             if (progressionService != null)
             {
                 progressionService.StateChanged += HandleChanged;
@@ -989,6 +1074,7 @@ namespace IndustryTycoon.Persistence
             if (courier != null) courier.CargoChanged -= HandleIntChanged;
             if (smelter != null) smelter.BufferChanged -= HandleFourIntsChanged;
             if (oreStorage != null) oreStorage.StateChanged -= HandleTwoIntsChanged;
+            if (toolWorkshop != null) toolWorkshop.BufferChanged -= HandleSixIntsChanged;
             if (progressionService != null)
             {
                 progressionService.StateChanged -= HandleChanged;
@@ -1034,6 +1120,11 @@ namespace IndustryTycoon.Persistence
             SetPurchasePadSubscription(
                 drillUnlock != null ? drillUnlock.DrillPurchasePad : null,
                 subscribe);
+            SetPurchasePadSubscription(
+                toolWorkshopUnlock != null
+                    ? toolWorkshopUnlock.WorkshopPurchasePad
+                    : null,
+                subscribe);
         }
 
         private void SetPurchasePadSubscription(PurchasePad pad, bool subscribe)
@@ -1061,6 +1152,13 @@ namespace IndustryTycoon.Persistence
         private void HandleTwoIntsChanged(int first, int second) => MarkDirty();
         private void HandleThreeIntsChanged(int first, int second, int third) => MarkDirty();
         private void HandleFourIntsChanged(int first, int second, int third, int fourth) => MarkDirty();
+        private void HandleSixIntsChanged(
+            int first,
+            int second,
+            int third,
+            int fourth,
+            int fifth,
+            int sixth) => MarkDirty();
 
         private static void SetEnabled(Behaviour behaviour, bool enabled)
         {
@@ -1104,6 +1202,18 @@ namespace IndustryTycoon.Persistence
             }
         }
 
+        private static void RestoreWorkshopPurchasePad(
+            PurchasePad purchasePad,
+            M12WorkshopSaveData data)
+        {
+            if (purchasePad != null && data != null && data.purchasePad != null)
+            {
+                purchasePad.RestorePaidAmount(
+                    data.purchasePad.paidCash,
+                    data.purchasePad.completed);
+            }
+        }
+
         private static void SnapshotPurchasePad(
             M9SaveData snapshot,
             int index,
@@ -1142,6 +1252,22 @@ namespace IndustryTycoon.Persistence
                 0,
                 purchasePad.TotalCost);
             record.completed = purchasePad.IsCompleted;
+        }
+
+        private static void SnapshotWorkshopPurchasePad(
+            M12WorkshopSaveData snapshot,
+            PurchasePad purchasePad)
+        {
+            if (snapshot == null || snapshot.purchasePad == null || purchasePad == null)
+            {
+                return;
+            }
+
+            snapshot.purchasePad.paidCash = Mathf.Clamp(
+                purchasePad.TotalCost - purchasePad.RemainingCost,
+                0,
+                purchasePad.TotalCost);
+            snapshot.purchasePad.completed = purchasePad.IsCompleted;
         }
 
         private static bool CanUseDevelopmentUtilities()

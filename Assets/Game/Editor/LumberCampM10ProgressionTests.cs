@@ -56,6 +56,8 @@ namespace IndustryTycoon.Editor
             Run("Achievement reward retry remains exactly once", TestAchievementRewardRetry);
             Run("Multi-condition achievement", TestMultiConditionAchievement);
             Run("All achievement progress requirements", TestAllAchievementRequirements);
+            Run("Empire levels advance once and restore silently", TestEmpireLevels);
+            Run("Tool objectives, contracts, and achievements", TestToolProgression);
             Run("Progression snapshot and validator JSON round trip", TestSnapshotRoundTrip);
             Run("Progression validator normalization and rejection", TestValidatorBoundaries);
 
@@ -66,16 +68,16 @@ namespace IndustryTycoon.Editor
 
         private static void TestCatalog()
         {
-            Require(LumberCampProgressionCatalog.MetricCount == 17,
+            Require(LumberCampProgressionCatalog.MetricCount == 20,
                 "Metric catalog count changed unexpectedly.");
             Require(LumberCampProgressionCatalog.FlagCount == 8,
                 "Flag catalog count changed unexpectedly.");
-            Require(LumberCampProgressionCatalog.ObjectiveCount == 13,
-                "Objective catalog must contain the corrected M10 and M11 sequence.");
-            Require(LumberCampProgressionCatalog.ContractCount == 5,
-                "Contract catalog must contain exactly the M10 sequence.");
-            Require(LumberCampProgressionCatalog.AchievementCount == 15,
-                "Achievement catalog must contain exactly the M10 set.");
+            Require(LumberCampProgressionCatalog.ObjectiveCount == 16,
+                "Objective catalog must contain the M10-M12 sequence.");
+            Require(LumberCampProgressionCatalog.ContractCount == 7,
+                "Contract catalog must contain the M10 and M12 sequence.");
+            Require(LumberCampProgressionCatalog.AchievementCount == 19,
+                "Achievement catalog must contain the M10 and M12 set.");
 
             MainObjectiveId[] objectiveIds =
             {
@@ -91,12 +93,15 @@ namespace IndustryTycoon.Editor
                 MainObjectiveId.MineTenIronOre,
                 MainObjectiveId.UnlockSmelter,
                 MainObjectiveId.ProduceFiveIronBars,
-                MainObjectiveId.UnlockAutomatedDrill
+                MainObjectiveId.UnlockAutomatedDrill,
+                MainObjectiveId.UnlockToolWorkshop,
+                MainObjectiveId.ProduceFiveTools,
+                MainObjectiveId.ReachEmpireLevelFive
             };
             long[] objectiveTargets =
             {
                 1L, 1L, 10L, 1L, 1L, 5L, 1L,
-                1L, 5L, 10L, 1L, 5L, 1L
+                1L, 5L, 10L, 1L, 5L, 1L, 1L, 5L, 5L
             };
             for (int i = 0; i < objectiveIds.Length; i++)
             {
@@ -113,10 +118,12 @@ namespace IndustryTycoon.Editor
                 LumberCampContractId.ProduceFifteenPlanks,
                 LumberCampContractId.SellTwentyPlanks,
                 LumberCampContractId.ProduceTenCrates,
-                LumberCampContractId.DeliverTenCrates
+                LumberCampContractId.DeliverTenCrates,
+                LumberCampContractId.ProduceTenTools,
+                LumberCampContractId.SellFifteenTools
             };
-            long[] contractTargets = { 20L, 15L, 20L, 10L, 10L };
-            int[] contractRewards = { 150, 250, 300, 400, 600 };
+            long[] contractTargets = { 20L, 15L, 20L, 10L, 10L, 10L, 15L };
+            int[] contractRewards = { 150, 250, 300, 400, 600, 800, 1200 };
             for (int i = 0; i < contractIds.Length; i++)
             {
                 LumberCampContractDefinition definition =
@@ -131,7 +138,8 @@ namespace IndustryTycoon.Editor
             {
                 50, 75, 100, 125, 150,
                 200, 150, 150, 200, 250,
-                250, 300, 500, 250, 500
+                250, 300, 500, 250, 500,
+                100, 150, 300, 250
             };
             for (int i = 0; i < LumberCampProgressionCatalog.AchievementCount; i++)
             {
@@ -396,12 +404,25 @@ namespace IndustryTycoon.Editor
                 "Five Iron Bars did not advance to Unlock Automated Drill.");
             Require(model.RecordDrillUnlocked() && !model.RecordDrillUnlocked(),
                 "Drill unlock metric was not binary and once-only.");
+            Require(CurrentObjectiveIs(model, MainObjectiveId.UnlockToolWorkshop),
+                "Automated Drill unlock did not advance to the Tool Workshop.");
+            Require(model.RecordToolWorkshopUnlocked()
+                    && !model.RecordToolWorkshopUnlocked()
+                    && CurrentObjectiveIs(model, MainObjectiveId.ProduceFiveTools),
+                "Tool Workshop unlock was not binary or did not advance objectives.");
+            model.RecordToolsProduced(1);
+            model.GetObjectiveProgress(out long toolCurrent, out long toolTarget);
+            Require(toolCurrent == 1L
+                    && toolTarget == 5L
+                    && CurrentObjectiveIs(model, MainObjectiveId.ProduceFiveTools),
+                "First Tool did not retain exact Produce Tools progress.");
+            model.RecordToolsProduced(4);
             Require(model.AreAllObjectivesCompleted
                     && model.ObjectiveIndex
                     == LumberCampProgressionCatalog.ObjectiveCount,
-                "Automated Drill unlock did not finish the objective sequence.");
+                "Five Tools did not resolve the already-established Level 5 objective.");
             Require(model.BuildObjectiveDisplayText()
-                    == "OBJECTIVE: MINING COMPLETE",
+                    == "OBJECTIVES COMPLETE — EMPIRE LEVEL 5",
                 "Completed objective HUD text is wrong.");
             model.GetObjectiveProgress(out long current, out long target);
             Require(current == 1L && target == 1L,
@@ -444,6 +465,8 @@ namespace IndustryTycoon.Editor
             futureModel.RecordFlag(ProgressFlagId.SmelterUnlocked);
             futureModel.RecordIronBarsProduced(5);
             futureModel.RecordDrillUnlocked();
+            futureModel.RecordToolWorkshopUnlocked();
+            futureModel.RecordToolsProduced(5);
             Require(CurrentObjectiveIs(futureModel, MainObjectiveId.UnlockWorker),
                 "Future progress skipped an earlier unsatisfied objective.");
             futureModel.RecordFlag(ProgressFlagId.WorkerUnlocked);
@@ -567,7 +590,32 @@ namespace IndustryTycoon.Editor
                     == ContractProgressState.CompletedUnclaimed,
                 "Deliver 10 Crates did not complete at the exact target.");
             Require(model.TryClaimActiveContract(),
-                "Final contract claim failed.");
+                "Final Lumber Camp contract claim failed.");
+
+            model.GetActiveContractProgress(out current, out target);
+            Require(model.ActiveContractIndex
+                    == (int)LumberCampContractId.ProduceTenTools
+                    && current == 0L
+                    && target == 10L,
+                "Produce Tools contract did not activate with a fresh baseline.");
+            model.RecordToolsProduced(10);
+            Require(model.ActiveContractState
+                    == ContractProgressState.CompletedUnclaimed
+                    && model.TryClaimActiveContract()
+                    && rewards.CountGranted(800) == 1,
+                "Produce 10 Tools contract did not complete/reward exactly once.");
+            model.GetActiveContractProgress(out current, out target);
+            Require(model.ActiveContractIndex
+                    == (int)LumberCampContractId.SellFifteenTools
+                    && current == 0L
+                    && target == 15L,
+                "Sell Tools contract did not activate with a fresh baseline.");
+            model.RecordSale(ResourceType.Tool, 15, 1500);
+            Require(model.ActiveContractState
+                    == ContractProgressState.CompletedUnclaimed
+                    && model.TryClaimActiveContract()
+                    && rewards.CountGranted(1200) == 1,
+                "Sell 15 Tools contract did not complete/reward exactly once.");
 
             Require(!model.HasActiveContract
                     && model.ActiveContractIndex
@@ -580,9 +628,7 @@ namespace IndustryTycoon.Editor
                     $"Contract {i} was not persisted as claimed.");
             }
 
-            Require(rewards.GrantCount == 5 && rewards.TotalGranted == 1700,
-                "Predefined contracts did not grant exactly $1,700 once.");
-            Require(model.GetMetric(ProgressMetricId.TotalCashEarned) == 1000L,
+            Require(model.GetMetric(ProgressMetricId.TotalCashEarned) == 2500L,
                 "Contract rewards polluted gameplay-generated Cash.");
             int attemptsBeforeDuplicate = rewards.AttemptCount;
             Require(!model.TryClaimActiveContract()
@@ -731,6 +777,10 @@ namespace IndustryTycoon.Editor
             SetMetric(state, ProgressMetricId.CratesProduced, 14L);
             SetMetric(state, ProgressMetricId.CourierTripsCompleted, 15L);
             SetMetric(state, ProgressMetricId.TotalCashEarned, 16L);
+            SetMetric(state, ProgressMetricId.DrillUnlocked, 1L);
+            SetMetric(state, ProgressMetricId.ToolsProduced, 23L);
+            SetMetric(state, ProgressMetricId.ToolsSold, 5L);
+            SetMetric(state, ProgressMetricId.ToolWorkshopUnlocked, 1L);
             SetFlag(state, ProgressFlagId.WorkerUnlocked);
             SetFlag(state, ProgressFlagId.ProcessorUnlocked);
             SetFlag(state, ProgressFlagId.AutoFeederUnlocked);
@@ -739,15 +789,17 @@ namespace IndustryTycoon.Editor
 
             long[] expectedCurrent =
             {
-                9L, 1L, 1L, 1L, 14L,
+                14L, 1L, 1L, 1L, 14L,
                 1L, 11L, 12L, 13L, 14L,
-                15L, 16L, 16L, 2L, 1L
+                15L, 16L, 16L, 2L, 1L,
+                23L, 1L, 23L, 5L
             };
             long[] expectedTarget =
             {
                 1L, 1L, 1L, 1L, 1L,
                 1L, 100L, 100L, 50L, 25L,
-                10L, 2500L, 10000L, 2L, 1L
+                10L, 2500L, 10000L, 2L, 1L,
+                1L, 1L, 25L, 5L
             };
             for (int i = 0; i < LumberCampProgressionCatalog.AchievementCount; i++)
             {
@@ -760,6 +812,128 @@ namespace IndustryTycoon.Editor
                         && target == expectedTarget[i],
                     $"Achievement {i} uses the wrong shared metric/flag requirement.");
             }
+        }
+
+        private static void TestEmpireLevels()
+        {
+            var levels = new List<int>();
+            var model = new LumberCampProgressionModel(
+                M10ProgressionSaveData.CreateFresh(),
+                amount => false);
+            model.EmpireLevelAdvanced += levels.Add;
+
+            Require(model.EmpireLevel == 1 && !model.EvaluateAll(),
+                "Fresh Empire progression did not start silently at Level 1.");
+            model.RecordFlag(ProgressFlagId.LumberCampCompleted);
+            Require(model.EmpireLevel == 2
+                    && levels.Count == 1
+                    && levels[0] == 2,
+                "Lumber Camp completion did not advance exactly once to Level 2.");
+            model.RecordDrillUnlocked();
+            Require(model.EmpireLevel == 3
+                    && levels.Count == 2
+                    && levels[1] == 3,
+                "Automated Drill did not advance exactly once to Level 3.");
+            model.RecordToolWorkshopUnlocked();
+            Require(model.EmpireLevel == 4
+                    && levels.Count == 3
+                    && levels[2] == 4,
+                "Tool Workshop did not advance exactly once to Level 4.");
+            model.RecordToolsProduced(1);
+            Require(model.EmpireLevel == 5
+                    && levels.Count == 4
+                    && levels[3] == 5,
+                "First Tool did not advance exactly once to Level 5.");
+
+            Require(!model.RecordFlag(ProgressFlagId.LumberCampCompleted)
+                    && !model.RecordDrillUnlocked()
+                    && !model.RecordToolWorkshopUnlocked()
+                    && model.RecordToolsProduced(4)
+                    && !model.EvaluateAll()
+                    && model.EmpireLevel == 5
+                    && levels.Count == 4,
+                "Repeated milestones regressed or duplicated Empire feedback.");
+
+            M10ProgressionSaveData saved = model.CapturePersistentState();
+            var restoredLevels = new List<int>();
+            var restored = new LumberCampProgressionModel(saved, amount => false);
+            restored.EmpireLevelAdvanced += restoredLevels.Add;
+            Require(restored.EmpireLevel == 5
+                    && !restored.EvaluateAll()
+                    && restoredLevels.Count == 0,
+                "Restore/re-evaluation replayed Empire level feedback.");
+
+            M10ProgressionSaveData outOfOrder = M10ProgressionSaveData.CreateFresh();
+            SetMetric(outOfOrder, ProgressMetricId.DrillUnlocked, 1L);
+            SetMetric(outOfOrder, ProgressMetricId.ToolWorkshopUnlocked, 1L);
+            SetMetric(outOfOrder, ProgressMetricId.ToolsProduced, 1L);
+            Require(M10ProgressionRules.ResolveEmpireLevel(outOfOrder) == 1,
+                "Later milestones bypassed the sequential Empire prerequisites.");
+        }
+
+        private static void TestToolProgression()
+        {
+            M10ProgressionSaveData state = CreateM11ObjectiveCompleteState();
+            var rewards = new FakeRewardWallet { AcceptRewards = false };
+            var unlocked = new List<int>();
+            var model = new LumberCampProgressionModel(state, rewards.TryGrant);
+            model.AchievementUnlocked += unlocked.Add;
+
+            Require(model.EmpireLevel == 3
+                    && CurrentObjectiveIs(
+                        model,
+                        MainObjectiveId.UnlockToolWorkshop),
+                "M11-complete state did not enter the M12 Workshop objective at Level 3.");
+            Require(model.RecordToolWorkshopUnlocked()
+                    && !model.RecordToolWorkshopUnlocked()
+                    && model.EmpireLevel == 4
+                    && CurrentObjectiveIs(model, MainObjectiveId.ProduceFiveTools),
+                "Tool Workshop commit was not binary or did not advance M12 progression.");
+            Require(Count(unlocked, (int)LumberCampAchievementId.CrossIndustry) == 1,
+                "Cross-Industry did not unlock exactly once from Workshop completion.");
+
+            Require(!model.RecordToolsProduced(0)
+                    && !model.RecordToolsProduced(-1)
+                    && model.GetMetric(ProgressMetricId.ToolsProduced) == 0L,
+                "Rejected Tool production changed its authoritative metric.");
+            Require(model.RecordToolsProduced(1)
+                    && model.GetMetric(ProgressMetricId.ToolsProduced) == 1L
+                    && model.EmpireLevel == 5,
+                "First committed Tool did not update its metric and Empire level.");
+            model.GetObjectiveProgress(out long current, out long target);
+            Require(current == 1L
+                    && target == 5L
+                    && CurrentObjectiveIs(model, MainObjectiveId.ProduceFiveTools),
+                "First Tool did not expose exact objective progress.");
+            Require(Count(unlocked, (int)LumberCampAchievementId.FirstTool) == 1
+                    && Count(
+                        unlocked,
+                        (int)LumberCampAchievementId.EmpireLevelFive) == 1,
+                "First Tool/Empire achievements did not unlock exactly once.");
+
+            Require(model.RecordSale(ResourceType.Tool, 1, 100)
+                    && model.GetMetric(ProgressMetricId.ToolsSold) == 1L
+                    && model.GetMetric(ProgressMetricId.TotalCashEarned) == 100L
+                    && model.IsAchievementUnlocked(
+                        (int)LumberCampAchievementId.FirstSale),
+                "Authoritative Tool sale did not record one Tool and exactly $100.");
+            Require(!model.RecordSale(ResourceType.Tool, 0, 100)
+                    && !model.RecordSale(ResourceType.Tool, 1, 0)
+                    && model.GetMetric(ProgressMetricId.ToolsSold) == 1L
+                    && model.GetMetric(ProgressMetricId.TotalCashEarned) == 100L,
+                "Rejected Tool sale mutated progression.");
+
+            Require(model.RecordToolsProduced(24)
+                    && model.GetMetric(ProgressMetricId.ToolsProduced) == 25L
+                    && model.AreAllObjectivesCompleted
+                    && model.IsAchievementUnlocked(
+                        (int)LumberCampAchievementId.Toolmaker)
+                    && Count(unlocked, (int)LumberCampAchievementId.FirstTool) == 1
+                    && Count(unlocked, (int)LumberCampAchievementId.Toolmaker) == 1
+                    && Count(
+                        unlocked,
+                        (int)LumberCampAchievementId.EmpireLevelFive) == 1,
+                "Repeated Tool cycles duplicated milestones or missed Toolmaker.");
         }
 
         private static void TestSnapshotRoundTrip()
@@ -850,6 +1024,7 @@ namespace IndustryTycoon.Editor
             M10ProgressionSaveData binary = M10ProgressionSaveData.CreateFresh();
             SetMetric(binary, ProgressMetricId.MineUnlocked, 100L);
             SetMetric(binary, ProgressMetricId.DrillUnlocked, -10L);
+            SetMetric(binary, ProgressMetricId.ToolWorkshopUnlocked, 100L);
             Require(M10ProgressionSaveValidator.TryNormalize(
                         binary,
                         out M10ProgressionSaveData normalizedBinary,
@@ -857,8 +1032,10 @@ namespace IndustryTycoon.Editor
                     && normalizedBinary.GetMetric(
                         ProgressMetricId.MineUnlocked) == 1L
                     && normalizedBinary.GetMetric(
-                        ProgressMetricId.DrillUnlocked) == 0L,
-                "Binary Mining unlock metrics were not normalized to 0/1.");
+                        ProgressMetricId.DrillUnlocked) == 0L
+                    && normalizedBinary.GetMetric(
+                        ProgressMetricId.ToolWorkshopUnlocked) == 1L,
+                "Binary unlock metrics were not normalized to 0/1.");
 
             M10ProgressionSaveData duplicate = M10ProgressionSaveData.CreateFresh();
             duplicate.metrics[1].id = duplicate.metrics[0].id;
@@ -940,6 +1117,25 @@ namespace IndustryTycoon.Editor
                 packed.rewarded = true;
             }
 
+            return state;
+        }
+
+        private static M10ProgressionSaveData CreateM11ObjectiveCompleteState()
+        {
+            M10ProgressionSaveData state = M10ProgressionSaveData.CreateFresh();
+            SetFlag(state, ProgressFlagId.WorkerUnlocked);
+            SetFlag(state, ProgressFlagId.ProcessorUnlocked);
+            SetMetric(state, ProgressMetricId.PlanksProduced, 10L);
+            SetFlag(state, ProgressFlagId.AutoFeederUnlocked);
+            SetFlag(state, ProgressFlagId.PackingStationUnlocked);
+            SetMetric(state, ProgressMetricId.CratesProduced, 5L);
+            SetFlag(state, ProgressFlagId.CourierUnlocked);
+            SetFlag(state, ProgressFlagId.LumberCampCompleted);
+            SetMetric(state, ProgressMetricId.CourierTripsCompleted, 5L);
+            SetMetric(state, ProgressMetricId.IronOreMined, 10L);
+            SetFlag(state, ProgressFlagId.SmelterUnlocked);
+            SetMetric(state, ProgressMetricId.IronBarsProduced, 5L);
+            SetMetric(state, ProgressMetricId.DrillUnlocked, 1L);
             return state;
         }
 

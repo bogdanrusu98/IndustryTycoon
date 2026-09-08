@@ -10,6 +10,7 @@ namespace IndustryTycoon.Progression
         private bool _isEvaluating;
         private bool _evaluationPending;
         private bool _reentrantMutationChanged;
+        private int _lastNotifiedEmpireLevel;
 
         public LumberCampProgressionModel(
             M10ProgressionSaveData state,
@@ -21,6 +22,7 @@ namespace IndustryTycoon.Progression
 
         public event Action StateChanged;
         public event Action<int> AchievementUnlocked;
+        public event Action<int> EmpireLevelAdvanced;
 
         public int ObjectiveIndex => _state.objectiveIndex;
         public bool AreAllObjectivesCompleted => ObjectiveIndex
@@ -34,6 +36,7 @@ namespace IndustryTycoon.Progression
             HasActiveContract
                 ? _state.activeContractState
                 : ContractProgressState.Claimed;
+        public int EmpireLevel => M10ProgressionRules.ResolveEmpireLevel(_state);
 
         public long GetMetric(ProgressMetricId metric)
         {
@@ -80,16 +83,28 @@ namespace IndustryTycoon.Progression
             MainObjectiveDefinition objective =
                 LumberCampProgressionCatalog.GetObjective(ObjectiveIndex);
             target = objective.Target;
-            current = objective.ConditionKind == ObjectiveConditionKind.Flag
-                ? (_state.GetFlag(objective.Flag) ? 1L : 0L)
-                : Math.Min(target, _state.GetMetric(objective.Metric));
+            switch (objective.ConditionKind)
+            {
+                case ObjectiveConditionKind.Metric:
+                    current = Math.Min(target, _state.GetMetric(objective.Metric));
+                    break;
+                case ObjectiveConditionKind.Flag:
+                    current = _state.GetFlag(objective.Flag) ? 1L : 0L;
+                    break;
+                case ObjectiveConditionKind.EmpireLevel:
+                    current = Math.Min(target, EmpireLevel);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(objective.ConditionKind));
+            }
         }
 
         public string BuildObjectiveDisplayText()
         {
             if (AreAllObjectivesCompleted)
             {
-                return "OBJECTIVE: MINING COMPLETE";
+                return "OBJECTIVES COMPLETE — EMPIRE LEVEL 5";
             }
 
             MainObjectiveDefinition objective =
@@ -150,6 +165,10 @@ namespace IndustryTycoon.Progression
             }
 
             _state = normalized;
+            // Loading/resetting establishes the comparison baseline silently. Only
+            // subsequent authoritative mutations may publish level-up feedback.
+            _lastNotifiedEmpireLevel =
+                M10ProgressionRules.ResolveEmpireLevel(_state);
         }
 
         public bool EvaluateAll()
@@ -205,6 +224,9 @@ namespace IndustryTycoon.Progression
                 case ResourceType.IronBar:
                     soldMetric = ProgressMetricId.IronBarsSold;
                     break;
+                case ResourceType.Tool:
+                    soldMetric = ProgressMetricId.ToolsSold;
+                    break;
                 default:
                     return false;
             }
@@ -241,6 +263,11 @@ namespace IndustryTycoon.Progression
             return RecordSingleMetric(ProgressMetricId.IronBarsProduced, amount);
         }
 
+        public bool RecordToolsProduced(int amount)
+        {
+            return RecordSingleMetric(ProgressMetricId.ToolsProduced, amount);
+        }
+
         public bool RecordMineUnlocked()
         {
             return FinishAuthoritativeMutation(
@@ -251,6 +278,12 @@ namespace IndustryTycoon.Progression
         {
             return FinishAuthoritativeMutation(
                 _state.SetMetricOnce(ProgressMetricId.DrillUnlocked));
+        }
+
+        public bool RecordToolWorkshopUnlocked()
+        {
+            return FinishAuthoritativeMutation(
+                _state.SetMetricOnce(ProgressMetricId.ToolWorkshopUnlocked));
         }
 
         public bool RecordCourierDelivery(int crateCount, int cashValue)
@@ -395,6 +428,8 @@ namespace IndustryTycoon.Progression
                         changed = true;
                     }
 
+                    PublishEmpireLevelAdvancements();
+
                     if (HasActiveContract)
                     {
                         LumberCampContractDefinition contract =
@@ -462,6 +497,24 @@ namespace IndustryTycoon.Progression
             }
 
             return changed;
+        }
+
+        private void PublishEmpireLevelAdvancements()
+        {
+            int resolvedLevel = M10ProgressionRules.ResolveEmpireLevel(_state);
+            if (resolvedLevel <= _lastNotifiedEmpireLevel)
+            {
+                return;
+            }
+
+            int firstAdvancedLevel = _lastNotifiedEmpireLevel + 1;
+            // Advance the guard before invoking callbacks so synchronous re-entry
+            // cannot publish the same level twice.
+            _lastNotifiedEmpireLevel = resolvedLevel;
+            for (int level = firstAdvancedLevel; level <= resolvedLevel; level++)
+            {
+                EmpireLevelAdvanced?.Invoke(level);
+            }
         }
     }
 }

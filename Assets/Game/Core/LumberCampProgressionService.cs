@@ -28,6 +28,7 @@ namespace IndustryTycoon.Progression
         [SerializeField] private IronVein ironVein;
         [SerializeField] private Smelter smelter;
         [SerializeField] private AutomatedDrill automatedDrill;
+        [SerializeField] private ToolWorkshop toolWorkshop;
 
         [Header("Authoritative Unlocks")]
         [SerializeField] private WoodProductionUpgrade productionUpgrade;
@@ -40,6 +41,7 @@ namespace IndustryTycoon.Progression
         [SerializeField] private MineUnlock mineUnlock;
         [SerializeField] private SmelterUnlock smelterUnlock;
         [SerializeField] private DrillUnlock drillUnlock;
+        [SerializeField] private ToolWorkshopUnlock toolWorkshopUnlock;
 
         private LumberCampProgressionModel _model;
         private bool _hasStarted;
@@ -47,6 +49,7 @@ namespace IndustryTycoon.Progression
 
         public event Action StateChanged;
         public event Action<int> AchievementUnlocked;
+        public event Action<int> EmpireLevelAdvanced;
 
         public Wallet Wallet => wallet;
         public WoodSpawner WoodSpawner => woodSpawner;
@@ -58,6 +61,7 @@ namespace IndustryTycoon.Progression
         public IronVein IronVein => ironVein;
         public Smelter Smelter => smelter;
         public AutomatedDrill AutomatedDrill => automatedDrill;
+        public ToolWorkshop ToolWorkshop => toolWorkshop;
         public WoodProductionUpgrade ProductionUpgrade => productionUpgrade;
         public FirstWorkerUnlock WorkerUnlock => workerUnlock;
         public FirstProcessorUnlock ProcessorUnlock => processorUnlock;
@@ -68,6 +72,7 @@ namespace IndustryTycoon.Progression
         public MineUnlock MineUnlock => mineUnlock;
         public SmelterUnlock SmelterUnlock => smelterUnlock;
         public DrillUnlock DrillUnlock => drillUnlock;
+        public ToolWorkshopUnlock ToolWorkshopUnlock => toolWorkshopUnlock;
         public bool IsRuntimeReady => _hasStarted;
         public int ObjectiveIndex => _model != null ? _model.ObjectiveIndex : 0;
         public bool AreAllObjectivesCompleted => _model != null
@@ -79,6 +84,9 @@ namespace IndustryTycoon.Progression
         public ContractProgressState ActiveContractState => _model != null
             ? _model.ActiveContractState
             : ContractProgressState.Active;
+        public int EmpireLevel => _model != null
+            ? _model.EmpireLevel
+            : M10ProgressionRules.MinimumEmpireLevel;
         public string ObjectiveDisplayText => _model != null
             ? _model.BuildObjectiveDisplayText()
             : "OBJECTIVE: UNLOCK WORKER";
@@ -90,6 +98,7 @@ namespace IndustryTycoon.Progression
                 TryGrantRewardCash);
             _model.StateChanged += HandleModelStateChanged;
             _model.AchievementUnlocked += HandleAchievementUnlocked;
+            _model.EmpireLevelAdvanced += HandleEmpireLevelAdvanced;
         }
 
         private void Start()
@@ -122,6 +131,7 @@ namespace IndustryTycoon.Progression
             {
                 _model.StateChanged -= HandleModelStateChanged;
                 _model.AchievementUnlocked -= HandleAchievementUnlocked;
+                _model.EmpireLevelAdvanced -= HandleEmpireLevelAdvanced;
             }
         }
 
@@ -210,6 +220,7 @@ namespace IndustryTycoon.Progression
                     TryGrantRewardCash);
                 _model.StateChanged += HandleModelStateChanged;
                 _model.AchievementUnlocked += HandleAchievementUnlocked;
+                _model.EmpireLevelAdvanced += HandleEmpireLevelAdvanced;
             }
 
             // Restore is intentionally silent: no evaluation, rewards, metric events,
@@ -290,6 +301,11 @@ namespace IndustryTycoon.Progression
                 automatedDrill.OreProduced += HandleAutomatedDrillOreProduced;
             }
 
+            if (toolWorkshop != null)
+            {
+                toolWorkshop.RecipeCompleted += HandleToolWorkshopRecipeCompleted;
+            }
+
             SetPurchaseSubscription(
                 productionUpgrade != null ? productionUpgrade.PurchasePad : null,
                 HandleProductionUpgradeCompleted,
@@ -323,6 +339,12 @@ namespace IndustryTycoon.Progression
             SetPurchaseSubscription(
                 drillUnlock != null ? drillUnlock.DrillPurchasePad : null,
                 HandleDrillCompleted,
+                true);
+            SetPurchaseSubscription(
+                toolWorkshopUnlock != null
+                    ? toolWorkshopUnlock.WorkshopPurchasePad
+                    : null,
+                HandleToolWorkshopCompleted,
                 true);
 
             if (lumberCampCompletion != null)
@@ -396,6 +418,11 @@ namespace IndustryTycoon.Progression
                 automatedDrill.OreProduced -= HandleAutomatedDrillOreProduced;
             }
 
+            if (toolWorkshop != null)
+            {
+                toolWorkshop.RecipeCompleted -= HandleToolWorkshopRecipeCompleted;
+            }
+
             SetPurchaseSubscription(
                 productionUpgrade != null ? productionUpgrade.PurchasePad : null,
                 HandleProductionUpgradeCompleted,
@@ -429,6 +456,12 @@ namespace IndustryTycoon.Progression
             SetPurchaseSubscription(
                 drillUnlock != null ? drillUnlock.DrillPurchasePad : null,
                 HandleDrillCompleted,
+                false);
+            SetPurchaseSubscription(
+                toolWorkshopUnlock != null
+                    ? toolWorkshopUnlock.WorkshopPurchasePad
+                    : null,
+                HandleToolWorkshopCompleted,
                 false);
 
             if (lumberCampCompletion != null)
@@ -506,6 +539,12 @@ namespace IndustryTycoon.Progression
             {
                 _model.RecordDrillUnlocked();
             }
+
+            if (toolWorkshopUnlock != null
+                && toolWorkshopUnlock.IsWorkshopActivated)
+            {
+                _model.RecordToolWorkshopUnlocked();
+            }
         }
 
         private static void SetPurchaseSubscription(
@@ -581,6 +620,14 @@ namespace IndustryTycoon.Progression
             _model.RecordIronOreProduced(amount);
         }
 
+        private void HandleToolWorkshopRecipeCompleted(
+            int consumedPlanks,
+            int consumedIronBars,
+            int producedTools)
+        {
+            _model.RecordToolsProduced(producedTools);
+        }
+
         private void HandleProductionUpgradeCompleted()
         {
             _model.RecordFlag(ProgressFlagId.ProductionUpgradeUnlocked);
@@ -631,6 +678,11 @@ namespace IndustryTycoon.Progression
             _model.RecordDrillUnlocked();
         }
 
+        private void HandleToolWorkshopCompleted()
+        {
+            _model.RecordToolWorkshopUnlocked();
+        }
+
         private void HandleWalletBalanceChanged(int balance)
         {
             // Only retries an already-unlocked reward that could not fit previously.
@@ -646,6 +698,11 @@ namespace IndustryTycoon.Progression
         private void HandleAchievementUnlocked(int achievementIndex)
         {
             AchievementUnlocked?.Invoke(achievementIndex);
+        }
+
+        private void HandleEmpireLevelAdvanced(int empireLevel)
+        {
+            EmpireLevelAdvanced?.Invoke(empireLevel);
         }
     }
 }

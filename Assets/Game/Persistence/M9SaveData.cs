@@ -10,7 +10,8 @@ namespace IndustryTycoon.Persistence
         public const int Version1 = 1;
         public const int Version2 = 2;
         public const int Version3 = 3;
-        public const int CurrentVersion = Version3;
+        public const int Version4 = 4;
+        public const int CurrentVersion = Version4;
     }
 
     public static class M9PurchasePadIds
@@ -137,6 +138,12 @@ namespace IndustryTycoon.Persistence
         }
     }
 
+    public static class M12WorkshopPurchasePadIds
+    {
+        public const string ToolWorkshop = "tool_workshop";
+        public const int ToolWorkshopCost = 3200;
+    }
+
     [Serializable]
     public sealed class M9CarrySaveRecord
     {
@@ -203,6 +210,26 @@ namespace IndustryTycoon.Persistence
     }
 
     [Serializable]
+    public sealed class M12WorkshopSaveData
+    {
+        public M9PurchasePadSaveRecord purchasePad;
+        public int inputPlanks;
+        public int inputIronBars;
+        public int outputTools;
+
+        public static M12WorkshopSaveData CreateFresh()
+        {
+            return new M12WorkshopSaveData
+            {
+                purchasePad = new M9PurchasePadSaveRecord
+                {
+                    id = M12WorkshopPurchasePadIds.ToolWorkshop
+                }
+            };
+        }
+    }
+
+    [Serializable]
     public sealed class M9SaveData
     {
         public string schema = M9SaveSchema.Id;
@@ -230,6 +257,8 @@ namespace IndustryTycoon.Persistence
         public M10ProgressionSaveData progression =
             M10ProgressionSaveData.CreateFresh();
         public M11MiningSaveData mining = M11MiningSaveData.CreateFresh();
+        public M12WorkshopSaveData workshop =
+            M12WorkshopSaveData.CreateFresh();
 
         public static M9SaveData CreateFresh(long utcNowUnixSeconds)
         {
@@ -241,6 +270,7 @@ namespace IndustryTycoon.Persistence
                 purchasePads = new M9PurchasePadSaveRecord[M9PurchasePadIds.Count],
                 progression = M10ProgressionSaveData.CreateFresh(),
                 mining = M11MiningSaveData.CreateFresh(),
+                workshop = M12WorkshopSaveData.CreateFresh(),
                 lastEvaluationUtcUnixSeconds = safeTimestamp,
                 lastWriteUtcUnixSeconds = safeTimestamp
             };
@@ -288,6 +318,9 @@ namespace IndustryTycoon.Persistence
         public int smelterInputCapacity = 24;
         public int smelterOutputCapacity = 12;
         public int oreStorageCapacity = 30;
+        public int workshopPlankInputCapacity = 24;
+        public int workshopIronBarInputCapacity = 12;
+        public int workshopToolOutputCapacity = 12;
         public long maximumPendingAwaySeconds = 365L * 24L * 60L * 60L;
 
         public static M9SaveValidationSettings CreateDefault()
@@ -426,11 +459,35 @@ namespace IndustryTycoon.Persistence
                 return false;
             }
 
+            if (!TryNormalizeWorkshop(
+                    source.workshop,
+                    normalizedProgression,
+                    settings,
+                    out M12WorkshopSaveData normalizedWorkshop,
+                    out failureReason))
+            {
+                return false;
+            }
+
+            bool hasCanonicalWorkshop = IsWorkshopPadCompleted(normalizedWorkshop);
+            if (!hasCanonicalWorkshop
+                && (normalizedProgression.GetMetric(
+                        ProgressMetricId.ToolsProduced) > 0L
+                    || normalizedProgression.GetMetric(
+                        ProgressMetricId.ToolsSold) > 0L
+                    || (carryAmount > 0 && carryType == ResourceType.Tool)))
+            {
+                failureReason =
+                    "M12 Tool ownership or lifetime metrics require the canonical Workshop unlock.";
+                return false;
+            }
+
             if (!ValidateExactProgressionFlags(
                     normalizedProgression,
                     orderedPads,
                     normalizedLumberCampCompleted,
                     normalizedMining,
+                    normalizedWorkshop,
                     out failureReason))
             {
                 return false;
@@ -440,7 +497,8 @@ namespace IndustryTycoon.Persistence
                 normalizedProgression,
                 orderedPads,
                 normalizedLumberCampCompleted,
-                normalizedMining);
+                normalizedMining,
+                normalizedWorkshop);
             if (!M10ProgressionSaveValidator.TryNormalize(
                     normalizedProgression,
                     out normalizedProgression,
@@ -491,7 +549,8 @@ namespace IndustryTycoon.Persistence
                 lastEvaluationUtcUnixSeconds = lastEvaluation,
                 lastWriteUtcUnixSeconds = lastWrite,
                 progression = normalizedProgression,
-                mining = normalizedMining
+                mining = normalizedMining,
+                workshop = normalizedWorkshop
             };
             return true;
         }
@@ -501,6 +560,7 @@ namespace IndustryTycoon.Persistence
             M9PurchasePadSaveRecord[] orderedPads,
             bool lumberCampCompleted,
             M11MiningSaveData mining,
+            M12WorkshopSaveData workshop,
             out string failureReason)
         {
             failureReason = null;
@@ -581,6 +641,15 @@ namespace IndustryTycoon.Persistence
                 return false;
             }
 
+            bool workshopUnlocked = IsWorkshopPadCompleted(workshop);
+            if (progression.GetMetric(ProgressMetricId.ToolWorkshopUnlocked) > 0L
+                && !workshopUnlocked)
+            {
+                failureReason =
+                    "M12 Tool Workshop unlock metric contradicts its PurchasePad.";
+                return false;
+            }
+
             return true;
         }
 
@@ -588,7 +657,8 @@ namespace IndustryTycoon.Persistence
             M10ProgressionSaveData progression,
             M9PurchasePadSaveRecord[] orderedPads,
             bool lumberCampCompleted,
-            M11MiningSaveData mining)
+            M11MiningSaveData mining,
+            M12WorkshopSaveData workshop)
         {
             if (progression == null || orderedPads == null)
             {
@@ -648,6 +718,79 @@ namespace IndustryTycoon.Persistence
             {
                 progression.SetMetricOnce(ProgressMetricId.DrillUnlocked);
             }
+
+            if (IsWorkshopPadCompleted(workshop))
+            {
+                progression.SetMetricOnce(ProgressMetricId.ToolWorkshopUnlocked);
+            }
+        }
+
+        private static bool TryNormalizeWorkshop(
+            M12WorkshopSaveData source,
+            M10ProgressionSaveData progression,
+            M9SaveValidationSettings settings,
+            out M12WorkshopSaveData normalized,
+            out string failureReason)
+        {
+            normalized = null;
+            failureReason = null;
+            if (source == null
+                || source.purchasePad == null
+                || !string.Equals(
+                    source.purchasePad.id,
+                    M12WorkshopPurchasePadIds.ToolWorkshop,
+                    StringComparison.Ordinal))
+            {
+                failureReason =
+                    "M12 Tool Workshop state must contain its canonical PurchasePad.";
+                return false;
+            }
+
+            normalized = M12WorkshopSaveData.CreateFresh();
+            bool hasBothIndustries = progression != null
+                                     && progression.GetMetric(
+                                         ProgressMetricId.PlanksProduced) > 0L
+                                     && progression.GetMetric(
+                                         ProgressMetricId.IronBarsProduced) > 0L;
+            if (!hasBothIndustries)
+            {
+                if (source.purchasePad.completed)
+                {
+                    failureReason =
+                        "M12 Tool Workshop cannot be unlocked before both input industries are established.";
+                    normalized = null;
+                    return false;
+                }
+
+                return true;
+            }
+
+            bool completed = source.purchasePad.completed;
+            normalized.purchasePad.completed = completed;
+            normalized.purchasePad.paidCash = completed
+                ? M12WorkshopPurchasePadIds.ToolWorkshopCost
+                : Clamp(
+                    source.purchasePad.paidCash,
+                    0,
+                    M12WorkshopPurchasePadIds.ToolWorkshopCost - 1);
+            if (!completed)
+            {
+                return true;
+            }
+
+            normalized.inputPlanks = Clamp(
+                source.inputPlanks,
+                0,
+                Math.Max(1, settings.workshopPlankInputCapacity));
+            normalized.inputIronBars = Clamp(
+                source.inputIronBars,
+                0,
+                Math.Max(1, settings.workshopIronBarInputCapacity));
+            normalized.outputTools = Clamp(
+                source.outputTools,
+                0,
+                Math.Max(1, settings.workshopToolOutputCapacity));
+            return true;
         }
 
         private static bool TryNormalizeMining(
@@ -752,6 +895,13 @@ namespace IndustryTycoon.Persistence
                    && pad.completed;
         }
 
+        private static bool IsWorkshopPadCompleted(M12WorkshopSaveData workshop)
+        {
+            return workshop != null
+                   && workshop.purchasePad != null
+                   && workshop.purchasePad.completed;
+        }
+
         private static long NormalizeTimestamp(long value, long fallback)
         {
             return M9UnixTime.IsPlausible(value) ? value : fallback;
@@ -763,7 +913,8 @@ namespace IndustryTycoon.Persistence
                    || resourceType == ResourceType.Plank
                    || resourceType == ResourceType.Crate
                    || resourceType == ResourceType.IronOre
-                   || resourceType == ResourceType.IronBar;
+                   || resourceType == ResourceType.IronBar
+                   || resourceType == ResourceType.Tool;
         }
 
         private static int Clamp(int value, int minimum, int maximum)

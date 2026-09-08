@@ -52,9 +52,9 @@ namespace IndustryTycoon.Editor
             Run("Corrupt and unsupported fallback", TestInvalidFileFallbacks);
             Run("Invalid value normalization/rejection", TestValidationBoundaries);
             Run("Reset returns exact fresh state", TestStoreReset);
-            Run("Schema v1 to v3 migration", TestVersion1Migration);
-            Run("Schema v2 to v3 migration", TestVersion2Migration);
-            Run("Migrated v3 resave is idempotent", TestMigratedResave);
+            Run("Schema v1 to current migration", TestVersion1Migration);
+            Run("Schema v2 to current migration", TestVersion2Migration);
+            Run("Migrated current resave is idempotent", TestMigratedResave);
             Run("Corrupt M10 structure fallback", TestCorruptM10Fallback);
             Run("Mining purchase threshold contradictions", TestMiningThresholdContradictions);
 
@@ -409,8 +409,8 @@ namespace IndustryTycoon.Editor
             Require(result.IsSuccess && result.WasMigrated,
                 "A valid M9 v1 save did not take the explicit migration path.");
             M9SaveData migrated = result.Data;
-            Require(migrated.version == M9SaveSchema.Version3,
-                "Migrated save did not become schema v3.");
+            Require(migrated.version == M9SaveSchema.CurrentVersion,
+                "Migrated save did not become the current schema.");
             Require(migrated.walletCash == 731
                     && migrated.cashPileStoredCash == 219
                     && migrated.carry.resourceType == ResourceType.Crate
@@ -512,14 +512,14 @@ namespace IndustryTycoon.Editor
                     "Store did not expose the required v2 rewrite state.");
                 M9SaveWriteResult write = store.Save(migrated.Data);
                 Require(write.IsSuccess
-                        && write.PersistedData.version == M9SaveSchema.Version3,
-                    "Migrated state did not resave as schema v3.");
+                        && write.PersistedData.version == M9SaveSchema.CurrentVersion,
+                    "Migrated state did not resave as the current schema.");
 
                 M9SaveLoadResult secondLoad = store.Load();
                 Require(secondLoad.Status == M9SaveLoadStatus.LoadedPrimary
                         && !secondLoad.WasMigrated
                         && !secondLoad.ShouldRewritePrimary,
-                    "A resaved v3 file remigrated destructively.");
+                    "A resaved current file remigrated destructively.");
                 AssertEquivalent(
                     write.PersistedData,
                     secondLoad.Data,
@@ -534,11 +534,11 @@ namespace IndustryTycoon.Editor
                 CreateValidationSettings(),
                 BaselineUtc);
             Require(result.IsSuccess && result.WasMigrated,
-                "A valid v2 save did not take the explicit v2-to-v3 path: "
+                "A valid v2 save did not take the explicit migration path: "
                 + result.Diagnostic);
             M9SaveData migrated = result.Data;
-            Require(migrated.version == M9SaveSchema.Version3,
-                "The v2 migration did not produce schema v3.");
+            Require(migrated.version == M9SaveSchema.CurrentVersion,
+                "The v2 migration did not produce the current schema.");
             Require(migrated.walletCash == 731
                     && migrated.cashPileStoredCash == 219
                     && migrated.lumberCampCompleted,
@@ -1071,7 +1071,10 @@ namespace IndustryTycoon.Editor
                 packingOutputCapacity = 12,
                 smelterInputCapacity = 24,
                 smelterOutputCapacity = 12,
-                oreStorageCapacity = 30
+                oreStorageCapacity = 30,
+                workshopPlankInputCapacity = 24,
+                workshopIronBarInputCapacity = 12,
+                workshopToolOutputCapacity = 12
             };
         }
 
@@ -1102,6 +1105,12 @@ namespace IndustryTycoon.Editor
             data.mining.smelterInputIronOre = 13;
             data.mining.smelterOutputIronBars = 7;
             data.mining.oreStorageIronOre = 19;
+            data.workshop.purchasePad.completed = true;
+            data.workshop.purchasePad.paidCash =
+                M12WorkshopPurchasePadIds.ToolWorkshopCost;
+            data.workshop.inputPlanks = 21;
+            data.workshop.inputIronBars = 9;
+            data.workshop.outputTools = 7;
             data.pendingOfflineCash = 240;
             data.pendingOfflineAwaySeconds = 7200L;
             data.returnScreenPending = true;
@@ -1112,6 +1121,8 @@ namespace IndustryTycoon.Editor
                 progression.metrics[i].value = metric == ProgressMetricId.MineUnlocked
                                                 || metric
                                                 == ProgressMetricId.DrillUnlocked
+                                                || metric
+                                                == ProgressMetricId.ToolWorkshopUnlocked
                     ? 1L
                     : (i + 1L) * 17L;
             }
@@ -1188,7 +1199,20 @@ namespace IndustryTycoon.Editor
             var version2Flags = new M10FlagSaveRecord[7];
             Array.Copy(data.progression.flags, version2Flags, version2Flags.Length);
             data.progression.flags = version2Flags;
+            var version2Claims = new bool[5];
+            Array.Copy(
+                data.progression.claimedContracts,
+                version2Claims,
+                version2Claims.Length);
+            data.progression.claimedContracts = version2Claims;
+            var version2Achievements = new M10AchievementSaveRecord[15];
+            Array.Copy(
+                data.progression.achievements,
+                version2Achievements,
+                version2Achievements.Length);
+            data.progression.achievements = version2Achievements;
             data.mining = null;
+            data.workshop = null;
             return JsonUtility.ToJson(data);
         }
 
@@ -1253,6 +1277,16 @@ namespace IndustryTycoon.Editor
                         && !data.mining.purchasePads[i].completed,
                     $"Fresh Mining PurchasePad {i} is not exact.");
             }
+            Require(data.workshop != null
+                    && data.workshop.purchasePad != null
+                    && data.workshop.purchasePad.id
+                    == M12WorkshopPurchasePadIds.ToolWorkshop
+                    && data.workshop.purchasePad.paidCash == 0
+                    && !data.workshop.purchasePad.completed
+                    && data.workshop.inputPlanks == 0
+                    && data.workshop.inputIronBars == 0
+                    && data.workshop.outputTools == 0,
+                "Fresh M12 Tool Workshop state is not exact.");
             Require(data.pendingOfflineCash == 0
                     && data.pendingOfflineAwaySeconds == 0L
                     && !data.returnScreenPending,
@@ -1360,6 +1394,23 @@ namespace IndustryTycoon.Editor
                         == actual.mining.purchasePads[i].completed,
                     $"Mining PurchasePad {i} changed during persistence.");
             }
+            Require(expected.workshop != null
+                    && actual.workshop != null
+                    && expected.workshop.purchasePad != null
+                    && actual.workshop.purchasePad != null
+                    && expected.workshop.purchasePad.id
+                    == actual.workshop.purchasePad.id
+                    && expected.workshop.purchasePad.paidCash
+                    == actual.workshop.purchasePad.paidCash
+                    && expected.workshop.purchasePad.completed
+                    == actual.workshop.purchasePad.completed
+                    && expected.workshop.inputPlanks
+                    == actual.workshop.inputPlanks
+                    && expected.workshop.inputIronBars
+                    == actual.workshop.inputIronBars
+                    && expected.workshop.outputTools
+                    == actual.workshop.outputTools,
+                "Canonical Tool Workshop state changed during persistence.");
             Require(expected.pendingOfflineCash == actual.pendingOfflineCash
                     && expected.pendingOfflineAwaySeconds
                     == actual.pendingOfflineAwaySeconds
@@ -1456,6 +1507,16 @@ namespace IndustryTycoon.Editor
                     checksum = (checksum * 397L)
                                + (data.mining.purchasePads[i].completed ? 1 : 0);
                 }
+            }
+
+            if (data.workshop != null && data.workshop.purchasePad != null)
+            {
+                checksum = (checksum * 397L) + data.workshop.purchasePad.paidCash;
+                checksum = (checksum * 397L)
+                           + (data.workshop.purchasePad.completed ? 1 : 0);
+                checksum = (checksum * 397L) + data.workshop.inputPlanks;
+                checksum = (checksum * 397L) + data.workshop.inputIronBars;
+                checksum = (checksum * 397L) + data.workshop.outputTools;
             }
 
             if (data.progression != null)

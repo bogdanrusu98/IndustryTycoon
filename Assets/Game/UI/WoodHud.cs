@@ -56,6 +56,9 @@ namespace IndustryTycoon.UI
                 case ResourceType.IronBar:
                     resourceLabel = "Iron Bar";
                     break;
+                case ResourceType.Tool:
+                    resourceLabel = "Tool";
+                    break;
                 default:
                     resourceLabel = "Wood";
                     break;

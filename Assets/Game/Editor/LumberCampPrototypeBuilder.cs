@@ -99,6 +99,23 @@ namespace IndustryTycoon.Editor
             public OreStorage OreStorage { get; }
         }
 
+        private readonly struct M12Services
+        {
+            public M12Services(
+                ToolWorkshopUnlock workshopUnlock,
+                ToolWorkshop workshop,
+                PurchasePad purchasePad)
+            {
+                WorkshopUnlock = workshopUnlock;
+                Workshop = workshop;
+                PurchasePad = purchasePad;
+            }
+
+            public ToolWorkshopUnlock WorkshopUnlock { get; }
+            public ToolWorkshop Workshop { get; }
+            public PurchasePad PurchasePad { get; }
+        }
+
         [MenuItem("Industry Tycoon/Prototype/Rebuild Lumber Camp")]
         private static void RebuildFromMenu()
         {
@@ -297,6 +314,10 @@ namespace IndustryTycoon.Editor
                 MaterialFolder + "/Iron_Bar.mat",
                 new Color(0.47f, 0.54f, 0.60f),
                 0.58f);
+            Material toolMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Tool.mat",
+                new Color(0.24f, 0.66f, 0.78f),
+                0.52f);
             Material mineRockMaterial = CreateOrUpdateMaterial(
                 MaterialFolder + "/Mine_Rock.mat",
                 new Color(0.20f, 0.23f, 0.25f),
@@ -324,7 +345,8 @@ namespace IndustryTycoon.Editor
                 crateMaterial,
                 crateAccentMaterial,
                 ironOreMaterial,
-                ironBarMaterial);
+                ironBarMaterial,
+                toolMaterial);
             BuildWoodResourcePrefab(barkMaterial, cutMaterial);
             GameObject cashVisualPrefab = BuildCashVisualPrefab(cashMaterial, cashAccentMaterial);
             GameObject playerPrefab = BuildPlayerPrefab(
@@ -511,6 +533,24 @@ namespace IndustryTycoon.Editor
                 sawBladeMaterial,
                 feedbackParticleMaterial,
                 feedbackServices.Audio);
+            M12Services m12Services = CreateM12Workshop(
+                scene,
+                wallet,
+                player.GetComponent<CarryStack>(),
+                playerCollider,
+                cashCollectionTarget,
+                cashVisualPrefab,
+                purchaseMaterial,
+                purchaseCompleteMaterial,
+                cashAccentMaterial,
+                plankMaterial,
+                ironBarMaterial,
+                toolMaterial,
+                processorMaterial,
+                smelterMaterial,
+                sawBladeMaterial,
+                feedbackParticleMaterial,
+                feedbackServices.Audio);
             LumberCampProgressionService progressionService =
                 CreateM10Progression(
                     scene,
@@ -526,7 +566,18 @@ namespace IndustryTycoon.Editor
                     courierUnlock,
                     courier,
                     m8Services.Completion,
-                    m11Services);
+                    m11Services,
+                    m12Services);
+            SetObjectReference(
+                m12Services.WorkshopUnlock,
+                "progressionService",
+                progressionService);
+            CreateIndustrialDistrictTease(
+                scene,
+                progressionService,
+                processorMaterial,
+                purchaseCompleteMaterial,
+                sawBladeMaterial);
             LocalPersistenceService persistenceService = CreateM9Persistence(
                 scene,
                 wallet,
@@ -543,7 +594,8 @@ namespace IndustryTycoon.Editor
                 stockpile,
                 m8Services.Completion,
                 progressionService,
-                m11Services);
+                m11Services,
+                m12Services);
             CreateLighting(scene);
             NextUnlockGuidance nextUnlockGuidance = CreateHud(
                 scene,
@@ -711,7 +763,8 @@ namespace IndustryTycoon.Editor
             Material crateMaterial,
             Material crateAccentMaterial,
             Material ironOreMaterial,
-            Material ironBarMaterial)
+            Material ironBarMaterial,
+            Material toolMaterial)
         {
             GameObject root = new GameObject("WoodCarryVisual");
             try
@@ -750,12 +803,24 @@ namespace IndustryTycoon.Editor
                     new Vector3(0.92f, 0.22f, 0.42f);
                 ironBarVisual.SetActive(false);
 
+                GameObject toolVisual = CreatePrimitiveChild(
+                    "Tool Visual",
+                    PrimitiveType.Capsule,
+                    root.transform,
+                    toolMaterial);
+                toolVisual.transform.localRotation =
+                    Quaternion.Euler(0f, 0f, 58f);
+                toolVisual.transform.localScale =
+                    new Vector3(0.22f, 0.62f, 0.22f);
+                toolVisual.SetActive(false);
+
                 ResourceVisual resourceVisual = root.AddComponent<ResourceVisual>();
                 SetObjectReference(resourceVisual, "woodRoot", woodVisual);
                 SetObjectReference(resourceVisual, "plankRoot", plankVisual);
                 SetObjectReference(resourceVisual, "crateRoot", crateVisual);
                 SetObjectReference(resourceVisual, "ironOreRoot", ironOreVisual);
                 SetObjectReference(resourceVisual, "ironBarRoot", ironBarVisual);
+                SetObjectReference(resourceVisual, "toolRoot", toolVisual);
                 root.transform.localScale = Vector3.one * 0.7f;
                 return SavePrefabAndReload(root, WoodVisualPrefabPath);
             }
@@ -1339,7 +1404,7 @@ namespace IndustryTycoon.Editor
             CreateWorldLabel(
                 "Sale Label",
                 root.transform,
-                "SELL MATERIALS\nWOOD $5  PLANK $15  CRATE $40\nORE $10  BAR $30",
+                "SELL MATERIALS\nWOOD $5  PLANK $15  CRATE $40\nORE $10  BAR $30  TOOL $100",
                 new Vector3(0f, 1.55f, 0.15f),
                 Color.white);
 
@@ -1368,6 +1433,7 @@ namespace IndustryTycoon.Editor
             SetInteger(salePoint, "crateValue", 40);
             SetInteger(salePoint, "ironOreValue", 10);
             SetInteger(salePoint, "ironBarValue", 30);
+            SetInteger(salePoint, "toolValue", 100);
             SetFloat(salePoint, "unloadInterval", 0.2f);
 
             SalePointFeedback saleFeedback = root.AddComponent<SalePointFeedback>();
@@ -3542,6 +3608,323 @@ namespace IndustryTycoon.Editor
                 oreStorage);
         }
 
+        private static M12Services CreateM12Workshop(
+            Scene scene,
+            Wallet wallet,
+            CarryStack carryStack,
+            Collider playerCollider,
+            Transform cashTokenOrigin,
+            GameObject cashVisualPrefab,
+            Material purchaseAvailableMaterial,
+            Material purchaseCompletedMaterial,
+            Material cashAccentMaterial,
+            Material plankMaterial,
+            Material ironBarMaterial,
+            Material toolMaterial,
+            Material workshopMaterial,
+            Material forgeMaterial,
+            Material metalMaterial,
+            Material particleMaterial,
+            AudioFeedback audioFeedback)
+        {
+            PurchasePad purchasePad = CreatePurchasePad(
+                scene,
+                "Tool Workshop Purchase Pad",
+                "TOOL WORKSHOP",
+                new Vector3(-3.5f, 0f, 17f),
+                3200,
+                false,
+                wallet,
+                playerCollider,
+                purchaseAvailableMaterial,
+                purchaseCompletedMaterial,
+                cashAccentMaterial,
+                cashVisualPrefab,
+                cashTokenOrigin,
+                particleMaterial,
+                audioFeedback);
+
+            GameObject workshopRoot = new GameObject("Tool Workshop");
+            SceneManager.MoveGameObjectToScene(workshopRoot, scene);
+            workshopRoot.transform.position = new Vector3(-0.8f, 0f, 12.5f);
+
+            GameObject workshopVisual = new GameObject("Tool Workshop Visual");
+            workshopVisual.transform.SetParent(workshopRoot.transform, false);
+
+            GameObject platform = CreatePrimitiveChild(
+                "Workshop Platform",
+                PrimitiveType.Cube,
+                workshopVisual.transform,
+                workshopMaterial);
+            platform.transform.localPosition = new Vector3(0f, 0.18f, 0.18f);
+            platform.transform.localScale = new Vector3(5.55f, 0.32f, 3.05f);
+
+            GameObject rearWall = CreatePrimitiveChild(
+                "Workshop Rear Wall",
+                PrimitiveType.Cube,
+                workshopVisual.transform,
+                forgeMaterial);
+            rearWall.transform.localPosition = new Vector3(0f, 1.08f, 1.33f);
+            rearWall.transform.localScale = new Vector3(4.85f, 1.54f, 0.20f);
+
+            GameObject roof = CreatePrimitiveChild(
+                "Workshop Roof",
+                PrimitiveType.Cube,
+                workshopVisual.transform,
+                toolMaterial);
+            roof.transform.localPosition = new Vector3(0f, 1.92f, 0.34f);
+            roof.transform.localScale = new Vector3(5.20f, 0.18f, 2.35f);
+
+            GameObject workbench = CreatePrimitiveChild(
+                "Forge Workbench",
+                PrimitiveType.Cube,
+                workshopVisual.transform,
+                metalMaterial);
+            workbench.transform.localPosition = new Vector3(0f, 0.76f, 0.25f);
+            workbench.transform.localScale = new Vector3(2.25f, 0.28f, 1.15f);
+
+            GameObject press = CreatePrimitiveChild(
+                "Tool Press",
+                PrimitiveType.Cylinder,
+                workshopVisual.transform,
+                forgeMaterial);
+            press.transform.localPosition = new Vector3(0f, 1.30f, 0.24f);
+            press.transform.localScale = new Vector3(0.48f, 0.50f, 0.48f);
+
+            GameObject statusIndicator = CreatePrimitiveChild(
+                "Workshop Status Indicator",
+                PrimitiveType.Cube,
+                workshopVisual.transform,
+                workshopMaterial);
+            statusIndicator.transform.localPosition = new Vector3(0f, 2.16f, 1.22f);
+            statusIndicator.transform.localScale = new Vector3(0.92f, 0.18f, 0.16f);
+
+            CreateWorldLabel(
+                "Tool Workshop Label",
+                workshopVisual.transform,
+                "TOOL WORKSHOP\n2 PLANKS + 1 BAR  →  1 TOOL  •  2.0s",
+                new Vector3(0f, 2.74f, 0.42f),
+                Color.white);
+            TextMesh statusText = CreateWorldLabel(
+                "Tool Workshop Status",
+                workshopVisual.transform,
+                "WAITING FOR INPUTS",
+                new Vector3(0f, 2.30f, 0.40f),
+                new Color(0.62f, 0.88f, 1f));
+            statusText.characterSize = 0.038f;
+
+            ToolWorkshop workshop = workshopRoot.AddComponent<ToolWorkshop>();
+            SetInteger(workshop, "plankInputCapacity", 24);
+            SetInteger(workshop, "ironBarInputCapacity", 12);
+            SetInteger(workshop, "outputCapacity", 12);
+            SetFloat(workshop, "processingDuration", 2f);
+
+            GameObject plankInputRoot = new GameObject("Workshop Plank Input Zone");
+            plankInputRoot.transform.SetParent(workshopRoot.transform, false);
+            plankInputRoot.transform.localPosition = new Vector3(-2.3f, 0f, -1.7f);
+            BoxCollider plankInputTrigger = AddKinematicTrigger(
+                plankInputRoot,
+                new Vector3(2.2f, 2.4f, 2.2f));
+            CreateZoneDisc(
+                "Plank Input Area",
+                plankInputRoot.transform,
+                plankMaterial,
+                1.02f);
+            TextMesh plankInputText = CreateWorldLabel(
+                "Workshop Plank Input Label",
+                plankInputRoot.transform,
+                "PLANK INPUT\n0 / 24",
+                new Vector3(0f, 1.36f, 0.10f),
+                new Color(1f, 0.84f, 0.38f));
+            ToolWorkshopInputZone plankInput =
+                plankInputRoot.AddComponent<ToolWorkshopInputZone>();
+            SetObjectReference(plankInput, "toolWorkshop", workshop);
+            SetObjectReference(plankInput, "carryStack", carryStack);
+            SetObjectReference(plankInput, "playerCollider", playerCollider);
+            SetEnum(plankInput, "inputResourceType", (int)ResourceType.Plank);
+            SetFloat(plankInput, "transferInterval", 0.10f);
+            Require(plankInput.GetComponent<Collider>() == plankInputTrigger,
+                "Workshop Plank input must share its trigger collider.");
+
+            GameObject ironInputRoot = new GameObject("Workshop Iron Bar Input Zone");
+            ironInputRoot.transform.SetParent(workshopRoot.transform, false);
+            ironInputRoot.transform.localPosition = new Vector3(2.3f, 0f, -1.7f);
+            BoxCollider ironInputTrigger = AddKinematicTrigger(
+                ironInputRoot,
+                new Vector3(2.2f, 2.4f, 2.2f));
+            CreateZoneDisc(
+                "Iron Bar Input Area",
+                ironInputRoot.transform,
+                ironBarMaterial,
+                1.02f);
+            TextMesh ironInputText = CreateWorldLabel(
+                "Workshop Iron Bar Input Label",
+                ironInputRoot.transform,
+                "BAR INPUT\n0 / 12",
+                new Vector3(0f, 1.36f, 0.10f),
+                new Color(0.78f, 0.88f, 0.96f));
+            ToolWorkshopInputZone ironInput =
+                ironInputRoot.AddComponent<ToolWorkshopInputZone>();
+            SetObjectReference(ironInput, "toolWorkshop", workshop);
+            SetObjectReference(ironInput, "carryStack", carryStack);
+            SetObjectReference(ironInput, "playerCollider", playerCollider);
+            SetEnum(ironInput, "inputResourceType", (int)ResourceType.IronBar);
+            SetFloat(ironInput, "transferInterval", 0.10f);
+            Require(ironInput.GetComponent<Collider>() == ironInputTrigger,
+                "Workshop Iron Bar input must share its trigger collider.");
+
+            GameObject outputRoot = new GameObject("Workshop Tool Output Zone");
+            outputRoot.transform.SetParent(workshopRoot.transform, false);
+            outputRoot.transform.localPosition = new Vector3(0f, 0f, 2f);
+            BoxCollider outputTrigger = AddKinematicTrigger(
+                outputRoot,
+                new Vector3(2.2f, 2.4f, 2.2f));
+            CreateZoneDisc(
+                "Tool Output Area",
+                outputRoot.transform,
+                toolMaterial,
+                1.02f);
+            TextMesh outputText = CreateWorldLabel(
+                "Workshop Tool Output Label",
+                outputRoot.transform,
+                "TOOL OUTPUT\n0 / 12",
+                new Vector3(0f, 1.36f, 0.10f),
+                new Color(0.48f, 0.92f, 1f));
+            ToolWorkshopOutputZone output =
+                outputRoot.AddComponent<ToolWorkshopOutputZone>();
+            SetObjectReference(output, "toolWorkshop", workshop);
+            SetObjectReference(output, "carryStack", carryStack);
+            SetObjectReference(output, "playerCollider", playerCollider);
+            SetFloat(output, "transferInterval", 0.10f);
+            Require(output.GetComponent<Collider>() == outputTrigger,
+                "Workshop Tool output must share its trigger collider.");
+
+            GameObject outputVisual = CreatePrimitiveChild(
+                "Forged Tool Output Visual",
+                PrimitiveType.Capsule,
+                workshopVisual.transform,
+                toolMaterial);
+            outputVisual.transform.localPosition = new Vector3(0f, 0.72f, 0.36f);
+            outputVisual.transform.localRotation = Quaternion.Euler(0f, 0f, 58f);
+            outputVisual.transform.localScale = new Vector3(0.22f, 0.62f, 0.22f);
+            outputVisual.SetActive(false);
+
+            ParticleSystem completionParticles = CreateFeedbackParticleSystem(
+                "Tool Forged Burst",
+                outputRoot.transform,
+                new Vector3(0f, 0.58f, 0f),
+                new Color(0.34f, 0.90f, 1f),
+                particleMaterial,
+                32,
+                0.34f,
+                1.30f,
+                0.11f);
+
+            ToolWorkshopFeedback feedback =
+                workshopRoot.AddComponent<ToolWorkshopFeedback>();
+            SetObjectReference(feedback, "workshop", workshop);
+            SetObjectReference(feedback, "outputVisual", outputVisual);
+            SetObjectReference(feedback, "plankInputText", plankInputText);
+            SetObjectReference(feedback, "ironBarInputText", ironInputText);
+            SetObjectReference(feedback, "outputText", outputText);
+            SetObjectReference(feedback, "statusText", statusText);
+            SetObjectReference(
+                feedback,
+                "statusIndicator",
+                statusIndicator.GetComponent<Renderer>());
+            SetObjectReference(feedback, "idleMaterial", workshopMaterial);
+            SetObjectReference(feedback, "workingMaterial", purchaseCompletedMaterial);
+            SetObjectReference(feedback, "outputFullMaterial", ironBarMaterial);
+            SetObjectReference(feedback, "completionParticles", completionParticles);
+
+            workshopRoot.SetActive(false);
+            purchasePad.gameObject.SetActive(false);
+
+            GameObject automationRoot = new GameObject("Tool Workshop Automation");
+            SceneManager.MoveGameObjectToScene(automationRoot, scene);
+            ToolWorkshopUnlock unlock =
+                automationRoot.AddComponent<ToolWorkshopUnlock>();
+            SetObjectReference(unlock, "workshopPurchasePad", purchasePad);
+            SetObjectReference(
+                unlock,
+                "workshopPurchasePadRoot",
+                purchasePad.gameObject);
+            SetObjectReference(unlock, "workshopRoot", workshopRoot);
+
+            return new M12Services(unlock, workshop, purchasePad);
+        }
+
+        private static IndustrialDistrictTease CreateIndustrialDistrictTease(
+            Scene scene,
+            LumberCampProgressionService progressionService,
+            Material platformMaterial,
+            Material barrierMaterial,
+            Material metalMaterial)
+        {
+            GameObject teaseRoot = new GameObject("Industrial District Tease");
+            SceneManager.MoveGameObjectToScene(teaseRoot, scene);
+            teaseRoot.transform.position = new Vector3(-5.5f, 0f, 23.5f);
+
+            GameObject platform = CreatePrimitiveChild(
+                "Industrial District Platform",
+                PrimitiveType.Cube,
+                teaseRoot.transform,
+                platformMaterial);
+            platform.transform.localPosition = new Vector3(0f, 0.16f, 0f);
+            platform.transform.localScale = new Vector3(5.4f, 0.30f, 2.5f);
+
+            GameObject leftPost = CreatePrimitiveChild(
+                "Industrial Lock Left",
+                PrimitiveType.Cube,
+                teaseRoot.transform,
+                barrierMaterial);
+            leftPost.transform.localPosition = new Vector3(-1.85f, 0.88f, -0.55f);
+            leftPost.transform.localScale = new Vector3(0.20f, 1.45f, 0.20f);
+
+            GameObject rightPost = CreatePrimitiveChild(
+                "Industrial Lock Right",
+                PrimitiveType.Cube,
+                teaseRoot.transform,
+                barrierMaterial);
+            rightPost.transform.localPosition = new Vector3(1.85f, 0.88f, -0.55f);
+            rightPost.transform.localScale = new Vector3(0.20f, 1.45f, 0.20f);
+
+            GameObject barrier = CreatePrimitiveChild(
+                "Industrial Lock Barrier",
+                PrimitiveType.Cube,
+                teaseRoot.transform,
+                barrierMaterial);
+            barrier.transform.localPosition = new Vector3(0f, 1.02f, -0.55f);
+            barrier.transform.localRotation = Quaternion.Euler(0f, 0f, -7f);
+            barrier.transform.localScale = new Vector3(3.85f, 0.24f, 0.18f);
+
+            GameObject skyline = CreatePrimitiveChild(
+                "Industrial Skyline",
+                PrimitiveType.Cube,
+                teaseRoot.transform,
+                metalMaterial);
+            skyline.transform.localPosition = new Vector3(0f, 1.08f, 0.48f);
+            skyline.transform.localScale = new Vector3(3.35f, 1.55f, 0.42f);
+
+            TextMesh teaseLabel = CreateWorldLabel(
+                "Industrial District Label",
+                teaseRoot.transform,
+                "INDUSTRIAL DISTRICT — LOCKED",
+                new Vector3(0f, 2.45f, 0.08f),
+                new Color(1f, 0.80f, 0.30f));
+            teaseLabel.characterSize = 0.047f;
+            teaseRoot.SetActive(false);
+
+            GameObject progressionRoot = FindRoot(scene, "Lumber Camp Progression");
+            Require(progressionRoot != null && progressionService != null,
+                "M12 Industrial District tease requires progression.");
+            IndustrialDistrictTease tease =
+                progressionRoot.AddComponent<IndustrialDistrictTease>();
+            SetObjectReference(tease, "progressionService", progressionService);
+            SetObjectReference(tease, "teaseRoot", teaseRoot);
+            return tease;
+        }
+
         private static LumberCampProgressionService CreateM10Progression(
             Scene scene,
             Wallet wallet,
@@ -3556,7 +3939,8 @@ namespace IndustryTycoon.Editor
             FirstCourierUnlock courierUnlock,
             CrateCourier courier,
             LumberCampCompletion completion,
-            M11Services m11Services)
+            M11Services m11Services,
+            M12Services m12Services)
         {
             GameObject root = FindRoot(scene, "Lumber Camp Progression");
             WoodProcessor processor = processorUnlock != null
@@ -3581,8 +3965,10 @@ namespace IndustryTycoon.Editor
                     && m11Services.SmelterUnlock != null
                     && m11Services.Smelter != null
                     && m11Services.DrillUnlock != null
-                    && m11Services.Drill != null,
-                "M11 progression requires all authoritative lumber and mining commit sources.");
+                    && m11Services.Drill != null
+                    && m12Services.WorkshopUnlock != null
+                    && m12Services.Workshop != null,
+                "M12 progression requires all authoritative production commit sources.");
 
             LumberCampProgressionService service =
                 root.AddComponent<LumberCampProgressionService>();
@@ -3606,6 +3992,8 @@ namespace IndustryTycoon.Editor
             SetObjectReference(service, "smelter", m11Services.Smelter);
             SetObjectReference(service, "drillUnlock", m11Services.DrillUnlock);
             SetObjectReference(service, "automatedDrill", m11Services.Drill);
+            SetObjectReference(service, "toolWorkshopUnlock", m12Services.WorkshopUnlock);
+            SetObjectReference(service, "toolWorkshop", m12Services.Workshop);
             return service;
         }
 
@@ -3625,7 +4013,8 @@ namespace IndustryTycoon.Editor
             WoodStockpile stockpile,
             LumberCampCompletion completion,
             LumberCampProgressionService progressionService,
-            M11Services m11Services)
+            M11Services m11Services,
+            M12Services m12Services)
         {
             LumberWorker worker = workerUnlock != null && workerUnlock.WorkerRoot != null
                 ? workerUnlock.WorkerRoot.GetComponent<LumberWorker>()
@@ -3661,8 +4050,10 @@ namespace IndustryTycoon.Editor
                     && m11Services.Smelter != null
                     && m11Services.DrillUnlock != null
                     && m11Services.Drill != null
-                    && m11Services.OreStorage != null,
-                "M11 persistence requires the complete authoritative lumber and mining state graph.");
+                    && m11Services.OreStorage != null
+                    && m12Services.WorkshopUnlock != null
+                    && m12Services.Workshop != null,
+                "M12 persistence requires the complete authoritative production state graph.");
 
             GameObject root = new GameObject("Local Persistence");
             SceneManager.MoveGameObjectToScene(root, scene);
@@ -3700,6 +4091,8 @@ namespace IndustryTycoon.Editor
             SetObjectReference(service, "drillUnlock", m11Services.DrillUnlock);
             SetObjectReference(service, "automatedDrill", m11Services.Drill);
             SetObjectReference(service, "oreStorage", m11Services.OreStorage);
+            SetObjectReference(service, "toolWorkshopUnlock", m12Services.WorkshopUnlock);
+            SetObjectReference(service, "toolWorkshop", m12Services.Workshop);
             SetFloat(service, "saveDebounceSeconds", 3f);
             SetFloat(service, "returnScreenThresholdSeconds", 300f);
             SetFloat(service, "maximumCreditedAwaySeconds", 14400f);
@@ -3784,8 +4177,15 @@ namespace IndustryTycoon.Editor
                 panelObject.transform,
                 "$ 0",
                 Vector2.zero,
+                new Vector2(0.55f, 0.5f),
+                38);
+            Text empireLevelText = CreateHudLine(
+                "Empire Level Text",
+                panelObject.transform,
+                "EMPIRE LEVEL 1",
+                new Vector2(0.55f, 0f),
                 new Vector2(1f, 0.5f),
-                42);
+                25);
 
             WoodHud woodHud = panelObject.AddComponent<WoodHud>();
             SetObjectReference(woodHud, "carryStack", carryStack);
@@ -3795,6 +4195,22 @@ namespace IndustryTycoon.Editor
             SetObjectReference(walletHud, "wallet", wallet);
             SetObjectReference(walletHud, "cashText", cashText);
             SetFloat(walletHud, "animationDuration", 0.22f);
+
+            EmpireLevelView empireLevelView =
+                panelObject.AddComponent<EmpireLevelView>();
+            SetObjectReference(
+                empireLevelView,
+                "progressionService",
+                progressionService);
+            SetObjectReference(empireLevelView, "levelText", empireLevelText);
+            SetObjectReference(
+                empireLevelView,
+                "audioFeedback",
+                feedbackServices.Audio);
+            SetObjectReference(
+                empireLevelView,
+                "hapticFeedback",
+                feedbackServices.Haptics);
 
             GameObject guidancePanel = new GameObject(
                 "Main Objective",
@@ -4835,13 +5251,17 @@ namespace IndustryTycoon.Editor
                     && resourceVisual.PlankRoot != null
                     && resourceVisual.CrateRoot != null
                     && resourceVisual.IronOreRoot != null
-                    && resourceVisual.IronBarRoot != null,
-                "Carried resource visuals must contain all reusable Lumber and Mining variants.");
+                    && resourceVisual.IronBarRoot != null
+                    && resourceVisual.ToolRoot != null,
+                "Carried resource visuals must contain all reusable production variants.");
             Require(resourceVisual.IronOreRoot.GetComponentsInChildren<MeshRenderer>(
                         true).Length == 1
                     && resourceVisual.IronBarRoot.GetComponentsInChildren<MeshRenderer>(
                         true).Length == 1,
                 "M11 Mining carry variants must stay at one renderer each for mobile reuse.");
+            Require(resourceVisual.ToolRoot.GetComponentsInChildren<MeshRenderer>(
+                        true).Length == 1,
+                "M12 Tool carry variant must stay at one renderer for mobile reuse.");
 
             GameObject cashVisualPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CashVisualPrefabPath);
             Require(cashVisualPrefab != null, "CashBundleVisual prefab is missing.");
@@ -4929,6 +5349,7 @@ namespace IndustryTycoon.Editor
                 workerAutomation);
             ValidateM10Scene(scene);
             ValidateM11Scene(scene, carryStack, salePoint, playerCollider);
+            ValidateM12Scene(scene, carryStack, salePoint, playerCollider);
             ValidateCoreLoopLogic();
             ValidateM3Logic();
             ValidateM4Logic();
@@ -5339,6 +5760,221 @@ namespace IndustryTycoon.Editor
                 "M11 Mine access path must be a clear, collider-free two-segment route.");
             Require(mineArea.GetComponentsInChildren<LumberWorker>(true).Length == 0,
                 "M11 automated mining must use a distinct Drill, not reuse Lumber workers.");
+        }
+
+        private static void ValidateM12Scene(
+            Scene scene,
+            CarryStack carryStack,
+            SalePoint salePoint,
+            Collider playerCollider)
+        {
+            GameObject workshopRoot = FindRoot(scene, "Tool Workshop");
+            GameObject purchaseRoot = FindRoot(scene, "Tool Workshop Purchase Pad");
+            GameObject automationRoot = FindRoot(scene, "Tool Workshop Automation");
+            GameObject teaseRoot = FindRoot(scene, "Industrial District Tease");
+            GameObject progressionRoot = FindRoot(scene, "Lumber Camp Progression");
+            GameObject persistenceRoot = FindRoot(scene, "Local Persistence");
+            GameObject hudRoot = FindRoot(scene, "HUD");
+            Require(workshopRoot != null
+                    && purchaseRoot != null
+                    && automationRoot != null
+                    && teaseRoot != null
+                    && progressionRoot != null
+                    && persistenceRoot != null
+                    && hudRoot != null,
+                "M12 Workshop, progression, persistence, HUD, or tease roots are missing.");
+
+            ToolWorkshop workshop = workshopRoot.GetComponent<ToolWorkshop>();
+            ToolWorkshopUnlock unlock =
+                automationRoot.GetComponent<ToolWorkshopUnlock>();
+            PurchasePad purchasePad = purchaseRoot.GetComponent<PurchasePad>();
+            ToolWorkshopFeedback feedback =
+                workshopRoot.GetComponent<ToolWorkshopFeedback>();
+            LumberCampProgressionService progression =
+                progressionRoot.GetComponent<LumberCampProgressionService>();
+            LocalPersistenceService persistence =
+                persistenceRoot.GetComponent<LocalPersistenceService>();
+            EmpireLevelView empireLevelView =
+                hudRoot.GetComponentInChildren<EmpireLevelView>(true);
+            IndustrialDistrictTease tease =
+                progressionRoot.GetComponent<IndustrialDistrictTease>();
+            Require(workshop != null
+                    && unlock != null
+                    && purchasePad != null
+                    && feedback != null
+                    && progression != null
+                    && persistence != null
+                    && empireLevelView != null
+                    && tease != null,
+                "M12 Workshop runtime components or event-driven views are incomplete.");
+
+            Require(workshopRoot.transform.position == new Vector3(-0.8f, 0f, 12.5f)
+                    && !workshopRoot.activeSelf,
+                "M12 Tool Workshop must occupy the central Lumber/Mine connection and start inactive.");
+            Require(purchaseRoot.transform.position == new Vector3(-3.5f, 0f, 17f)
+                    && !purchaseRoot.activeSelf,
+                "M12 Tool Workshop Purchase Pad is misplaced or visible before its opportunity.");
+            Require(workshop.PlankInputCapacity == 24
+                    && workshop.IronBarInputCapacity == 12
+                    && workshop.OutputCapacity == 12
+                    && workshop.RecipeInputPlanks == 2
+                    && workshop.RecipeInputIronBars == 1
+                    && workshop.RecipeOutputTools == 1
+                    && Mathf.Approximately(workshop.ProcessingDuration, 2f),
+                "M12 Workshop recipe, capacity, or duration changed from the accepted baseline.");
+            Require(workshop.InputPlanks == 0
+                    && workshop.ProcessingInputPlanks == 0
+                    && workshop.InputIronBars == 0
+                    && workshop.ProcessingInputIronBars == 0
+                    && workshop.OutputTools == 0
+                    && workshop.ReservedOutputCapacity == 0
+                    && !workshop.IsProcessing,
+                "M12 Workshop must begin with empty stable buffers and no transaction in flight.");
+
+            Transform plankInputTransform =
+                workshopRoot.transform.Find("Workshop Plank Input Zone");
+            Transform ironInputTransform =
+                workshopRoot.transform.Find("Workshop Iron Bar Input Zone");
+            Transform outputTransform =
+                workshopRoot.transform.Find("Workshop Tool Output Zone");
+            Require(plankInputTransform != null
+                    && ironInputTransform != null
+                    && outputTransform != null
+                    && plankInputTransform.localPosition
+                    == new Vector3(-2.3f, 0f, -1.7f)
+                    && ironInputTransform.localPosition
+                    == new Vector3(2.3f, 0f, -1.7f)
+                    && outputTransform.localPosition
+                    == new Vector3(0f, 0f, 2f),
+                "M12 Workshop must retain its clear U-shaped input/output layout.");
+
+            ToolWorkshopInputZone plankInput =
+                plankInputTransform.GetComponent<ToolWorkshopInputZone>();
+            ToolWorkshopInputZone ironInput =
+                ironInputTransform.GetComponent<ToolWorkshopInputZone>();
+            ToolWorkshopOutputZone output =
+                outputTransform.GetComponent<ToolWorkshopOutputZone>();
+            Require(workshopRoot.GetComponentsInChildren<ToolWorkshopInputZone>(
+                        true).Length == 2
+                    && workshopRoot.GetComponentsInChildren<ToolWorkshopOutputZone>(
+                        true).Length == 1
+                    && plankInput != null
+                    && ironInput != null
+                    && output != null,
+                "M12 Workshop requires exactly two typed input zones and one output zone.");
+            Require(plankInput.ToolWorkshop == workshop
+                    && plankInput.CarryStack == carryStack
+                    && plankInput.PlayerCollider == playerCollider
+                    && plankInput.InputResourceType == ResourceType.Plank
+                    && ironInput.ToolWorkshop == workshop
+                    && ironInput.CarryStack == carryStack
+                    && ironInput.PlayerCollider == playerCollider
+                    && ironInput.InputResourceType == ResourceType.IronBar
+                    && output.ToolWorkshop == workshop
+                    && output.CarryStack == carryStack
+                    && output.PlayerCollider == playerCollider,
+                "M12 Workshop typed transfer zones are crossed or incompletely wired.");
+            Require(Mathf.Approximately(plankInput.TransferInterval, 0.10f)
+                    && Mathf.Approximately(ironInput.TransferInterval, 0.10f)
+                    && Mathf.Approximately(output.TransferInterval, 0.10f),
+                "M12 Workshop manual transfers must reuse the 0.10-second cadence.");
+
+            ValidateTriggerZone(plankInputTransform.gameObject, "Workshop Plank Input Zone");
+            ValidateTriggerZone(ironInputTransform.gameObject, "Workshop Iron Bar Input Zone");
+            ValidateTriggerZone(outputTransform.gameObject, "Workshop Tool Output Zone");
+            Require(Vector3.Distance(
+                        plankInputTransform.position,
+                        ironInputTransform.position) >= 4.5f
+                    && Vector3.Distance(
+                        plankInputTransform.position,
+                        outputTransform.position) >= 4.2f
+                    && Vector3.Distance(
+                        ironInputTransform.position,
+                        outputTransform.position) >= 4.2f,
+                "M12 Workshop interaction triggers are too close for reliable portrait controls.");
+
+            BoxCollider purchaseTrigger = ValidateTriggerZone(
+                purchaseRoot,
+                "Tool Workshop Purchase Pad");
+            Require(purchasePad.Wallet != null
+                    && purchasePad.PlayerCollider == playerCollider
+                    && purchasePad.InteractionCollider == purchaseTrigger
+                    && purchasePad.PurchaseLabel == "TOOL WORKSHOP"
+                    && purchasePad.TotalCost == 3200
+                    && !purchasePad.StartsAvailable
+                    && !purchasePad.IsAvailable
+                    && !purchaseTrigger.enabled,
+                "M12 Tool Workshop Purchase Pad cost, gate, or interaction wiring is invalid.");
+            Require(unlock.ProgressionService == progression
+                    && unlock.WorkshopPurchasePad == purchasePad
+                    && unlock.WorkshopPurchasePadRoot == purchaseRoot
+                    && unlock.WorkshopRoot == workshopRoot
+                    && !unlock.IsPadUnlocked
+                    && !unlock.IsWorkshopActivated
+                    && unlock.ActivationCount == 0,
+                "M12 Workshop unlock must begin gated by authoritative cross-industry progression.");
+
+            Transform workshopVisual =
+                workshopRoot.transform.Find("Tool Workshop Visual");
+            Transform outputVisual = workshopVisual != null
+                ? workshopVisual.Find("Forged Tool Output Visual")
+                : null;
+            Require(workshopVisual != null
+                    && outputVisual != null
+                    && outputVisual.GetComponentsInChildren<MeshRenderer>(true).Length == 1
+                    && !outputVisual.gameObject.activeSelf,
+                "M12 Workshop output must use one lightweight event-driven Tool visual.");
+            Require(GetObjectReference(feedback, "workshop") == workshop
+                    && GetObjectReference(feedback, "outputVisual")
+                    == outputVisual.gameObject
+                    && GetObjectReference(feedback, "plankInputText") != null
+                    && GetObjectReference(feedback, "ironBarInputText") != null
+                    && GetObjectReference(feedback, "outputText") != null
+                    && GetObjectReference(feedback, "statusText") != null
+                    && GetObjectReference(feedback, "statusIndicator") != null
+                    && GetObjectReference(feedback, "completionParticles") != null,
+                "M12 Workshop event-driven feedback references are incomplete.");
+
+            Require(progression.ToolWorkshop == workshop
+                    && progression.ToolWorkshopUnlock == unlock,
+                "M12 progression is not wired to authoritative Workshop commits.");
+            Require(GetObjectReference(persistence, "toolWorkshop") == workshop
+                    && GetObjectReference(persistence, "toolWorkshopUnlock") == unlock,
+                "M12 persistence is not wired to Workshop stable state.");
+            Require(salePoint.ToolValue == 100,
+                "M12 Tool sale value must remain exactly $100.");
+
+            Require(empireLevelView.ProgressionService == progression
+                    && empireLevelView.LevelText != null
+                    && GetObjectReference(empireLevelView, "audioFeedback") != null
+                    && GetObjectReference(empireLevelView, "hapticFeedback") != null,
+                "M12 Empire Level HUD view is missing authoritative event-driven references.");
+            TextMesh teaseLabel = teaseRoot.transform
+                .Find("Industrial District Label")
+                ?.GetComponent<TextMesh>();
+            Require(tease.ProgressionService == progression
+                    && tease.TeaseRoot == teaseRoot
+                    && teaseLabel != null
+                    && string.Equals(
+                        teaseLabel.text,
+                        "INDUSTRIAL DISTRICT — LOCKED",
+                        StringComparison.Ordinal)
+                    && teaseRoot.transform.position == new Vector3(-5.5f, 0f, 23.5f)
+                    && !teaseRoot.activeSelf
+                    && teaseRoot.GetComponentsInChildren<Collider>(true).Length == 0
+                    && teaseRoot.GetComponentsInChildren<Rigidbody>(true).Length == 0,
+                "M12 Industrial District tease must start hidden and remain visual-only.");
+
+            GameObject pathRoot = FindRoot(scene, "Mine Access Path");
+            Require(pathRoot != null
+                    && pathRoot.GetComponentsInChildren<Collider>(true).Length == 0
+                    && Vector3.Distance(
+                        workshopRoot.transform.position,
+                        new Vector3(4.6f, 0f, 12.5f)) >= 5.0f,
+                "M12 Workshop crowds or blocks the accepted Mine access route.");
+            Require(workshopRoot.GetComponentsInChildren<LumberWorker>(true).Length == 0
+                    && workshopRoot.GetComponentsInChildren<AutomatedDrill>(true).Length == 0,
+                "M12 Workshop must remain manually supplied with no hidden automation.");
         }
 
         private static void ValidateM4Scene(
@@ -6221,8 +6857,8 @@ namespace IndustryTycoon.Editor
                 particleSystems.AddRange(rootParticles);
             }
 
-            Require(particleSystems.Count == 26,
-                $"The M11 prototype requires twenty-six bounded feedback emitters; found {particleSystems.Count}.");
+            Require(particleSystems.Count == 28,
+                $"The M12 prototype requires twenty-eight bounded feedback emitters; found {particleSystems.Count}.");
             for (int i = 0; i < particleSystems.Count; i++)
             {
                 ParticleSystem particles = particleSystems[i];
@@ -7368,14 +8004,14 @@ namespace IndustryTycoon.Editor
 
         private static void ValidateM10Logic()
         {
-            Require(M9SaveSchema.CurrentVersion == M9SaveSchema.Version3,
-                "M11 requires local save schema version 3.");
-            Require(LumberCampProgressionCatalog.MetricCount == 17
+            Require(M9SaveSchema.CurrentVersion == M9SaveSchema.Version4,
+                "M12 requires local save schema version 4.");
+            Require(LumberCampProgressionCatalog.MetricCount == 20
                     && LumberCampProgressionCatalog.FlagCount == 8
-                    && LumberCampProgressionCatalog.ObjectiveCount == 13
-                    && LumberCampProgressionCatalog.ContractCount == 5
-                    && LumberCampProgressionCatalog.AchievementCount == 15,
-                "M11 progression catalog sizes changed unexpectedly.");
+                    && LumberCampProgressionCatalog.ObjectiveCount == 16
+                    && LumberCampProgressionCatalog.ContractCount == 7
+                    && LumberCampProgressionCatalog.AchievementCount == 19,
+                "M12 progression catalog sizes changed unexpectedly.");
 
             MainObjectiveId[] objectiveIds =
             {
@@ -7391,7 +8027,10 @@ namespace IndustryTycoon.Editor
                 MainObjectiveId.MineTenIronOre,
                 MainObjectiveId.UnlockSmelter,
                 MainObjectiveId.ProduceFiveIronBars,
-                MainObjectiveId.UnlockAutomatedDrill
+                MainObjectiveId.UnlockAutomatedDrill,
+                MainObjectiveId.UnlockToolWorkshop,
+                MainObjectiveId.ProduceFiveTools,
+                MainObjectiveId.ReachEmpireLevelFive
             };
             ObjectiveConditionKind[] objectiveKinds =
             {
@@ -7407,7 +8046,10 @@ namespace IndustryTycoon.Editor
                 ObjectiveConditionKind.Metric,
                 ObjectiveConditionKind.Flag,
                 ObjectiveConditionKind.Metric,
-                ObjectiveConditionKind.Metric
+                ObjectiveConditionKind.Metric,
+                ObjectiveConditionKind.Metric,
+                ObjectiveConditionKind.Metric,
+                ObjectiveConditionKind.EmpireLevel
             };
             ProgressFlagId[] objectiveFlags =
             {
@@ -7422,6 +8064,9 @@ namespace IndustryTycoon.Editor
                 default,
                 default,
                 ProgressFlagId.SmelterUnlocked,
+                default,
+                default,
+                default,
                 default,
                 default
             };
@@ -7439,11 +8084,15 @@ namespace IndustryTycoon.Editor
                 ProgressMetricId.IronOreMined,
                 default,
                 ProgressMetricId.IronBarsProduced,
-                ProgressMetricId.DrillUnlocked
+                ProgressMetricId.DrillUnlocked,
+                ProgressMetricId.ToolWorkshopUnlocked,
+                ProgressMetricId.ToolsProduced,
+                default
             };
             long[] objectiveTargets =
             {
-                1L, 1L, 10L, 1L, 1L, 5L, 1L, 1L, 5L, 10L, 1L, 5L, 1L
+                1L, 1L, 10L, 1L, 1L, 5L, 1L, 1L,
+                5L, 10L, 1L, 5L, 1L, 1L, 5L, 5L
             };
             for (int i = 0; i < LumberCampProgressionCatalog.ObjectiveCount; i++)
             {
@@ -7452,16 +8101,16 @@ namespace IndustryTycoon.Editor
                 Require(objective.Id == objectiveIds[i]
                         && objective.ConditionKind == objectiveKinds[i]
                         && objective.Target == objectiveTargets[i],
-                    $"M11 objective {i} order, condition, or target changed.");
+                    $"M12 objective {i} order, condition, or target changed.");
                 if (objective.ConditionKind == ObjectiveConditionKind.Flag)
                 {
                     Require(objective.Flag == objectiveFlags[i],
-                        $"M11 objective {i} uses the wrong unlock flag.");
+                        $"M12 objective {i} uses the wrong unlock flag.");
                 }
-                else
+                else if (objective.ConditionKind == ObjectiveConditionKind.Metric)
                 {
                     Require(objective.Metric == objectiveMetrics[i],
-                        $"M11 objective {i} uses the wrong progress metric.");
+                        $"M12 objective {i} uses the wrong progress metric.");
                 }
             }
 
@@ -7482,8 +8131,8 @@ namespace IndustryTycoon.Editor
                     $"M11 flag stable ID {i} is duplicated.");
             }
 
-            long[] contractTargets = { 20L, 15L, 20L, 10L, 10L };
-            int[] contractRewards = { 150, 250, 300, 400, 600 };
+            long[] contractTargets = { 20L, 15L, 20L, 10L, 10L, 10L, 15L };
+            int[] contractRewards = { 150, 250, 300, 400, 600, 800, 1200 };
             var stableIds = new HashSet<string>(StringComparer.Ordinal);
             for (int i = 0; i < LumberCampProgressionCatalog.ContractCount; i++)
             {
@@ -7499,7 +8148,8 @@ namespace IndustryTycoon.Editor
             int[] achievementRewards =
             {
                 50, 75, 100, 125, 150, 200, 150, 150,
-                200, 250, 250, 300, 500, 250, 500
+                200, 250, 250, 300, 500, 250, 500,
+                100, 150, 300, 250
             };
             stableIds.Clear();
             for (int i = 0;

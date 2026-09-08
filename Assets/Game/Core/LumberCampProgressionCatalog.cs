@@ -22,7 +22,10 @@ namespace IndustryTycoon.Progression
         IronBarsProduced = 13,
         IronBarsSold = 14,
         MineUnlocked = 15,
-        DrillUnlocked = 16
+        DrillUnlocked = 16,
+        ToolsProduced = 17,
+        ToolsSold = 18,
+        ToolWorkshopUnlocked = 19
     }
 
     public enum ProgressFlagId
@@ -51,7 +54,10 @@ namespace IndustryTycoon.Progression
         MineTenIronOre = 9,
         UnlockSmelter = 10,
         ProduceFiveIronBars = 11,
-        UnlockAutomatedDrill = 12
+        UnlockAutomatedDrill = 12,
+        UnlockToolWorkshop = 13,
+        ProduceFiveTools = 14,
+        ReachEmpireLevelFive = 15
     }
 
     public enum LumberCampContractId
@@ -60,7 +66,9 @@ namespace IndustryTycoon.Progression
         ProduceFifteenPlanks = 1,
         SellTwentyPlanks = 2,
         ProduceTenCrates = 3,
-        DeliverTenCrates = 4
+        DeliverTenCrates = 4,
+        ProduceTenTools = 5,
+        SellFifteenTools = 6
     }
 
     public enum ContractProgressState
@@ -86,13 +94,18 @@ namespace IndustryTycoon.Progression
         Merchant = 11,
         TycoonInTraining = 12,
         FullyAutomatedInput = 13,
-        LumberCampComplete = 14
+        LumberCampComplete = 14,
+        FirstTool = 15,
+        CrossIndustry = 16,
+        Toolmaker = 17,
+        EmpireLevelFive = 18
     }
 
     public enum ObjectiveConditionKind
     {
         Metric = 0,
-        Flag = 1
+        Flag = 1,
+        EmpireLevel = 2
     }
 
     public readonly struct MainObjectiveDefinition
@@ -122,6 +135,19 @@ namespace IndustryTycoon.Progression
             Metric = default;
             Flag = flag;
             Target = 1L;
+        }
+
+        public MainObjectiveDefinition(
+            MainObjectiveId id,
+            string label,
+            int empireLevelTarget)
+        {
+            Id = id;
+            Label = label;
+            ConditionKind = ObjectiveConditionKind.EmpireLevel;
+            Metric = default;
+            Flag = default;
+            Target = Math.Max(1L, empireLevelTarget);
         }
 
         public MainObjectiveId Id { get; }
@@ -201,7 +227,10 @@ namespace IndustryTycoon.Progression
             "iron_bars_produced",
             "iron_bars_sold",
             "mine_unlocked",
-            "drill_unlocked"
+            "drill_unlocked",
+            "tools_produced",
+            "tools_sold",
+            "tool_workshop_unlocked"
         };
 
         private static readonly string[] FlagStableIds =
@@ -275,7 +304,21 @@ namespace IndustryTycoon.Progression
                 MainObjectiveId.UnlockAutomatedDrill,
                 "UNLOCK AUTOMATED DRILL",
                 ProgressMetricId.DrillUnlocked,
-                1L)
+                1L),
+            new MainObjectiveDefinition(
+                MainObjectiveId.UnlockToolWorkshop,
+                "UNLOCK TOOL WORKSHOP",
+                ProgressMetricId.ToolWorkshopUnlocked,
+                1L),
+            new MainObjectiveDefinition(
+                MainObjectiveId.ProduceFiveTools,
+                "PRODUCE TOOLS",
+                ProgressMetricId.ToolsProduced,
+                5L),
+            new MainObjectiveDefinition(
+                MainObjectiveId.ReachEmpireLevelFive,
+                "REACH EMPIRE LEVEL",
+                5)
         };
 
         private static readonly LumberCampContractDefinition[] Contracts =
@@ -314,7 +357,21 @@ namespace IndustryTycoon.Progression
                 "DELIVER 10 CRATES",
                 ProgressMetricId.CratesDelivered,
                 10L,
-                600)
+                600),
+            new LumberCampContractDefinition(
+                LumberCampContractId.ProduceTenTools,
+                "produce_10_tools",
+                "PRODUCE 10 TOOLS",
+                ProgressMetricId.ToolsProduced,
+                10L,
+                800),
+            new LumberCampContractDefinition(
+                LumberCampContractId.SellFifteenTools,
+                "sell_15_tools",
+                "SELL 15 TOOLS",
+                ProgressMetricId.ToolsSold,
+                15L,
+                1200)
         };
 
         private static readonly LumberCampAchievementDefinition[] Achievements =
@@ -408,7 +465,31 @@ namespace IndustryTycoon.Progression
                 "lumber_camp_complete",
                 "Lumber Camp Complete",
                 "Complete Lumber Camp",
-                500)
+                500),
+            new LumberCampAchievementDefinition(
+                LumberCampAchievementId.FirstTool,
+                "first_tool",
+                "First Tool",
+                "Produce the first Tool",
+                100),
+            new LumberCampAchievementDefinition(
+                LumberCampAchievementId.CrossIndustry,
+                "cross_industry",
+                "Cross-Industry",
+                "Unlock the Tool Workshop",
+                150),
+            new LumberCampAchievementDefinition(
+                LumberCampAchievementId.Toolmaker,
+                "toolmaker",
+                "Toolmaker",
+                "Produce 25 Tools",
+                300),
+            new LumberCampAchievementDefinition(
+                LumberCampAchievementId.EmpireLevelFive,
+                "empire_level_5",
+                "Empire Level 5",
+                "Reach Empire Level 5",
+                250)
         };
 
         public static int MetricCount => MetricStableIds.Length;

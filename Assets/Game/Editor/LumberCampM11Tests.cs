@@ -96,14 +96,14 @@ namespace IndustryTycoon.Editor
 
         private static void TestCatalogEconomyAndObjectiveOrder()
         {
-            Require(M9SaveSchema.CurrentVersion == M9SaveSchema.Version3,
-                "M11 must own save schema v3.");
+            Require(M9SaveSchema.CurrentVersion >= M9SaveSchema.Version3,
+                "M11 Mining data must remain supported by the current schema.");
             Require((int)ResourceType.IronOre == 3
                     && (int)ResourceType.IronBar == 4,
                 "Mining resources must remain append-only after the M1-M10 IDs.");
-            Require(LumberCampProgressionCatalog.MetricCount == 17
+            Require(LumberCampProgressionCatalog.MetricCount >= 17
                     && LumberCampProgressionCatalog.FlagCount == 8
-                    && LumberCampProgressionCatalog.ObjectiveCount == 13,
+                    && LumberCampProgressionCatalog.ObjectiveCount >= 13,
                 "The M11 metric, flag, or objective catalog is incomplete.");
 
             MainObjectiveId[] expectedIds =
@@ -339,8 +339,8 @@ namespace IndustryTycoon.Editor
                 BaselineUtc + 60L);
             Require(migrated.IsSuccess
                     && migrated.WasMigrated
-                    && migrated.Data.version == M9SaveSchema.Version3,
-                "A valid schema-v2 save did not migrate explicitly to v3: "
+                    && migrated.Data.version == M9SaveSchema.CurrentVersion,
+                "A valid schema-v2 save did not migrate explicitly to the current schema: "
                 + migrated.Diagnostic);
 
             M9SaveData data = migrated.Data;
@@ -414,7 +414,7 @@ namespace IndustryTycoon.Editor
                     out string failure,
                     prettyPrint: true),
                 "Canonical M11 save could not encode: " + failure);
-            Require(json.Contains("\"version\": 3")
+            Require(json.Contains("\"version\": 4")
                     && json.Contains("\"mining\"")
                     && json.Contains("\"smelterInputIronOre\": 23")
                     && json.Contains("\"smelterOutputIronBars\": 11")
@@ -638,6 +638,14 @@ namespace IndustryTycoon.Editor
             Array.Copy(progression.flags, legacyFlags, legacyFlags.Length);
             progression.metrics = legacyMetrics;
             progression.flags = legacyFlags;
+            var legacyClaims = new bool[5];
+            progression.claimedContracts = legacyClaims;
+            var legacyAchievements = new M10AchievementSaveRecord[15];
+            Array.Copy(
+                progression.achievements,
+                legacyAchievements,
+                legacyAchievements.Length);
+            progression.achievements = legacyAchievements;
             progression.objectiveIndex = lumberCompleted ? 9 : 0;
             progression.activeContractState =
                 ContractProgressState.CompletedUnclaimed;

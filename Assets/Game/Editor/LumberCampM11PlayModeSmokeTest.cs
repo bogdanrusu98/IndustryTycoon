@@ -929,14 +929,15 @@ namespace IndustryTycoon.Editor
                     && File.Exists(_persistence.SavePath),
                 "M11 canonical state did not persist before reload.");
             string savedJson = File.ReadAllText(_persistence.SavePath);
-            Require(savedJson.Contains("\"version\":3")
+            Require(savedJson.Contains("\"version\":4")
                     && savedJson.Contains("\"mining\"")
+                    && savedJson.Contains("\"workshop\"")
                     && !savedJson.Contains("processingInputOre")
                     && !savedJson.Contains("reservedOutputCapacity")
                     && !savedJson.Contains("incomingReservations")
                     && !savedJson.Contains("isProcessing")
                     && !savedJson.Contains("isProducing"),
-                "Runtime save omitted v3 Mining state or leaked transient ownership.");
+                "Runtime save omitted v4 Mining/Workshop state or leaked transient ownership.");
 
             AdvanceTo(Stage.WaitForPersistenceReload);
             _runtimeInitialized = false;
@@ -1027,7 +1028,7 @@ namespace IndustryTycoon.Editor
                 + "Courier completion → Mine unlock, timed/type/full-safe manual Mining, "
                 + "$10 Ore, atomic 2→1 Smelter with full/cancel resume, $30 Bar, "
                 + "$2400 Drill with exclusive storage reservation/full resume, manual "
-                + "storage transfer, exact Mining metrics, v3 reload, and Reset Save.");
+                + "storage transfer, exact Mining metrics, v4 reload, and Reset Save.");
         }
 
         private static void ValidateCameraExpansion()

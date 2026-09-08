@@ -268,6 +268,36 @@ namespace IndustryTycoon.Progression
 
     public static class M10ProgressionRules
     {
+        public const int MinimumEmpireLevel = 1;
+        public const int MaximumEmpireLevel = 5;
+
+        public static int ResolveEmpireLevel(M10ProgressionSaveData data)
+        {
+            int level = MinimumEmpireLevel;
+            if (data == null
+                || !data.GetFlag(ProgressFlagId.LumberCampCompleted))
+            {
+                return level;
+            }
+
+            level = 2;
+            if (data.GetMetric(ProgressMetricId.DrillUnlocked) < 1L)
+            {
+                return level;
+            }
+
+            level = 3;
+            if (data.GetMetric(ProgressMetricId.ToolWorkshopUnlocked) < 1L)
+            {
+                return level;
+            }
+
+            level = 4;
+            return data.GetMetric(ProgressMetricId.ToolsProduced) >= 1L
+                ? MaximumEmpireLevel
+                : level;
+        }
+
         public static bool IsObjectiveSatisfied(
             M10ProgressionSaveData data,
             int objectiveIndex)
@@ -281,9 +311,18 @@ namespace IndustryTycoon.Progression
 
             MainObjectiveDefinition definition =
                 LumberCampProgressionCatalog.GetObjective(objectiveIndex);
-            return definition.ConditionKind == ObjectiveConditionKind.Flag
-                ? data.GetFlag(definition.Flag)
-                : data.GetMetric(definition.Metric) >= definition.Target;
+            switch (definition.ConditionKind)
+            {
+                case ObjectiveConditionKind.Metric:
+                    return data.GetMetric(definition.Metric) >= definition.Target;
+                case ObjectiveConditionKind.Flag:
+                    return data.GetFlag(definition.Flag);
+                case ObjectiveConditionKind.EmpireLevel:
+                    return ResolveEmpireLevel(data) >= definition.Target;
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(definition.ConditionKind));
+            }
         }
 
         public static int ResolveObjectiveIndex(M10ProgressionSaveData data)
@@ -326,6 +365,9 @@ namespace IndustryTycoon.Progression
                     current = SaturatingAdd(
                         current,
                         data.GetMetric(ProgressMetricId.IronBarsSold));
+                    current = SaturatingAdd(
+                        current,
+                        data.GetMetric(ProgressMetricId.ToolsSold));
                     break;
                 case LumberCampAchievementId.FirstHire:
                     current = BoolToLong(data.GetFlag(ProgressFlagId.WorkerUnlocked));
@@ -379,6 +421,21 @@ namespace IndustryTycoon.Progression
                 case LumberCampAchievementId.LumberCampComplete:
                     current = BoolToLong(
                         data.GetFlag(ProgressFlagId.LumberCampCompleted));
+                    break;
+                case LumberCampAchievementId.FirstTool:
+                    current = data.GetMetric(ProgressMetricId.ToolsProduced);
+                    break;
+                case LumberCampAchievementId.CrossIndustry:
+                    current = data.GetMetric(
+                        ProgressMetricId.ToolWorkshopUnlocked);
+                    break;
+                case LumberCampAchievementId.Toolmaker:
+                    current = data.GetMetric(ProgressMetricId.ToolsProduced);
+                    target = 25L;
+                    break;
+                case LumberCampAchievementId.EmpireLevelFive:
+                    current = ResolveEmpireLevel(data);
+                    target = MaximumEmpireLevel;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(achievementIndex));
@@ -579,7 +636,8 @@ namespace IndustryTycoon.Progression
         private static bool IsBinaryMetric(ProgressMetricId metric)
         {
             return metric == ProgressMetricId.MineUnlocked
-                   || metric == ProgressMetricId.DrillUnlocked;
+                   || metric == ProgressMetricId.DrillUnlocked
+                   || metric == ProgressMetricId.ToolWorkshopUnlocked;
         }
 
         private static bool TryNormalizeFlags(

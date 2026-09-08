@@ -13,7 +13,7 @@ namespace IndustryTycoon.Editor
     /// <summary>
     /// Editor-only save reset entry point used by manual QA and by fresh-state smoke tests.
     /// It deliberately targets only the shared primary/temp/backup/corrupt save
-    /// artifacts; Lumber and Mining state live inside the same schema-v3 file.
+    /// artifacts; Lumber, Mining, and Workshop state live inside the same versioned file.
     /// </summary>
     public static class M9EditorSaveUtility
     {

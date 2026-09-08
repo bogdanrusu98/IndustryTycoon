@@ -6,6 +6,7 @@ namespace IndustryTycoon.Core
         Plank = 1,
         Crate = 2,
         IronOre = 3,
-        IronBar = 4
+        IronBar = 4,
+        Tool = 5
     }
 }

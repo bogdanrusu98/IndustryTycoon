@@ -17,12 +17,16 @@ namespace IndustryTycoon.Persistence
         public double FeederTransferSecondsPerWood = 0.75d;
         public double ProcessorSecondsPerRecipe = 1.10d;
         public double PackingSecondsPerRecipe = 1.50d;
+        public double ToolWorkshopSecondsPerRecipe = 2.00d;
         public double CourierSecondsPerTrip = 11.40d;
 
         public int ProcessorWoodPerRecipe = 2;
         public int ProcessorPlanksPerRecipe = 1;
         public int PackingPlanksPerRecipe = 2;
         public int PackingCratesPerRecipe = 1;
+        public int ToolWorkshopPlanksPerRecipe = 2;
+        public int ToolWorkshopIronBarsPerRecipe = 1;
+        public int ToolWorkshopToolsPerRecipe = 1;
         public int CourierCratesPerTrip = 2;
         public int CashPerDeliveredCrate = 40;
 
@@ -42,6 +46,7 @@ namespace IndustryTycoon.Persistence
         public bool AutoFeederUnlocked;
         public bool PackingUnlocked;
         public bool CourierUnlocked;
+        public bool ToolWorkshopUnlocked;
 
         public int StockpileWood;
         public int StockpileCapacity = 30;
@@ -53,6 +58,12 @@ namespace IndustryTycoon.Persistence
         public int PackingInputCapacity = 24;
         public int PackingOutputCrates;
         public int PackingOutputCapacity = 12;
+        public int ToolWorkshopInputPlanks;
+        public int ToolWorkshopPlankCapacity = 24;
+        public int ToolWorkshopInputIronBars;
+        public int ToolWorkshopIronBarCapacity = 12;
+        public int ToolWorkshopOutputTools;
+        public int ToolWorkshopOutputCapacity = 12;
 
         public int PendingOfflineCash;
         public long PendingOfflineAwaySeconds;
@@ -79,6 +90,8 @@ namespace IndustryTycoon.Persistence
         public int PackingRecipesCompleted { get; internal set; }
         public int PackingCratesProduced { get; internal set; }
         public int CourierCratesDelivered { get; internal set; }
+        public int ToolWorkshopRecipesCompleted { get; internal set; }
+        public int ToolsProduced { get; internal set; }
         public int OfflineCashEarned { get; internal set; }
 
         public int StockpileWood { get; internal set; }
@@ -86,6 +99,9 @@ namespace IndustryTycoon.Persistence
         public int ProcessorOutputPlanks { get; internal set; }
         public int PackingInputPlanks { get; internal set; }
         public int PackingOutputCrates { get; internal set; }
+        public int ToolWorkshopInputPlanks { get; internal set; }
+        public int ToolWorkshopInputIronBars { get; internal set; }
+        public int ToolWorkshopOutputTools { get; internal set; }
         public int PendingOfflineCash { get; internal set; }
         public long PendingOfflineAwaySeconds { get; internal set; }
         public bool ReturnScreenPending { get; internal set; }
@@ -237,6 +253,44 @@ namespace IndustryTycoon.Persistence
                 DeliverCrates(result, ref courierCrateBudget, cashPerCrate);
             }
 
+            // Cross-industry transport is always manual. Offline processing can only
+            // transform materials already present inside the unlocked Workshop.
+            if (input.ToolWorkshopUnlocked
+                && result.EffectiveAutomationSeconds > 0d)
+            {
+                int planksPerRecipe = Math.Max(
+                    1,
+                    rules.ToolWorkshopPlanksPerRecipe);
+                int ironBarsPerRecipe = Math.Max(
+                    1,
+                    rules.ToolWorkshopIronBarsPerRecipe);
+                int toolsPerRecipe = Math.Max(
+                    1,
+                    rules.ToolWorkshopToolsPerRecipe);
+                int outputCapacity = Math.Max(0, input.ToolWorkshopOutputCapacity);
+                long timeRecipeBudget = CalculateOperationBudget(
+                    result.EffectiveAutomationSeconds,
+                    rules.ToolWorkshopSecondsPerRecipe);
+                long plankRecipeBudget =
+                    result.ToolWorkshopInputPlanks / planksPerRecipe;
+                long ironBarRecipeBudget =
+                    result.ToolWorkshopInputIronBars / ironBarsPerRecipe;
+                long outputRecipeBudget =
+                    (outputCapacity - result.ToolWorkshopOutputTools) / toolsPerRecipe;
+                result.ToolWorkshopRecipesCompleted = MinToInt(
+                    timeRecipeBudget,
+                    plankRecipeBudget,
+                    ironBarRecipeBudget,
+                    outputRecipeBudget);
+                result.ToolWorkshopInputPlanks -=
+                    result.ToolWorkshopRecipesCompleted * planksPerRecipe;
+                result.ToolWorkshopInputIronBars -=
+                    result.ToolWorkshopRecipesCompleted * ironBarsPerRecipe;
+                result.ToolsProduced =
+                    result.ToolWorkshopRecipesCompleted * toolsPerRecipe;
+                result.ToolWorkshopOutputTools += result.ToolsProduced;
+            }
+
             result.PendingOfflineAwaySeconds = SaturatingAdd(
                 result.PendingOfflineAwaySeconds,
                 creditedAwaySeconds);
@@ -270,6 +324,13 @@ namespace IndustryTycoon.Persistence
             int processorOutputCapacity = Math.Max(0, input.ProcessorOutputCapacity);
             int packingInputCapacity = Math.Max(0, input.PackingInputCapacity);
             int packingOutputCapacity = Math.Max(0, input.PackingOutputCapacity);
+            int workshopPlankCapacity = Math.Max(0, input.ToolWorkshopPlankCapacity);
+            int workshopIronBarCapacity = Math.Max(
+                0,
+                input.ToolWorkshopIronBarCapacity);
+            int workshopOutputCapacity = Math.Max(
+                0,
+                input.ToolWorkshopOutputCapacity);
             return new OfflineProgressionResult
             {
                 StockpileWood = Clamp(input.StockpileWood, 0, stockpileCapacity),
@@ -289,6 +350,18 @@ namespace IndustryTycoon.Persistence
                     input.PackingOutputCrates,
                     0,
                     packingOutputCapacity),
+                ToolWorkshopInputPlanks = Clamp(
+                    input.ToolWorkshopInputPlanks,
+                    0,
+                    workshopPlankCapacity),
+                ToolWorkshopInputIronBars = Clamp(
+                    input.ToolWorkshopInputIronBars,
+                    0,
+                    workshopIronBarCapacity),
+                ToolWorkshopOutputTools = Clamp(
+                    input.ToolWorkshopOutputTools,
+                    0,
+                    workshopOutputCapacity),
                 PendingOfflineCash = Math.Max(0, input.PendingOfflineCash),
                 PendingOfflineAwaySeconds = Math.Max(0L, input.PendingOfflineAwaySeconds),
                 ReturnScreenPending = input.ReturnScreenPending
