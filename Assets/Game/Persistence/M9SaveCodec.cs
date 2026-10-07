@@ -157,6 +157,33 @@ namespace IndustryTycoon.Persistence
             public M12WorkshopSaveData workshop;
         }
 
+        [Serializable]
+        private sealed class Version5SaveData
+        {
+            public string schema;
+            public int version;
+            public int walletCash;
+            public int cashPileStoredCash;
+            public M9CarrySaveRecord carry;
+            public M9PurchasePadSaveRecord[] purchasePads;
+            public bool lumberCampCompleted;
+            public int stockpileWood;
+            public int processorInputWood;
+            public int processorOutputPlanks;
+            public int packingInputPlanks;
+            public int packingOutputCrates;
+            public int pendingOfflineCash;
+            public long pendingOfflineAwaySeconds;
+            public bool returnScreenPending;
+            public long lastEvaluationUtcUnixSeconds;
+            public long lastWriteUtcUnixSeconds;
+            public M10ProgressionSaveData progression;
+            public M11MiningSaveData mining;
+            public M12WorkshopSaveData workshop;
+            public M13LogisticsSaveData logistics;
+            public M13RetentionSaveData retention;
+        }
+
         public static M9SaveDecodeResult Decode(
             string json,
             M9SaveValidationSettings validationSettings,
@@ -224,6 +251,11 @@ namespace IndustryTycoon.Persistence
                         fallbackUtcUnixSeconds);
                 case M9SaveSchema.Version5:
                     return DecodeVersion5(
+                        trimmedJson,
+                        validationSettings,
+                        fallbackUtcUnixSeconds);
+                case M9SaveSchema.Version6:
+                    return DecodeVersion6(
                         trimmedJson,
                         validationSettings,
                         fallbackUtcUnixSeconds);
@@ -326,7 +358,8 @@ namespace IndustryTycoon.Persistence
                 workshop = M12WorkshopSaveData.CreateFresh(),
                 logistics = M13LogisticsSaveData.CreateFresh(),
                 retention = M13RetentionSaveData.CreateFresh(
-                    legacy.lastWriteUtcUnixSeconds)
+                    legacy.lastWriteUtcUnixSeconds),
+                industrial = M14IndustrialSaveData.CreateFresh()
             };
 
             if (!M9SaveValidator.TryNormalize(
@@ -419,7 +452,8 @@ namespace IndustryTycoon.Persistence
                 workshop = M12WorkshopSaveData.CreateFresh(),
                 logistics = M13LogisticsSaveData.CreateFresh(),
                 retention = M13RetentionSaveData.CreateFresh(
-                    legacy.lastWriteUtcUnixSeconds)
+                    legacy.lastWriteUtcUnixSeconds),
+                industrial = M14IndustrialSaveData.CreateFresh()
             };
 
             if (!M9SaveValidator.TryNormalize(
@@ -499,7 +533,8 @@ namespace IndustryTycoon.Persistence
                 workshop = M12WorkshopSaveData.CreateFresh(),
                 logistics = M13LogisticsSaveData.CreateFresh(),
                 retention = M13RetentionSaveData.CreateFresh(
-                    legacy.lastWriteUtcUnixSeconds)
+                    legacy.lastWriteUtcUnixSeconds),
+                industrial = M14IndustrialSaveData.CreateFresh()
             };
 
             if (!M9SaveValidator.TryNormalize(
@@ -579,7 +614,8 @@ namespace IndustryTycoon.Persistence
                 workshop = legacy.workshop,
                 logistics = M13LogisticsSaveData.CreateFresh(),
                 retention = M13RetentionSaveData.CreateFresh(
-                    legacy.lastWriteUtcUnixSeconds)
+                    legacy.lastWriteUtcUnixSeconds),
+                industrial = M14IndustrialSaveData.CreateFresh()
             };
 
             if (!M9SaveValidator.TryNormalize(
@@ -602,10 +638,10 @@ namespace IndustryTycoon.Persistence
             M9SaveValidationSettings validationSettings,
             long fallbackUtcUnixSeconds)
         {
-            M9SaveData decoded;
+            Version5SaveData legacy;
             try
             {
-                decoded = JsonUtility.FromJson<M9SaveData>(json);
+                legacy = JsonUtility.FromJson<Version5SaveData>(json);
             }
             catch (Exception exception)
             {
@@ -613,6 +649,51 @@ namespace IndustryTycoon.Persistence
                     M9SaveDecodeStatus.MalformedJson,
                     $"Save body could not be decoded: {exception.Message}");
             }
+
+            string upgradeFailure = null;
+            M10ProgressionSaveData upgradedProgression = null;
+            M13LogisticsSaveData upgradedLogistics = null;
+            if (legacy == null
+                || !TryUpgradeLegacyProgression(
+                    legacy.progression, 31, 8, 11, 19,
+                    out upgradedProgression,
+                    out upgradeFailure)
+                || !TryUpgradeVersion5Logistics(
+                    legacy.logistics,
+                    out upgradedLogistics,
+                    out upgradeFailure))
+            {
+                return M9SaveDecodeResult.Failed(
+                    M9SaveDecodeStatus.ValidationFailed,
+                    upgradeFailure ?? "Version 5 save body is missing.");
+            }
+
+            var decoded = new M9SaveData
+            {
+                schema = legacy.schema,
+                version = M9SaveSchema.CurrentVersion,
+                walletCash = legacy.walletCash,
+                cashPileStoredCash = legacy.cashPileStoredCash,
+                carry = SanitizeLegacyCarry(legacy.carry, true),
+                purchasePads = legacy.purchasePads,
+                lumberCampCompleted = legacy.lumberCampCompleted,
+                stockpileWood = legacy.stockpileWood,
+                processorInputWood = legacy.processorInputWood,
+                processorOutputPlanks = legacy.processorOutputPlanks,
+                packingInputPlanks = legacy.packingInputPlanks,
+                packingOutputCrates = legacy.packingOutputCrates,
+                pendingOfflineCash = legacy.pendingOfflineCash,
+                pendingOfflineAwaySeconds = legacy.pendingOfflineAwaySeconds,
+                returnScreenPending = legacy.returnScreenPending,
+                lastEvaluationUtcUnixSeconds = legacy.lastEvaluationUtcUnixSeconds,
+                lastWriteUtcUnixSeconds = legacy.lastWriteUtcUnixSeconds,
+                progression = upgradedProgression,
+                mining = legacy.mining,
+                workshop = legacy.workshop,
+                logistics = upgradedLogistics,
+                retention = legacy.retention,
+                industrial = M14IndustrialSaveData.CreateFresh()
+            };
 
             if (!M9SaveValidator.TryNormalize(
                     decoded,
@@ -626,7 +707,70 @@ namespace IndustryTycoon.Persistence
                     validationFailure);
             }
 
+            return M9SaveDecodeResult.Succeeded(normalized, true);
+        }
+
+        private static M9SaveDecodeResult DecodeVersion6(
+            string json,
+            M9SaveValidationSettings validationSettings,
+            long fallbackUtcUnixSeconds)
+        {
+            M9SaveData decoded;
+            try
+            {
+                decoded = JsonUtility.FromJson<M9SaveData>(json);
+            }
+            catch (Exception exception)
+            {
+                return M9SaveDecodeResult.Failed(
+                    M9SaveDecodeStatus.MalformedJson,
+                    $"Save body could not be decoded: {exception.Message}");
+            }
+
+            if (!M9SaveValidator.TryNormalize(decoded, validationSettings,
+                    fallbackUtcUnixSeconds, out M9SaveData normalized,
+                    out string failure))
+            {
+                return M9SaveDecodeResult.Failed(
+                    M9SaveDecodeStatus.ValidationFailed, failure);
+            }
             return M9SaveDecodeResult.Succeeded(normalized);
+        }
+
+        private static bool TryUpgradeVersion5Logistics(
+            M13LogisticsSaveData source,
+            out M13LogisticsSaveData upgraded,
+            out string failure)
+        {
+            upgraded = null;
+            failure = null;
+            if (source?.warehouse?.resources == null
+                || source.warehouse.resources.Length != 6
+                || source.routes == null)
+            {
+                failure = "Version 5 logistics state is missing or malformed.";
+                return false;
+            }
+
+            upgraded = M13LogisticsSaveData.CreateFresh();
+            for (int i = 0; i < 6; i++)
+            {
+                M13WarehouseResourceSaveRecord old = source.warehouse.resources[i];
+                if (old == null || (int)old.resourceType != i)
+                {
+                    failure = "Version 5 Warehouse resources are not canonical.";
+                    upgraded = null;
+                    return false;
+                }
+                upgraded.warehouse.resources[i].amount = old.amount;
+                upgraded.warehouse.resources[i].capacity = old.capacity;
+            }
+            M13RouteSaveRecord[] defaults = M13LogisticsSaveData.CreateFresh().routes;
+            upgraded.routes = new M13RouteSaveRecord[source.routes.Length + 3];
+            Array.Copy(source.routes, upgraded.routes, source.routes.Length);
+            for (int i = 0; i < 3; i++)
+                upgraded.routes[source.routes.Length + i] = defaults[3 + i];
+            return true;
         }
 
         private static bool TryUpgradeLegacyProgression(

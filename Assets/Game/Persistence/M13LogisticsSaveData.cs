@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using IndustryTycoon.Core;
 using IndustryTycoon.Logistics;
+using IndustryTycoon.Processing;
 
 namespace IndustryTycoon.Persistence
 {
@@ -57,6 +58,8 @@ namespace IndustryTycoon.Persistence
         public float transferIntervalSeconds = 2f;
         public bool enabled;
         public IndustrialRouteState state;
+        public int capacityUpgradeLevel;
+        public int speedUpgradeLevel;
     }
 
     [Serializable]
@@ -98,6 +101,36 @@ namespace IndustryTycoon.Persistence
                         sourceEndpointId = "iron_smelter",
                         destinationEndpointId = CentralWarehouse.StableEndpointId,
                         resourceType = ResourceType.IronBar,
+                        batchSize = 1,
+                        transferIntervalSeconds = 2f,
+                        state = IndustrialRouteState.Disabled
+                    },
+                    new M13RouteSaveRecord
+                    {
+                        id = "warehouse_bars_to_assembly",
+                        sourceEndpointId = CentralWarehouse.StableEndpointId,
+                        destinationEndpointId = AssemblyPlant.StableEndpointId,
+                        resourceType = ResourceType.IronBar,
+                        batchSize = 1,
+                        transferIntervalSeconds = 2f,
+                        state = IndustrialRouteState.Disabled
+                    },
+                    new M13RouteSaveRecord
+                    {
+                        id = "warehouse_tools_to_assembly",
+                        sourceEndpointId = CentralWarehouse.StableEndpointId,
+                        destinationEndpointId = AssemblyPlant.StableEndpointId,
+                        resourceType = ResourceType.Tool,
+                        batchSize = 1,
+                        transferIntervalSeconds = 2f,
+                        state = IndustrialRouteState.Disabled
+                    },
+                    new M13RouteSaveRecord
+                    {
+                        id = "assembly_to_warehouse",
+                        sourceEndpointId = AssemblyPlant.StableEndpointId,
+                        destinationEndpointId = CentralWarehouse.StableEndpointId,
+                        resourceType = ResourceType.MachinePart,
                         batchSize = 1,
                         transferIntervalSeconds = 2f,
                         state = IndustrialRouteState.Disabled
@@ -194,6 +227,8 @@ namespace IndustryTycoon.Persistence
                         2f),
                     enabled = route.enabled,
                     state = NormalizeState(route.state, route.enabled)
+                    ,capacityUpgradeLevel = Clamp(route.capacityUpgradeLevel, 0, 3)
+                    ,speedUpgradeLevel = Clamp(route.speedUpgradeLevel, 0, 3)
                 };
             }
 
@@ -404,6 +439,18 @@ namespace IndustryTycoon.Persistence
                         : 0;
             }
 
+            if (string.Equals(endpointId, AssemblyPlant.StableEndpointId, StringComparison.Ordinal)
+                && data.industrial != null)
+            {
+                return resourceType == ResourceType.IronBar
+                    ? data.industrial.assemblyInputIronBars
+                    : resourceType == ResourceType.Tool
+                        ? data.industrial.assemblyInputTools
+                        : resourceType == ResourceType.MachinePart
+                            ? data.industrial.assemblyOutputMachineParts
+                            : 0;
+            }
+
             return 0;
         }
 
@@ -433,6 +480,19 @@ namespace IndustryTycoon.Persistence
             if (string.Equals(endpointId, "iron_smelter", StringComparison.Ordinal))
             {
                 return resourceType == ResourceType.IronOre ? 24 : 0;
+            }
+
+            if (string.Equals(endpointId, AssemblyPlant.StableEndpointId, StringComparison.Ordinal)
+                && data.industrial != null)
+            {
+                M14BuildingUpgradeSaveRecord upgrade = data.industrial.GetBuildingUpgrade(
+                    AssemblyPlant.StableEndpointId);
+                int level = upgrade?.inputCapacityLevel ?? 0;
+                return resourceType == ResourceType.IronBar
+                    ? 24 + M14ProductionUpgradeTuning.GetCapacityBonus(24, level)
+                    : resourceType == ResourceType.Tool
+                        ? 12 + M14ProductionUpgradeTuning.GetCapacityBonus(12, level)
+                        : 0;
             }
 
             return 0;
@@ -520,6 +580,37 @@ namespace IndustryTycoon.Persistence
                     }
 
                     data.mining.smelterOutputIronBars = updated;
+                    return true;
+                }
+            }
+
+            if (string.Equals(endpointId, AssemblyPlant.StableEndpointId, StringComparison.Ordinal)
+                && data.industrial != null)
+            {
+                int updated;
+                if (resourceType == ResourceType.IronBar)
+                {
+                    updated = data.industrial.assemblyInputIronBars + delta;
+                    if (updated < 0 || updated > ReadCapacity(data, endpointId, resourceType)) return false;
+                    data.industrial.assemblyInputIronBars = updated;
+                    return true;
+                }
+                if (resourceType == ResourceType.Tool)
+                {
+                    updated = data.industrial.assemblyInputTools + delta;
+                    if (updated < 0 || updated > ReadCapacity(data, endpointId, resourceType)) return false;
+                    data.industrial.assemblyInputTools = updated;
+                    return true;
+                }
+                if (resourceType == ResourceType.MachinePart)
+                {
+                    M14BuildingUpgradeSaveRecord upgrade = data.industrial.GetBuildingUpgrade(
+                        AssemblyPlant.StableEndpointId);
+                    int capacity = 12 + M14ProductionUpgradeTuning.GetCapacityBonus(
+                        12, upgrade?.outputCapacityLevel ?? 0);
+                    updated = data.industrial.assemblyOutputMachineParts + delta;
+                    if (updated < 0 || updated > capacity) return false;
+                    data.industrial.assemblyOutputMachineParts = updated;
                     return true;
                 }
             }

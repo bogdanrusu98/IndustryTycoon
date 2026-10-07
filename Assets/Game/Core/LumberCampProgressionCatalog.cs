@@ -36,7 +36,15 @@ namespace IndustryTycoon.Progression
         IndustrialRouteOperational = 27,
         DailyGoalsCompleted = 28,
         CrossIndustryLogisticsContractsCompleted = 29,
-        IndustrialDistrictReady = 30
+        IndustrialDistrictReady = 30,
+        IndustrialDistrictEntered = 31,
+        AssemblyPlantUnlocked = 32,
+        MachinePartsProduced = 33,
+        MachinePartsSold = 34,
+        MachinePartsTransported = 35,
+        ProductionUpgradesPurchased = 36,
+        LogisticsUpgradesPurchased = 37,
+        AdvancedManufacturingContractsCompleted = 38
     }
 
     public enum ProgressFlagId
@@ -83,7 +91,8 @@ namespace IndustryTycoon.Progression
         ProduceThirtyWood = 7,
         MineTwentyFiveIronOre = 8,
         ProduceFifteenTools = 9,
-        TransportTenIronBars = 10
+        TransportTenIronBars = 10,
+        ProduceTenMachineParts = 11
     }
 
     public enum ContractProgressState
@@ -100,7 +109,8 @@ namespace IndustryTycoon.Progression
         Mine = 1,
         ToolWorkshop = 2,
         IndustrialLogistics = 3,
-        Warehouse = 4
+        Warehouse = 4,
+        AssemblyPlant = 5
     }
 
     public enum LumberCampAchievementId
@@ -273,7 +283,15 @@ namespace IndustryTycoon.Progression
             "industrial_route_operational",
             "daily_goals_completed",
             "cross_industry_logistics_contracts_completed",
-            "industrial_district_ready"
+            "industrial_district_ready",
+            "industrial_district_entered",
+            "assembly_plant_unlocked",
+            "machine_parts_produced",
+            "machine_parts_sold",
+            "machine_parts_transported",
+            "production_upgrades_purchased",
+            "logistics_upgrades_purchased",
+            "advanced_manufacturing_contracts_completed"
         };
 
         private static readonly string[] FlagStableIds =
@@ -447,7 +465,15 @@ namespace IndustryTycoon.Progression
                 10L,
                 1800,
                 ContractUnlockRequirement.IndustrialLogistics,
-                true)
+                true),
+            new LumberCampContractDefinition(
+                LumberCampContractId.ProduceTenMachineParts,
+                "produce_10_machine_parts",
+                "PRODUCE 10 MACHINE PARTS",
+                ProgressMetricId.MachinePartsProduced,
+                10L,
+                3000,
+                ContractUnlockRequirement.AssemblyPlant)
         };
 
         private static readonly LumberCampAchievementDefinition[] Achievements =

@@ -236,6 +236,9 @@ namespace IndustryTycoon.Progression
                 case ResourceType.Tool:
                     soldMetric = ProgressMetricId.ToolsSold;
                     break;
+                case ResourceType.MachinePart:
+                    soldMetric = ProgressMetricId.MachinePartsSold;
+                    break;
                 default:
                     return false;
             }
@@ -275,6 +278,33 @@ namespace IndustryTycoon.Progression
         public bool RecordToolsProduced(int amount)
         {
             return RecordSingleMetric(ProgressMetricId.ToolsProduced, amount);
+        }
+
+        public bool RecordMachinePartsProduced(int amount)
+        {
+            return RecordSingleMetric(ProgressMetricId.MachinePartsProduced, amount);
+        }
+
+        public bool RecordIndustrialDistrictEntered()
+        {
+            return FinishAuthoritativeMutation(
+                _state.SetMetricOnce(ProgressMetricId.IndustrialDistrictEntered));
+        }
+
+        public bool RecordAssemblyPlantUnlocked()
+        {
+            return FinishAuthoritativeMutation(
+                _state.SetMetricOnce(ProgressMetricId.AssemblyPlantUnlocked));
+        }
+
+        public bool RecordProductionUpgradePurchased()
+        {
+            return RecordSingleMetric(ProgressMetricId.ProductionUpgradesPurchased, 1);
+        }
+
+        public bool RecordLogisticsUpgradePurchased()
+        {
+            return RecordSingleMetric(ProgressMetricId.LogisticsUpgradesPurchased, 1);
         }
 
         public bool RecordMineUnlocked()
@@ -350,6 +380,9 @@ namespace IndustryTycoon.Progression
                 case ResourceType.Tool:
                     metric = ProgressMetricId.ToolsTransported;
                     break;
+                case ResourceType.MachinePart:
+                    metric = ProgressMetricId.MachinePartsTransported;
+                    break;
                 default:
                     return false;
             }
@@ -396,6 +429,13 @@ namespace IndustryTycoon.Progression
                         _state.IncrementMetric(
                             ProgressMetricId
                                 .CrossIndustryLogisticsContractsCompleted,
+                            1L);
+                    }
+
+                    if (contract.Id == LumberCampContractId.ProduceTenMachineParts)
+                    {
+                        _state.IncrementMetric(
+                            ProgressMetricId.AdvancedManufacturingContractsCompleted,
                             1L);
                     }
 

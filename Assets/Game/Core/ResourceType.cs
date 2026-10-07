@@ -7,6 +7,7 @@ namespace IndustryTycoon.Core
         Crate = 2,
         IronOre = 3,
         IronBar = 4,
-        Tool = 5
+        Tool = 5,
+        MachinePart = 6
     }
 }

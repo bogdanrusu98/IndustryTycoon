@@ -61,8 +61,8 @@ namespace IndustryTycoon.Editor
             {
                 CentralWarehouse warehouse = root.AddComponent<CentralWarehouse>();
                 CarryStack stack = root.AddComponent<CarryStack>();
-                int[] capacities = { 2, 2, 2, 2, 2, 2 };
-                Require(warehouse.RestoreStableState(new int[6], capacities),
+                int[] capacities = { 2, 2, 2, 2, 2, 2, 2 };
+                Require(warehouse.RestoreStableState(new int[7], capacities),
                     "Warehouse rejected canonical capacities.");
                 Require(stack.TryAdd(ResourceType.Plank, 2)
                         && warehouse.TryDepositFrom(stack, ResourceType.Plank)
@@ -95,11 +95,11 @@ namespace IndustryTycoon.Editor
             {
                 CentralWarehouse source = sourceObject.AddComponent<CentralWarehouse>();
                 CentralWarehouse destination = destinationObject.AddComponent<CentralWarehouse>();
-                int[] capacities = { 10, 10, 10, 10, 10, 10 };
-                int[] sourceAmounts = new int[6];
+                int[] capacities = { 10, 10, 10, 10, 10, 10, 10 };
+                int[] sourceAmounts = new int[7];
                 sourceAmounts[(int)ResourceType.Plank] = 3;
                 Require(source.RestoreStableState(sourceAmounts, capacities)
-                        && destination.RestoreStableState(new int[6], capacities),
+                        && destination.RestoreStableState(new int[7], capacities),
                     "Route fixtures could not be initialized.");
                 IndustrialLogisticsRoute route = routeObject.AddComponent<IndustrialLogisticsRoute>();
                 Require(route.TryConfigure(source, destination, ResourceType.Plank, 1, 0.1f, true),
@@ -121,7 +121,7 @@ namespace IndustryTycoon.Editor
                         && route.State == IndustrialRouteState.PausedEmptySource,
                     "Repeated route transfers duplicated or lost inventory.");
 
-                int[] full = new int[6];
+                int[] full = new int[7];
                 full[(int)ResourceType.Plank] = 10;
                 sourceAmounts[(int)ResourceType.Plank] = 1;
                 Require(source.RestoreStableState(sourceAmounts, capacities)
@@ -158,11 +158,11 @@ namespace IndustryTycoon.Editor
                 destination.transform.SetParent(root.transform);
                 IndustrialLogisticsRoute route = new GameObject("Route").AddComponent<IndustrialLogisticsRoute>();
                 route.transform.SetParent(root.transform);
-                int[] capacities = { 10, 10, 10, 10, 10, 10 };
-                int[] amounts = new int[6];
+                int[] capacities = { 10, 10, 10, 10, 10, 10, 10 };
+                int[] amounts = new int[7];
                 amounts[(int)ResourceType.Plank] = 1;
                 source.RestoreStableState(amounts, capacities);
-                destination.RestoreStableState(new int[6], capacities);
+                destination.RestoreStableState(new int[7], capacities);
                 Require(route.TryConfigure(source, destination, ResourceType.Plank, 1, 1f, true),
                     "Save/load route setup failed.");
                 route.Tick(0.6f);
@@ -352,7 +352,7 @@ namespace IndustryTycoon.Editor
                 M9SaveValidationSettings.CreateDefault(),
                 BaselineUtc);
             Require(first.IsSuccess && first.WasMigrated
-                    && first.Data.version == M9SaveSchema.Version5
+                    && first.Data.version == M9SaveSchema.CurrentVersion
                     && first.Data.logistics != null
                     && first.Data.retention != null,
                 "Valid v4 did not migrate to canonical v5 M13 state.");

@@ -69,7 +69,9 @@ namespace IndustryTycoon.Logistics
                         batchSize = route.BatchSize,
                         transferIntervalSeconds = route.TransferInterval,
                         enabled = route.RouteEnabled,
-                        state = route.State
+                        state = route.State,
+                        capacityUpgradeLevel = route.CapacityUpgradeLevel,
+                        speedUpgradeLevel = route.SpeedUpgradeLevel
                     };
             }
 
@@ -141,6 +143,9 @@ namespace IndustryTycoon.Logistics
                     }
 
                     route.RestoreRuntimeState(record.enabled);
+                    route.RestoreUpgradeLevels(
+                        record.capacityUpgradeLevel,
+                        record.speedUpgradeLevel);
                 }
             }
 

@@ -15,7 +15,8 @@ namespace IndustryTycoon.Logistics
     public sealed class CentralWarehouse : MonoBehaviour, IIndustrialResourceEndpoint
     {
         public const string StableEndpointId = "central_warehouse";
-        private const int ResourceCount = 6;
+        private static readonly int ResourceCount =
+            Enum.GetValues(typeof(ResourceType)).Length;
 
         [SerializeField] private WarehouseResourceSlot[] slots = CreateDefaultSlots();
 

@@ -12,7 +12,8 @@ namespace IndustryTycoon.Persistence
         public const int Version3 = 3;
         public const int Version4 = 4;
         public const int Version5 = 5;
-        public const int CurrentVersion = Version5;
+        public const int Version6 = 6;
+        public const int CurrentVersion = Version6;
     }
 
     public static class M9PurchasePadIds
@@ -264,6 +265,8 @@ namespace IndustryTycoon.Persistence
             M13LogisticsSaveData.CreateFresh();
         public M13RetentionSaveData retention =
             M13RetentionSaveData.CreateFresh();
+        public M14IndustrialSaveData industrial =
+            M14IndustrialSaveData.CreateFresh();
 
         public static M9SaveData CreateFresh(long utcNowUnixSeconds)
         {
@@ -278,6 +281,7 @@ namespace IndustryTycoon.Persistence
                 workshop = M12WorkshopSaveData.CreateFresh(),
                 logistics = M13LogisticsSaveData.CreateFresh(),
                 retention = M13RetentionSaveData.CreateFresh(safeTimestamp),
+                industrial = M14IndustrialSaveData.CreateFresh(),
                 lastEvaluationUtcUnixSeconds = safeTimestamp,
                 lastWriteUtcUnixSeconds = safeTimestamp
             };
@@ -484,6 +488,10 @@ namespace IndustryTycoon.Persistence
                     source.retention,
                     safeFallbackTimestamp,
                     out M13RetentionSaveData normalizedRetention,
+                    out failureReason)
+                || !M14IndustrialSaveValidator.TryNormalize(
+                    source.industrial,
+                    out M14IndustrialSaveData normalizedIndustrial,
                     out failureReason))
             {
                 return false;
@@ -499,6 +507,31 @@ namespace IndustryTycoon.Persistence
             {
                 failureReason =
                     "M12 Tool ownership or lifetime metrics require the canonical Workshop unlock.";
+                return false;
+            }
+
+            bool districtMetric = normalizedProgression.GetMetric(
+                ProgressMetricId.IndustrialDistrictEntered) > 0L;
+            bool assemblyMetric = normalizedProgression.GetMetric(
+                ProgressMetricId.AssemblyPlantUnlocked) > 0L;
+            if (districtMetric != normalizedIndustrial.districtEntered
+                || assemblyMetric
+                   != normalizedIndustrial.assemblyPlantPurchase.completed)
+            {
+                failureReason = "M14 district/Assembly ownership contradicts progression.";
+                return false;
+            }
+
+            bool ownsMachineParts = normalizedIndustrial.assemblyOutputMachineParts > 0
+                                    || (carryAmount > 0
+                                        && carryType == ResourceType.MachinePart)
+                                    || normalizedProgression.GetMetric(
+                                        ProgressMetricId.MachinePartsProduced) > 0L
+                                    || normalizedProgression.GetMetric(
+                                        ProgressMetricId.MachinePartsSold) > 0L;
+            if (!normalizedIndustrial.assemblyPlantPurchase.completed && ownsMachineParts)
+            {
+                failureReason = "Machine Part ownership requires the Assembly Plant unlock.";
                 return false;
             }
 
@@ -573,6 +606,7 @@ namespace IndustryTycoon.Persistence
                 workshop = normalizedWorkshop,
                 logistics = normalizedLogistics,
                 retention = normalizedRetention
+                ,industrial = normalizedIndustrial
             };
             return true;
         }
@@ -936,7 +970,8 @@ namespace IndustryTycoon.Persistence
                    || resourceType == ResourceType.Crate
                    || resourceType == ResourceType.IronOre
                    || resourceType == ResourceType.IronBar
-                   || resourceType == ResourceType.Tool;
+                   || resourceType == ResourceType.Tool
+                   || resourceType == ResourceType.MachinePart;
         }
 
         private static int Clamp(int value, int minimum, int maximum)

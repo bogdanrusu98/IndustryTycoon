@@ -25,7 +25,8 @@ namespace IndustryTycoon.Processing
         internal uint Token => _token;
     }
 
-    public sealed class WoodProcessor : MonoBehaviour, IIndustrialResourceEndpoint
+    public sealed class WoodProcessor : MonoBehaviour, IIndustrialResourceEndpoint,
+        IProductionUpgradeable
     {
         private const int WoodRequiredPerRecipe = 2;
         private const int PlanksProducedPerRecipe = 1;
@@ -55,6 +56,12 @@ namespace IndustryTycoon.Processing
         private uint _nextIndustrialToken;
         private IndustrialResourceReservation _industrialIncoming;
         private IndustrialResourceReservation _industrialOutgoing;
+        private int _baseInputCapacity;
+        private int _baseOutputCapacity;
+        private float _baseProcessingDuration;
+        private int _speedUpgradeLevel;
+        private int _inputUpgradeLevel;
+        private int _outputUpgradeLevel;
 
         public event Action<int, int, int> BufferChanged;
         public event Action<bool> ProcessingChanged;
@@ -77,10 +84,40 @@ namespace IndustryTycoon.Processing
         public int CompletedRecipeCount => _completedRecipeCount;
         public string EndpointId => "wood_processor";
         public bool IsEndpointOperational => isActiveAndEnabled;
+        public string ProductionBuildingId => EndpointId;
+        public int SpeedUpgradeLevel => _speedUpgradeLevel;
+        public int InputCapacityUpgradeLevel => _inputUpgradeLevel;
+        public int OutputCapacityUpgradeLevel => _outputUpgradeLevel;
 
         private void Awake()
         {
+            CaptureBaseTuning();
             RebuildProcessingWait();
+        }
+
+        public bool ApplyUpgradeLevels(int speed, int input, int output)
+        {
+            CaptureBaseTuning();
+            _speedUpgradeLevel = M14ProductionUpgradeTuning.ClampLevel(speed);
+            _inputUpgradeLevel = M14ProductionUpgradeTuning.ClampLevel(input);
+            _outputUpgradeLevel = M14ProductionUpgradeTuning.ClampLevel(output);
+            inputCapacity = _baseInputCapacity
+                + M14ProductionUpgradeTuning.GetCapacityBonus(_baseInputCapacity, _inputUpgradeLevel);
+            outputCapacity = _baseOutputCapacity
+                + M14ProductionUpgradeTuning.GetCapacityBonus(_baseOutputCapacity, _outputUpgradeLevel);
+            processingDuration = _baseProcessingDuration
+                * M14ProductionUpgradeTuning.GetDurationMultiplier(_speedUpgradeLevel);
+            RebuildProcessingWait();
+            NotifyBufferChanged();
+            return true;
+        }
+
+        private void CaptureBaseTuning()
+        {
+            if (_baseInputCapacity > 0) return;
+            _baseInputCapacity = inputCapacity;
+            _baseOutputCapacity = outputCapacity;
+            _baseProcessingDuration = processingDuration;
         }
 
         private void OnEnable()

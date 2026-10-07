@@ -56,6 +56,7 @@ namespace IndustryTycoon.Persistence
         [SerializeField] private CentralWarehouse centralWarehouse;
         [SerializeField] private IndustrialLogisticsNetwork logisticsNetwork;
         [SerializeField] private RetentionGoalService retentionGoalService;
+        [SerializeField] private IndustrialDistrictService industrialDistrictService;
 
         [Header("Save Cadence")]
         [SerializeField, Min(0.25f)] private float saveDebounceSeconds = 3f;
@@ -123,6 +124,7 @@ namespace IndustryTycoon.Persistence
         public CentralWarehouse CentralWarehouse => centralWarehouse;
         public IndustrialLogisticsNetwork LogisticsNetwork => logisticsNetwork;
         public RetentionGoalService RetentionGoalService => retentionGoalService;
+        public IndustrialDistrictService IndustrialDistrictService => industrialDistrictService;
         public float SaveDebounceSeconds => saveDebounceSeconds;
         public float ReturnScreenThresholdSeconds => returnScreenThresholdSeconds;
         public float MaximumCreditedAwaySeconds => maximumCreditedAwaySeconds;
@@ -446,6 +448,16 @@ namespace IndustryTycoon.Persistence
                 data,
                 creditedRouteSeconds,
                 offlineEfficiency);
+            int offlineMachineParts = M14OfflineProductionCalculator.Settle(
+                data,
+                creditedRouteSeconds,
+                offlineEfficiency);
+            if (offlineMachineParts > 0)
+            {
+                data.progression?.IncrementMetric(
+                    ProgressMetricId.MachinePartsProduced,
+                    offlineMachineParts);
+            }
             OfflineProgressionInput input = BuildOfflineInput(data, now);
             OfflineProgressionRules rules = BuildOfflineRules(data);
             LastOfflineResult = OfflineProgressionCalculator.Calculate(input, rules);
@@ -490,13 +502,17 @@ namespace IndustryTycoon.Persistence
                 StockpileWood = data.stockpileWood,
                 StockpileCapacity = stockpile != null ? stockpile.Capacity : 30,
                 ProcessorInputWood = data.processorInputWood,
-                ProcessorInputCapacity = processor != null ? processor.InputCapacity : 24,
+                ProcessorInputCapacity = processor != null
+                    ? ResolveUpgradedCapacity(data, "wood_processor", 24, true) : 24,
                 ProcessorOutputPlanks = data.processorOutputPlanks,
-                ProcessorOutputCapacity = processor != null ? processor.OutputCapacity : 12,
+                ProcessorOutputCapacity = processor != null
+                    ? ResolveUpgradedCapacity(data, "wood_processor", 12, false) : 12,
                 PackingInputPlanks = data.packingInputPlanks,
-                PackingInputCapacity = packingStation != null ? packingStation.InputCapacity : 24,
+                PackingInputCapacity = packingStation != null
+                    ? ResolveUpgradedCapacity(data, "packing_station", 24, true) : 24,
                 PackingOutputCrates = data.packingOutputCrates,
-                PackingOutputCapacity = packingStation != null ? packingStation.OutputCapacity : 12,
+                PackingOutputCapacity = packingStation != null
+                    ? ResolveUpgradedCapacity(data, "packing_station", 12, false) : 12,
                 ToolWorkshopUnlocked = data.workshop != null
                                        && data.workshop.purchasePad != null
                                        && data.workshop.purchasePad.completed,
@@ -504,19 +520,19 @@ namespace IndustryTycoon.Persistence
                     ? data.workshop.inputPlanks
                     : 0,
                 ToolWorkshopPlankCapacity = toolWorkshop != null
-                    ? toolWorkshop.PlankInputCapacity
+                    ? ResolveUpgradedCapacity(data, "tool_workshop", 24, true)
                     : 24,
                 ToolWorkshopInputIronBars = data.workshop != null
                     ? data.workshop.inputIronBars
                     : 0,
                 ToolWorkshopIronBarCapacity = toolWorkshop != null
-                    ? toolWorkshop.IronBarInputCapacity
+                    ? ResolveUpgradedCapacity(data, "tool_workshop", 12, true)
                     : 12,
                 ToolWorkshopOutputTools = data.workshop != null
                     ? data.workshop.outputTools
                     : 0,
                 ToolWorkshopOutputCapacity = toolWorkshop != null
-                    ? toolWorkshop.OutputCapacity
+                    ? ResolveUpgradedCapacity(data, "tool_workshop", 12, false)
                     : 12,
                 PendingOfflineCash = data.pendingOfflineCash,
                 PendingOfflineAwaySeconds = data.pendingOfflineAwaySeconds,
@@ -540,18 +556,36 @@ namespace IndustryTycoon.Persistence
                 ? autoFeeder.LaunchInterval
                 : rules.FeederTransferSecondsPerWood;
             rules.ProcessorSecondsPerRecipe = processor != null
-                ? processor.ProcessingDuration
+                ? ResolveUpgradedDuration(data, "wood_processor", 1.1d)
                 : rules.ProcessorSecondsPerRecipe;
             rules.PackingSecondsPerRecipe = packingStation != null
                 ? packingStation.ProcessingDuration
                 : rules.PackingSecondsPerRecipe;
             rules.ToolWorkshopSecondsPerRecipe = toolWorkshop != null
-                ? toolWorkshop.ProcessingDuration
+                ? ResolveUpgradedDuration(data, "tool_workshop", 2d)
                 : rules.ToolWorkshopSecondsPerRecipe;
             rules.CourierSecondsPerTrip = ResolveCourierSecondsPerTrip();
             rules.CourierCratesPerTrip = courier != null ? courier.Capacity : 2;
             rules.CashPerDeliveredCrate = courier != null ? courier.CashPerCrate : 40;
             return rules;
+        }
+
+        private static int ResolveUpgradedCapacity(
+            M9SaveData data, string id, int baseCapacity, bool input)
+        {
+            M14BuildingUpgradeSaveRecord record = data?.industrial?.GetBuildingUpgrade(id);
+            int level = input ? record?.inputCapacityLevel ?? 0
+                : record?.outputCapacityLevel ?? 0;
+            return baseCapacity
+                   + M14ProductionUpgradeTuning.GetCapacityBonus(baseCapacity, level);
+        }
+
+        private static double ResolveUpgradedDuration(
+            M9SaveData data, string id, double baseDuration)
+        {
+            M14BuildingUpgradeSaveRecord record = data?.industrial?.GetBuildingUpgrade(id);
+            return baseDuration * M14ProductionUpgradeTuning.GetDurationMultiplier(
+                record?.speedLevel ?? 0);
         }
 
         private double ResolveOfflineProductionSeconds(M9SaveData data)
@@ -641,6 +675,7 @@ namespace IndustryTycoon.Persistence
             try
             {
                 progressionService?.RestorePersistentState(data.progression);
+                industrialDistrictService?.RestorePersistentState(data.industrial);
                 retentionGoalService?.RestorePersistentState(
                     data.retention,
                     utcNowUnixSeconds);
@@ -957,6 +992,9 @@ namespace IndustryTycoon.Persistence
             snapshot.logistics = logisticsNetwork.CapturePersistentState(
                 centralWarehouse);
             snapshot.retention = retentionGoalService.CapturePersistentState();
+            snapshot.industrial = industrialDistrictService != null
+                ? industrialDistrictService.CapturePersistentState()
+                : _state.industrial;
             snapshot.pendingOfflineCash = _state.pendingOfflineCash;
             snapshot.pendingOfflineAwaySeconds = _state.pendingOfflineAwaySeconds;
             snapshot.returnScreenPending = _state.returnScreenPending;
@@ -1082,6 +1120,10 @@ namespace IndustryTycoon.Persistence
             {
                 retentionGoalService.StateChanged += HandleChanged;
             }
+            if (industrialDistrictService != null)
+            {
+                industrialDistrictService.StateChanged += HandleChanged;
+            }
             if (progressionService != null)
             {
                 progressionService.StateChanged += HandleChanged;
@@ -1122,6 +1164,10 @@ namespace IndustryTycoon.Persistence
             if (retentionGoalService != null)
             {
                 retentionGoalService.StateChanged -= HandleChanged;
+            }
+            if (industrialDistrictService != null)
+            {
+                industrialDistrictService.StateChanged -= HandleChanged;
             }
             if (progressionService != null)
             {

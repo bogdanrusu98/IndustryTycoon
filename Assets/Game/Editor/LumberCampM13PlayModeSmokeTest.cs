@@ -176,7 +176,8 @@ namespace IndustryTycoon.Editor
             _carry.RestoreStableState(null, 0);
             _processor.RestoreStableState(0, 2);
             _packing.RestoreStableState(0, 0);
-            _warehouse.RestoreStableState(new int[6], new[] { 60, 60, 60, 60, 60, 60 });
+            _warehouse.RestoreStableState(
+                new int[7], new[] { 60, 60, 60, 60, 60, 60, 60 });
             for (int i = 0; i < _routes.Length; i++) _routes[i].SetRouteEnabled(false);
         }
 

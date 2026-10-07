@@ -23,6 +23,8 @@ namespace IndustryTycoon.Logistics
         [SerializeField, Min(1)] private int batchSize = 1;
         [SerializeField, Min(0.1f)] private float transferInterval = 2f;
         [SerializeField] private bool routeEnabled;
+        [SerializeField, Range(0, 3)] private int capacityUpgradeLevel;
+        [SerializeField, Range(0, 3)] private int speedUpgradeLevel;
 
         private IIndustrialResourceEndpoint _source;
         private IIndustrialResourceEndpoint _destination;
@@ -43,6 +45,45 @@ namespace IndustryTycoon.Logistics
         public float TransferInterval => transferInterval;
         public bool RouteEnabled => routeEnabled;
         public IndustrialRouteState State => _state;
+        public int CapacityUpgradeLevel => capacityUpgradeLevel;
+        public int SpeedUpgradeLevel => speedUpgradeLevel;
+
+        public int GetNextUpgradeCost(bool capacity)
+        {
+            int next = (capacity ? capacityUpgradeLevel : speedUpgradeLevel) + 1;
+            return next > 3 ? int.MaxValue : (capacity ? 1200 : 1500) * next * next;
+        }
+
+        public bool TryApplyNextUpgrade(bool capacity)
+        {
+            if (capacity)
+            {
+                if (capacityUpgradeLevel >= 3) return false;
+                capacityUpgradeLevel++;
+                batchSize++;
+            }
+            else
+            {
+                if (speedUpgradeLevel >= 3) return false;
+                speedUpgradeLevel++;
+                transferInterval = Mathf.Max(0.1f, transferInterval * 0.8f);
+            }
+
+            // Timers are presentation-only. Restarting the interval means an upgrade
+            // can never commit an in-flight transfer twice.
+            _elapsed = 0f;
+            RefreshState();
+            StateChanged?.Invoke();
+            return true;
+        }
+
+        public void RestoreUpgradeLevels(int capacityLevel, int speedLevel)
+        {
+            capacityUpgradeLevel = Mathf.Clamp(capacityLevel, 0, 3);
+            speedUpgradeLevel = Mathf.Clamp(speedLevel, 0, 3);
+            _elapsed = 0f;
+            RefreshState();
+        }
 
         private void Awake()
         {

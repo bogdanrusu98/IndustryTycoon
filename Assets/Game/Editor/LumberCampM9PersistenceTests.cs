@@ -1123,6 +1123,10 @@ namespace IndustryTycoon.Editor
                                                 == ProgressMetricId.DrillUnlocked
                                                 || metric
                                                 == ProgressMetricId.ToolWorkshopUnlocked
+                                                || metric
+                                                == ProgressMetricId.IndustrialDistrictEntered
+                                                || metric
+                                                == ProgressMetricId.AssemblyPlantUnlocked
                     ? 1L
                     : (i + 1L) * 17L;
             }
@@ -1142,6 +1146,14 @@ namespace IndustryTycoon.Editor
                 progression.achievements[i].unlocked = i < 6;
                 progression.achievements[i].rewarded = i < 5;
             }
+
+            data.industrial.districtEntered = true;
+            data.industrial.assemblyPlantPurchase.completed = true;
+            data.industrial.assemblyPlantPurchase.paidCash =
+                M14IndustrialTuning.AssemblyPlantUnlockCost;
+            data.industrial.assemblyInputIronBars = 8;
+            data.industrial.assemblyInputTools = 4;
+            data.industrial.assemblyOutputMachineParts = 6;
 
             return data;
         }

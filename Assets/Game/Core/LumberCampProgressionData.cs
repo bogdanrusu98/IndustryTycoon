@@ -269,7 +269,7 @@ namespace IndustryTycoon.Progression
     public static class M10ProgressionRules
     {
         public const int MinimumEmpireLevel = 1;
-        public const int MaximumEmpireLevel = 10;
+        public const int MaximumEmpireLevel = 15;
 
         public static int ResolveEmpireLevel(M10ProgressionSaveData data)
         {
@@ -324,7 +324,39 @@ namespace IndustryTycoon.Progression
             }
 
             level = 9;
-            return data.GetMetric(ProgressMetricId.IndustrialDistrictReady) >= 1L
+            if (data.GetMetric(ProgressMetricId.IndustrialDistrictReady) < 1L)
+            {
+                return level;
+            }
+
+            level = 10;
+            if (data.GetMetric(ProgressMetricId.IndustrialDistrictEntered) < 1L)
+            {
+                return level;
+            }
+
+            level = 11;
+            if (data.GetMetric(ProgressMetricId.AssemblyPlantUnlocked) < 1L)
+            {
+                return level;
+            }
+
+            level = 12;
+            if (data.GetMetric(ProgressMetricId.MachinePartsProduced) < 1L)
+            {
+                return level;
+            }
+
+            level = 13;
+            if (data.GetMetric(ProgressMetricId.ProductionUpgradesPurchased) < 1L
+                && data.GetMetric(ProgressMetricId.LogisticsUpgradesPurchased) < 1L)
+            {
+                return level;
+            }
+
+            level = 14;
+            return data.GetMetric(
+                       ProgressMetricId.AdvancedManufacturingContractsCompleted) >= 1L
                 ? MaximumEmpireLevel
                 : level;
         }
@@ -355,6 +387,8 @@ namespace IndustryTycoon.Progression
                                ProgressMetricId.ToolWorkshopUnlocked) >= 1L;
                 case ContractUnlockRequirement.Warehouse:
                     return data.GetMetric(ProgressMetricId.WarehouseUnlocked) >= 1L;
+                case ContractUnlockRequirement.AssemblyPlant:
+                    return data.GetMetric(ProgressMetricId.AssemblyPlantUnlocked) >= 1L;
                 default:
                     return false;
             }
@@ -704,7 +738,9 @@ namespace IndustryTycoon.Progression
         {
             return metric == ProgressMetricId.MineUnlocked
                    || metric == ProgressMetricId.DrillUnlocked
-                   || metric == ProgressMetricId.ToolWorkshopUnlocked;
+                   || metric == ProgressMetricId.ToolWorkshopUnlocked
+                   || metric == ProgressMetricId.IndustrialDistrictEntered
+                   || metric == ProgressMetricId.AssemblyPlantUnlocked;
         }
 
         private static bool TryNormalizeFlags(

@@ -217,6 +217,31 @@ namespace IndustryTycoon.Progression
             return _model != null && _model.RecordDailyGoalCompleted();
         }
 
+        public bool RecordIndustrialDistrictEntered()
+        {
+            return _model != null && _model.RecordIndustrialDistrictEntered();
+        }
+
+        public bool RecordAssemblyPlantUnlocked()
+        {
+            return _model != null && _model.RecordAssemblyPlantUnlocked();
+        }
+
+        public bool RecordMachinePartsProduced(int amount)
+        {
+            return _model != null && _model.RecordMachinePartsProduced(amount);
+        }
+
+        public bool RecordProductionUpgradePurchased()
+        {
+            return _model != null && _model.RecordProductionUpgradePurchased();
+        }
+
+        public bool RecordLogisticsUpgradePurchased()
+        {
+            return _model != null && _model.RecordLogisticsUpgradePurchased();
+        }
+
         public M10ProgressionSaveData CapturePersistentState()
         {
             return _model != null

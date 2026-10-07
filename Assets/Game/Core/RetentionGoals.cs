@@ -19,6 +19,9 @@ namespace IndustryTycoon.Progression
         Transport = 1,
         Sell = 2,
         EarnCash = 3
+        ,UpgradeBuilding = 4
+        ,UpgradeRoute = 5
+        ,Deliver = 6
     }
 
     [Serializable]
@@ -82,7 +85,8 @@ namespace IndustryTycoon.Progression
             bool mine,
             bool smelter,
             bool workshop,
-            bool logistics)
+            bool logistics,
+            bool assemblyPlant = false)
         {
             Processor = processor;
             Packing = packing;
@@ -90,6 +94,7 @@ namespace IndustryTycoon.Progression
             Smelter = smelter;
             Workshop = workshop;
             Logistics = logistics;
+            AssemblyPlant = assemblyPlant;
         }
 
         public bool Processor { get; }
@@ -98,6 +103,7 @@ namespace IndustryTycoon.Progression
         public bool Smelter { get; }
         public bool Workshop { get; }
         public bool Logistics { get; }
+        public bool AssemblyPlant { get; }
     }
 
     internal readonly struct GoalCandidate
@@ -479,6 +485,40 @@ namespace IndustryTycoon.Progression
                         5L,
                         300));
                 }
+
+                result.Add(new GoalCandidate(
+                    RetentionGoalType.UpgradeRoute,
+                    ResourceType.Wood,
+                    ProgressMetricId.LogisticsUpgradesPurchased,
+                    1L,
+                    500));
+            }
+
+            if (unlocks.AssemblyPlant)
+            {
+                AddResourceGoals(
+                    result,
+                    ResourceType.MachinePart,
+                    ProgressMetricId.MachinePartsProduced,
+                    ProgressMetricId.MachinePartsSold,
+                    3L,
+                    2L,
+                    600);
+                result.Add(new GoalCandidate(
+                    RetentionGoalType.UpgradeBuilding,
+                    ResourceType.MachinePart,
+                    ProgressMetricId.ProductionUpgradesPurchased,
+                    1L,
+                    550));
+                if (unlocks.Logistics)
+                {
+                    result.Add(new GoalCandidate(
+                        RetentionGoalType.Deliver,
+                        ResourceType.MachinePart,
+                        ProgressMetricId.MachinePartsTransported,
+                        2L,
+                        700));
+                }
             }
 
             return result;
@@ -810,7 +850,10 @@ namespace IndustryTycoon.Progression
                     ProgressMetricId.ToolWorkshopUnlocked) > 0L,
                 progressionService != null
                 && progressionService.GetMetric(
-                    ProgressMetricId.IndustrialRouteOperational) > 0L);
+                    ProgressMetricId.IndustrialRouteOperational) > 0L,
+                progressionService != null
+                && progressionService.GetMetric(
+                    ProgressMetricId.AssemblyPlantUnlocked) > 0L);
         }
 
         private bool TryGrantCash(int amount)

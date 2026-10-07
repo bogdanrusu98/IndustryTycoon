@@ -655,6 +655,29 @@ namespace IndustryTycoon.Editor
                 processorMaterial,
                 purchaseCompleteMaterial,
                 sawBladeMaterial);
+            IndustrialDistrictService industrialDistrictService =
+                CreateM14IndustrialDistrict(
+                    scene,
+                    progressionService,
+                    wallet,
+                    player.GetComponent<CarryStack>(),
+                    playerCollider,
+                    cashCollectionTarget,
+                    cashVisualPrefab,
+                    purchaseMaterial,
+                    purchaseCompleteMaterial,
+                    cashAccentMaterial,
+                    processorMaterial,
+                    smelterMaterial,
+                    ironBarMaterial,
+                    toolMaterial,
+                    feedbackParticleMaterial,
+                    feedbackServices.Audio,
+                    m13Processor,
+                    m11Services.Smelter,
+                    m12Services.Workshop,
+                    m13Packing,
+                    m13Services);
             LocalPersistenceService persistenceService = CreateM9Persistence(
                 scene,
                 wallet,
@@ -674,7 +697,8 @@ namespace IndustryTycoon.Editor
                 m11Services,
                 m12Services,
                 m13Services,
-                retentionGoalService);
+                retentionGoalService,
+                industrialDistrictService);
             CreateLighting(scene);
             NextUnlockGuidance nextUnlockGuidance = CreateHud(
                 scene,
@@ -929,6 +953,17 @@ namespace IndustryTycoon.Editor
                     new Vector3(0.22f, 0.62f, 0.22f);
                 toolVisual.SetActive(false);
 
+                GameObject machinePartVisual = CreatePrimitiveChild(
+                    "Machine Part Visual",
+                    PrimitiveType.Cylinder,
+                    root.transform,
+                    ironBarMaterial);
+                machinePartVisual.transform.localRotation =
+                    Quaternion.Euler(90f, 0f, 0f);
+                machinePartVisual.transform.localScale =
+                    new Vector3(0.48f, 0.16f, 0.48f);
+                machinePartVisual.SetActive(false);
+
                 ResourceVisual resourceVisual = root.AddComponent<ResourceVisual>();
                 SetObjectReference(resourceVisual, "woodRoot", woodVisual);
                 SetObjectReference(resourceVisual, "plankRoot", plankVisual);
@@ -936,6 +971,7 @@ namespace IndustryTycoon.Editor
                 SetObjectReference(resourceVisual, "ironOreRoot", ironOreVisual);
                 SetObjectReference(resourceVisual, "ironBarRoot", ironBarVisual);
                 SetObjectReference(resourceVisual, "toolRoot", toolVisual);
+                SetObjectReference(resourceVisual, "machinePartRoot", machinePartVisual);
                 root.transform.localScale = Vector3.one * 0.7f;
                 return SavePrefabAndReload(root, WoodVisualPrefabPath);
             }
@@ -4222,6 +4258,168 @@ namespace IndustryTycoon.Editor
             return tease;
         }
 
+        private static IndustrialDistrictService CreateM14IndustrialDistrict(
+            Scene scene,
+            LumberCampProgressionService progression,
+            Wallet wallet,
+            CarryStack carryStack,
+            Collider playerCollider,
+            Transform cashOrigin,
+            GameObject cashVisualPrefab,
+            Material purchaseMaterial,
+            Material purchaseCompleteMaterial,
+            Material cashAccentMaterial,
+            Material plantMaterial,
+            Material metalMaterial,
+            Material ironBarMaterial,
+            Material toolMaterial,
+            Material particleMaterial,
+            AudioFeedback audioFeedback,
+            WoodProcessor processor,
+            Smelter smelter,
+            ToolWorkshop workshop,
+            PackingStation packingStation,
+            M13Services m13)
+        {
+            GameObject districtRoot = new GameObject("Industrial District M14");
+            SceneManager.MoveGameObjectToScene(districtRoot, scene);
+            districtRoot.transform.position = new Vector3(-5.5f, 0f, 21.0f);
+            BoxCollider entry = AddKinematicTrigger(
+                districtRoot, new Vector3(4.8f, 2.5f, 2.0f));
+
+            GameObject gate = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            gate.name = "Industrial District Progression Gate";
+            gate.transform.SetParent(districtRoot.transform, false);
+            gate.transform.localPosition = new Vector3(0f, 1.1f, -0.75f);
+            gate.transform.localScale = new Vector3(4.7f, 2.2f, 0.35f);
+            gate.GetComponent<MeshRenderer>().sharedMaterial = purchaseMaterial;
+
+            GameObject floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            floor.name = "Advanced Manufacturing Floor";
+            floor.transform.SetParent(districtRoot.transform, false);
+            floor.transform.localPosition = new Vector3(0f, 0.08f, 3.2f);
+            floor.transform.localScale = new Vector3(9.5f, 0.16f, 5.8f);
+            floor.GetComponent<MeshRenderer>().sharedMaterial = plantMaterial;
+
+            PurchasePad purchase = CreatePurchasePad(
+                scene,
+                "Assembly Plant Purchase",
+                "ASSEMBLY PLANT",
+                new Vector3(-7.8f, 0f, 22.3f),
+                M14IndustrialTuning.AssemblyPlantUnlockCost,
+                false,
+                wallet,
+                playerCollider,
+                purchaseMaterial,
+                purchaseCompleteMaterial,
+                cashAccentMaterial,
+                cashVisualPrefab,
+                cashOrigin,
+                particleMaterial,
+                audioFeedback);
+
+            GameObject plantRoot = new GameObject("Assembly Plant");
+            SceneManager.MoveGameObjectToScene(plantRoot, scene);
+            plantRoot.transform.position = new Vector3(-4.0f, 0f, 24.3f);
+            AssemblyPlant plant = plantRoot.AddComponent<AssemblyPlant>();
+            GameObject body = CreatePrimitiveChild(
+                "Assembly Plant Body", PrimitiveType.Cube, plantRoot.transform, metalMaterial);
+            body.transform.localPosition = new Vector3(0f, 1.0f, 0.5f);
+            body.transform.localScale = new Vector3(4.6f, 1.8f, 2.2f);
+            GameObject line = CreatePrimitiveChild(
+                "Assembly Line", PrimitiveType.Cube, plantRoot.transform, plantMaterial);
+            line.transform.localPosition = new Vector3(0f, 0.48f, -0.9f);
+            line.transform.localScale = new Vector3(4.2f, 0.35f, 0.8f);
+            CreateWorldLabel(
+                "Assembly Label",
+                plantRoot.transform,
+                "ASSEMBLY PLANT\n2 BARS + 1 TOOL → 1 MACHINE PART",
+                new Vector3(0f, 2.35f, 0f),
+                Color.white);
+
+            GameObject barZone = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            barZone.name = "Assembly Iron Bar Input";
+            barZone.transform.SetParent(plantRoot.transform, false);
+            barZone.transform.localPosition = new Vector3(-1.45f, 0.2f, -1.65f);
+            barZone.transform.localScale = new Vector3(1.15f, 0.18f, 0.9f);
+            barZone.GetComponent<MeshRenderer>().sharedMaterial = ironBarMaterial;
+            barZone.GetComponent<BoxCollider>().isTrigger = true;
+            AssemblyPlantInputZone barInput = barZone.AddComponent<AssemblyPlantInputZone>();
+            SetObjectReference(barInput, "plant", plant);
+            SetObjectReference(barInput, "carryStack", carryStack);
+            SetObjectReference(barInput, "playerCollider", playerCollider);
+            SetEnum(barInput, "resourceType", (int)ResourceType.IronBar);
+
+            GameObject toolZone = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            toolZone.name = "Assembly Tool Input";
+            toolZone.transform.SetParent(plantRoot.transform, false);
+            toolZone.transform.localPosition = new Vector3(0f, 0.2f, -1.65f);
+            toolZone.transform.localScale = new Vector3(1.15f, 0.18f, 0.9f);
+            toolZone.GetComponent<MeshRenderer>().sharedMaterial = toolMaterial;
+            toolZone.GetComponent<BoxCollider>().isTrigger = true;
+            AssemblyPlantInputZone toolInput = toolZone.AddComponent<AssemblyPlantInputZone>();
+            SetObjectReference(toolInput, "plant", plant);
+            SetObjectReference(toolInput, "carryStack", carryStack);
+            SetObjectReference(toolInput, "playerCollider", playerCollider);
+            SetEnum(toolInput, "resourceType", (int)ResourceType.Tool);
+
+            GameObject outputZone = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            outputZone.name = "Assembly Machine Part Output";
+            outputZone.transform.SetParent(plantRoot.transform, false);
+            outputZone.transform.localPosition = new Vector3(1.45f, 0.2f, -1.65f);
+            outputZone.transform.localScale = new Vector3(1.15f, 0.18f, 0.9f);
+            outputZone.GetComponent<MeshRenderer>().sharedMaterial = purchaseCompleteMaterial;
+            outputZone.GetComponent<BoxCollider>().isTrigger = true;
+            AssemblyPlantOutputZone output = outputZone.AddComponent<AssemblyPlantOutputZone>();
+            SetObjectReference(output, "plant", plant);
+            SetObjectReference(output, "carryStack", carryStack);
+            SetObjectReference(output, "playerCollider", playerCollider);
+
+            IndustrialLogisticsRoute[] routes = new IndustrialLogisticsRoute[6];
+            Array.Copy(m13.Routes, routes, m13.Routes.Length);
+            Transform routeRoot = m13.Network.transform;
+            routes[3] = CreateIndustrialRoute(
+                routeRoot, "Warehouse Bars To Assembly Route",
+                "warehouse_bars_to_assembly", m13.Warehouse, plant,
+                ResourceType.IronBar);
+            routes[4] = CreateIndustrialRoute(
+                routeRoot, "Warehouse Tools To Assembly Route",
+                "warehouse_tools_to_assembly", m13.Warehouse, plant,
+                ResourceType.Tool);
+            routes[5] = CreateIndustrialRoute(
+                routeRoot, "Assembly To Warehouse Route",
+                "assembly_to_warehouse", plant, m13.Warehouse,
+                ResourceType.MachinePart);
+            SetObjectArray(m13.Network, "endpoints", new Object[]
+            {
+                processor, packingStation, smelter, workshop, m13.Warehouse, plant
+            });
+            SetObjectArray(m13.Network, "routes", routes);
+
+            IndustrialDistrictService service =
+                districtRoot.AddComponent<IndustrialDistrictService>();
+            SetObjectReference(service, "progression", progression);
+            SetObjectReference(service, "wallet", wallet);
+            SetObjectReference(service, "playerCollider", playerCollider);
+            SetObjectReference(service, "entryTrigger", entry);
+            SetObjectReference(service, "gateBlocker", gate);
+            SetObjectReference(service, "assemblyPurchasePad", purchase);
+            SetObjectReference(service, "assemblyPlant", plant);
+            SetObjectReference(service, "logisticsNetwork", m13.Network);
+            SetObjectArray(service, "upgradeableBuildings", new Object[]
+            {
+                processor, smelter, workshop, plant
+            });
+
+            IndustrialDistrictView view =
+                districtRoot.AddComponent<IndustrialDistrictView>();
+            SetObjectReference(view, "district", service);
+            SetObjectReference(view, "progression", progression);
+            SetObjectReference(view, "logistics", m13.Network);
+            plantRoot.SetActive(false);
+            return service;
+        }
+
         private static LumberCampProgressionService CreateM10Progression(
             Scene scene,
             Wallet wallet,
@@ -4316,7 +4514,8 @@ namespace IndustryTycoon.Editor
             M11Services m11Services,
             M12Services m12Services,
             M13Services m13Services,
-            RetentionGoalService retentionGoalService)
+            RetentionGoalService retentionGoalService,
+            IndustrialDistrictService industrialDistrictService)
         {
             LumberWorker worker = workerUnlock != null && workerUnlock.WorkerRoot != null
                 ? workerUnlock.WorkerRoot.GetComponent<LumberWorker>()
@@ -4357,8 +4556,9 @@ namespace IndustryTycoon.Editor
                     && m12Services.Workshop != null
                     && m13Services.Warehouse != null
                     && m13Services.Network != null
-                    && retentionGoalService != null,
-                "M12 persistence requires the complete authoritative production state graph.");
+                    && retentionGoalService != null
+                    && industrialDistrictService != null,
+                "M14 persistence requires the complete authoritative production state graph.");
 
             GameObject root = new GameObject("Local Persistence");
             SceneManager.MoveGameObjectToScene(root, scene);
@@ -4401,6 +4601,7 @@ namespace IndustryTycoon.Editor
             SetObjectReference(service, "centralWarehouse", m13Services.Warehouse);
             SetObjectReference(service, "logisticsNetwork", m13Services.Network);
             SetObjectReference(service, "retentionGoalService", retentionGoalService);
+            SetObjectReference(service, "industrialDistrictService", industrialDistrictService);
             SetFloat(service, "saveDebounceSeconds", 3f);
             SetFloat(service, "returnScreenThresholdSeconds", 300f);
             SetFloat(service, "maximumCreditedAwaySeconds", 14400f);
@@ -5715,7 +5916,8 @@ namespace IndustryTycoon.Editor
                     && resourceVisual.CrateRoot != null
                     && resourceVisual.IronOreRoot != null
                     && resourceVisual.IronBarRoot != null
-                    && resourceVisual.ToolRoot != null,
+                    && resourceVisual.ToolRoot != null
+                    && resourceVisual.MachinePartRoot != null,
                 "Carried resource visuals must contain all reusable production variants.");
             Require(resourceVisual.IronOreRoot.GetComponentsInChildren<MeshRenderer>(
                         true).Length == 1
@@ -5725,6 +5927,9 @@ namespace IndustryTycoon.Editor
             Require(resourceVisual.ToolRoot.GetComponentsInChildren<MeshRenderer>(
                         true).Length == 1,
                 "M12 Tool carry variant must stay at one renderer for mobile reuse.");
+            Require(resourceVisual.MachinePartRoot.GetComponentsInChildren<MeshRenderer>(
+                        true).Length == 1,
+                "M14 Machine Part carry variant must stay lightweight for mobile reuse.");
 
             GameObject cashVisualPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(CashVisualPrefabPath);
             Require(cashVisualPrefab != null, "CashBundleVisual prefab is missing.");
@@ -7320,8 +7525,8 @@ namespace IndustryTycoon.Editor
                 particleSystems.AddRange(rootParticles);
             }
 
-            Require(particleSystems.Count == 28,
-                $"The M12 prototype requires twenty-eight bounded feedback emitters; found {particleSystems.Count}.");
+            Require(particleSystems.Count == 29,
+                $"The M14 prototype requires twenty-nine bounded feedback emitters; found {particleSystems.Count}.");
             for (int i = 0; i < particleSystems.Count; i++)
             {
                 ParticleSystem particles = particleSystems[i];

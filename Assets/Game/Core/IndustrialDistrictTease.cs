@@ -5,6 +5,7 @@ namespace IndustryTycoon.Progression
 {
     public sealed class IndustrialDistrictTease : MonoBehaviour
     {
+        public const int ReadyEmpireLevel = 10;
         [SerializeField] private LumberCampProgressionService progressionService;
         [SerializeField] private GameObject teaseRoot;
         [SerializeField] private GameObject readyRoot;
@@ -48,7 +49,7 @@ namespace IndustryTycoon.Progression
                                 >= 5;
             bool shouldBeReady = progressionService != null
                                  && progressionService.EmpireLevel
-                                 >= M10ProgressionRules.MaximumEmpireLevel;
+                                 >= ReadyEmpireLevel;
             SetPresentationState(shouldReveal, shouldBeReady, false);
         }
 
@@ -66,7 +67,7 @@ namespace IndustryTycoon.Progression
 
             SetPresentationState(
                 true,
-                empireLevel >= M10ProgressionRules.MaximumEmpireLevel,
+                empireLevel >= ReadyEmpireLevel,
                 true);
         }
 

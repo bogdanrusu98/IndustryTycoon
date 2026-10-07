@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace IndustryTycoon.Processing
 {
-    public sealed class ToolWorkshop : MonoBehaviour
+    public sealed class ToolWorkshop : MonoBehaviour, IProductionUpgradeable
     {
         private const int PlankInputIndex = 0;
         private const int IronBarInputIndex = 1;
@@ -36,6 +36,13 @@ namespace IndustryTycoon.Processing
         private bool _isStartingProcessing;
         private bool _isInputTransferInProgress;
         private bool _isOutputTransferInProgress;
+        private int _basePlankInputCapacity;
+        private int _baseIronBarInputCapacity;
+        private int _baseOutputCapacity;
+        private float _baseProcessingDuration;
+        private int _speedUpgradeLevel;
+        private int _inputUpgradeLevel;
+        private int _outputUpgradeLevel;
 
         public event Action<int, int, int, int, int, int> BufferChanged;
         public event Action<int, int, int> RecipeCompleted;
@@ -74,11 +81,45 @@ namespace IndustryTycoon.Processing
                                     && _outputTools + ToolsProducedPerRecipe
                                     > outputCapacity;
         public int CompletedRecipeCount => _completedRecipeCount;
+        public string ProductionBuildingId => "tool_workshop";
+        public int SpeedUpgradeLevel => _speedUpgradeLevel;
+        public int InputCapacityUpgradeLevel => _inputUpgradeLevel;
+        public int OutputCapacityUpgradeLevel => _outputUpgradeLevel;
 
         private void Awake()
         {
+            CaptureBaseTuning();
             EnsureRuntimeState();
             AssertInvariants();
+        }
+
+        public bool ApplyUpgradeLevels(int speed, int input, int output)
+        {
+            CaptureBaseTuning();
+            _speedUpgradeLevel = M14ProductionUpgradeTuning.ClampLevel(speed);
+            _inputUpgradeLevel = M14ProductionUpgradeTuning.ClampLevel(input);
+            _outputUpgradeLevel = M14ProductionUpgradeTuning.ClampLevel(output);
+            plankInputCapacity = _basePlankInputCapacity
+                + M14ProductionUpgradeTuning.GetCapacityBonus(_basePlankInputCapacity, _inputUpgradeLevel);
+            ironBarInputCapacity = _baseIronBarInputCapacity
+                + M14ProductionUpgradeTuning.GetCapacityBonus(_baseIronBarInputCapacity, _inputUpgradeLevel);
+            outputCapacity = _baseOutputCapacity
+                + M14ProductionUpgradeTuning.GetCapacityBonus(_baseOutputCapacity, _outputUpgradeLevel);
+            processingDuration = _baseProcessingDuration
+                * M14ProductionUpgradeTuning.GetDurationMultiplier(_speedUpgradeLevel);
+            _processingWait = new WaitForSeconds(processingDuration);
+            EnsureRuntimeState();
+            NotifyBufferChanged();
+            return true;
+        }
+
+        private void CaptureBaseTuning()
+        {
+            if (_basePlankInputCapacity > 0) return;
+            _basePlankInputCapacity = plankInputCapacity;
+            _baseIronBarInputCapacity = ironBarInputCapacity;
+            _baseOutputCapacity = outputCapacity;
+            _baseProcessingDuration = processingDuration;
         }
 
         private void OnEnable()

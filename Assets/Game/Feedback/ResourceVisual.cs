@@ -11,6 +11,7 @@ namespace IndustryTycoon.Feedback
         [SerializeField] private GameObject ironOreRoot;
         [SerializeField] private GameObject ironBarRoot;
         [SerializeField] private GameObject toolRoot;
+        [SerializeField] private GameObject machinePartRoot;
         [SerializeField] private ResourceType displayedResourceType = ResourceType.Wood;
 
         public ResourceType DisplayedResourceType => displayedResourceType;
@@ -20,6 +21,7 @@ namespace IndustryTycoon.Feedback
         public GameObject IronOreRoot => ironOreRoot;
         public GameObject IronBarRoot => ironBarRoot;
         public GameObject ToolRoot => toolRoot;
+        public GameObject MachinePartRoot => machinePartRoot;
 
         private void Awake()
         {
@@ -43,6 +45,7 @@ namespace IndustryTycoon.Feedback
             GameObject ironOreVisualRoot,
             GameObject ironBarVisualRoot,
             GameObject toolVisualRoot,
+            GameObject machinePartVisualRoot,
             ResourceType initialResourceType = ResourceType.Wood)
         {
             woodRoot = woodVisualRoot;
@@ -51,6 +54,7 @@ namespace IndustryTycoon.Feedback
             ironOreRoot = ironOreVisualRoot;
             ironBarRoot = ironBarVisualRoot;
             toolRoot = toolVisualRoot;
+            machinePartRoot = machinePartVisualRoot;
             Show(initialResourceType);
         }
 
@@ -118,6 +122,12 @@ namespace IndustryTycoon.Feedback
             if (toolRoot != null)
             {
                 toolRoot.SetActive(displayedResourceType == ResourceType.Tool);
+            }
+
+            if (machinePartRoot != null)
+            {
+                machinePartRoot.SetActive(
+                    displayedResourceType == ResourceType.MachinePart);
             }
         }
 
