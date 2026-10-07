@@ -46,6 +46,8 @@ namespace IndustryTycoon.Progression
                 ? _state.activeContractState
                 : ContractProgressState.Claimed;
         public int EmpireLevel => ResolveEmpireLevel();
+        public WorldLandmarkId RecommendedLandmark =>
+            WorldProgressionGuidance.Resolve(_state, _factoryScaling, EmpireLevel).Landmark;
 
         public long GetMetric(ProgressMetricId metric)
         {
@@ -111,20 +113,10 @@ namespace IndustryTycoon.Progression
 
         public string BuildObjectiveDisplayText()
         {
-            if (AreAllObjectivesCompleted)
-            {
-                return "OBJECTIVES COMPLETE — EMPIRE LEVEL 5";
-            }
-
-            MainObjectiveDefinition objective =
-                LumberCampProgressionCatalog.GetObjective(ObjectiveIndex);
-            if (objective.ConditionKind == ObjectiveConditionKind.Flag)
-            {
-                return $"OBJECTIVE: {objective.Label}";
-            }
-
-            GetObjectiveProgress(out long current, out long target);
-            return $"OBJECTIVE: {objective.Label} — {current} / {target}";
+            return WorldProgressionGuidance.Resolve(
+                _state,
+                _factoryScaling,
+                EmpireLevel).Text;
         }
 
         public void GetActiveContractProgress(out long current, out long target)

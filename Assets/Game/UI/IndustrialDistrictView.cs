@@ -23,7 +23,7 @@ namespace IndustryTycoon.UI
             float width = Mathf.Min(340f, Screen.width - 24f);
             GUILayout.BeginArea(new Rect(12f, Screen.height * 0.48f, width, Screen.height * 0.48f),
                 GUI.skin.box);
-            GUILayout.Label($"INDUSTRIAL DISTRICT L{district.DistrictLevel}  •  EMPIRE {district.EffectiveEmpireLevel}/20");
+            GUILayout.Label($"INDUSTRIAL DISTRICT L{district.DistrictLevel}  •  EMPIRE {district.EffectiveEmpireLevel}/25");
             GUILayout.Label($"{_buildingId}: {district.GetProductionStatus(_buildingId)}");
             AssemblyPlant plant = district.AssemblyPlant;
             if (plant == null || !district.AssemblyPlantUnlocked)

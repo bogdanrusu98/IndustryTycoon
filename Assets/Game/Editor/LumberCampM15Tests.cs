@@ -43,11 +43,17 @@ namespace IndustryTycoon.EditorTests
         public void BottleneckStatus_IsDerived(bool unlocked,bool active,bool running,bool input,bool space,bool logistics,ProductionStatus expected)
         { Assert.AreEqual(expected,ProductionStatusRules.Derive(unlocked,active,running,input,space,logistics)); }
 
-        [Test] public void V6_MigratesToV7_Idempotently()
+        [Test] public void V6_MigratesToCurrentSchema_Idempotently()
         {
-            var d=M9SaveData.CreateFresh(1000);d.version=6;string json=JsonUtility.ToJson(d);
+            var d=M9SaveData.CreateFresh(1000);
+            d.version=6;
+            System.Array.Resize(ref d.progression.metrics,39);
+            System.Array.Resize(ref d.progression.flags,8);
+            System.Array.Resize(ref d.progression.claimedContracts,16);
+            System.Array.Resize(ref d.progression.achievements,19);
+            string json=JsonUtility.ToJson(d);
             var migrated=M9SaveCodec.Decode(json,M9SaveValidationSettings.CreateDefault(),1000);
-            Assert.IsTrue(migrated.IsSuccess,migrated.Diagnostic);Assert.IsTrue(migrated.WasMigrated);Assert.AreEqual(7,migrated.Data.version);
+            Assert.IsTrue(migrated.IsSuccess,migrated.Diagnostic);Assert.IsTrue(migrated.WasMigrated);Assert.AreEqual(M9SaveSchema.CurrentVersion,migrated.Data.version);
             Assert.IsTrue(M9SaveCodec.TryEncode(migrated.Data,M9SaveValidationSettings.CreateDefault(),1000,out string current,out _,out _));
             var decoded=M9SaveCodec.Decode(current,M9SaveValidationSettings.CreateDefault(),1000);Assert.IsTrue(decoded.IsSuccess);Assert.IsFalse(decoded.WasMigrated);
         }

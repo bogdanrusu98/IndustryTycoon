@@ -392,6 +392,22 @@ namespace IndustryTycoon.Editor
                 MaterialFolder + "/Mine_Path.mat",
                 new Color(0.58f, 0.48f, 0.32f),
                 0.02f);
+            Material lumberAreaMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Area_Lumber.mat",
+                new Color(0.24f, 0.48f, 0.20f),
+                0.02f);
+            Material miningAreaMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Area_Mining.mat",
+                new Color(0.30f, 0.32f, 0.34f),
+                0.02f);
+            Material logisticsAreaMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Area_Logistics.mat",
+                new Color(0.12f, 0.38f, 0.52f),
+                0.04f);
+            Material industrialAreaMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/Area_Industrial.mat",
+                new Color(0.38f, 0.20f, 0.44f),
+                0.04f);
             Material feedbackParticleMaterial = CreateOrUpdateParticleMaterial(
                 MaterialFolder + "/Feedback_Particle.mat");
 
@@ -682,6 +698,15 @@ namespace IndustryTycoon.Editor
             MarketPlanningService marketPlanningService = CreateM16MarketPlanning(
                 scene, progressionService, industrialDistrictService, m13Services.Warehouse,
                 wallet, salePoint, courier, m11Services.Smelter, m12Services.Workshop);
+            CreateM17WorldPresentation(
+                scene,
+                progressionService,
+                lumberAreaMaterial,
+                miningAreaMaterial,
+                logisticsAreaMaterial,
+                industrialAreaMaterial,
+                purchaseMaterial,
+                purchaseCompleteMaterial);
             LocalPersistenceService persistenceService = CreateM9Persistence(
                 scene,
                 wallet,
@@ -4652,6 +4677,122 @@ namespace IndustryTycoon.Editor
             return service;
         }
 
+        private static void CreateM17WorldPresentation(
+            Scene scene,
+            LumberCampProgressionService progression,
+            Material lumberMaterial,
+            Material miningMaterial,
+            Material logisticsMaterial,
+            Material industrialMaterial,
+            Material lockedMaterial,
+            Material unlockedMaterial)
+        {
+            Require(progression != null, "M17 world presentation requires progression.");
+            GameObject root = new GameObject("World Areas M17");
+            SceneManager.MoveGameObjectToScene(root, scene);
+
+            var districts = new WorldDistrictPresentationBinding[4];
+            districts[0] = CreateWorldAreaPresentation(
+                root.transform, WorldDistrictId.Lumber, "Lumber Area",
+                new Vector3(0f, 0.025f, 1.5f), new Vector3(14f, 0.05f, 18f),
+                lumberMaterial, lockedMaterial, unlockedMaterial);
+            districts[1] = CreateWorldAreaPresentation(
+                root.transform, WorldDistrictId.Mining, "Mining Area",
+                new Vector3(7.2f, 0.035f, 22f), new Vector3(10f, 0.07f, 15f),
+                miningMaterial, lockedMaterial, unlockedMaterial);
+            districts[2] = CreateWorldAreaPresentation(
+                root.transform, WorldDistrictId.CentralLogistics,
+                "Central Logistics - Warehouse Area",
+                new Vector3(-10.2f, 0.045f, 16.8f), new Vector3(9.5f, 0.09f, 10f),
+                logisticsMaterial, lockedMaterial, unlockedMaterial);
+            districts[3] = CreateWorldAreaPresentation(
+                root.transform, WorldDistrictId.Industrial, "Industrial District",
+                new Vector3(-5.5f, 0.055f, 24.8f), new Vector3(11f, 0.11f, 8.5f),
+                industrialMaterial, lockedMaterial, unlockedMaterial);
+
+            var landmarks = new[]
+            {
+                CreateLandmarkMarker(root.transform, WorldLandmarkId.LumberCamp,
+                    new Vector3(1.2f, 0.22f, -3.5f), unlockedMaterial),
+                CreateLandmarkMarker(root.transform, WorldLandmarkId.MineEntrance,
+                    new Vector3(7.2f, 0.22f, 16.1f), unlockedMaterial),
+                CreateLandmarkMarker(root.transform, WorldLandmarkId.Smelter,
+                    new Vector3(2.2f, 0.22f, 21.85f), unlockedMaterial),
+                CreateLandmarkMarker(root.transform, WorldLandmarkId.ToolWorkshop,
+                    new Vector3(-0.8f, 0.22f, 10.5f), unlockedMaterial),
+                CreateLandmarkMarker(root.transform, WorldLandmarkId.Warehouse,
+                    new Vector3(-12f, 0.22f, 16.8f), unlockedMaterial),
+                CreateLandmarkMarker(root.transform, WorldLandmarkId.IndustrialEntrance,
+                    new Vector3(-5.5f, 0.22f, 19.3f), unlockedMaterial),
+                CreateLandmarkMarker(root.transform, WorldLandmarkId.AssemblyPlant,
+                    new Vector3(-4f, 0.22f, 22.4f), unlockedMaterial),
+                CreateLandmarkMarker(root.transform, WorldLandmarkId.Market,
+                    new Vector3(-8.5f, 0.22f, 20.1f), unlockedMaterial)
+            };
+
+            WorldProgressionPresentation presentation =
+                root.AddComponent<WorldProgressionPresentation>();
+            presentation.Configure(progression, districts, landmarks);
+        }
+
+        private static WorldDistrictPresentationBinding CreateWorldAreaPresentation(
+            Transform parent,
+            WorldDistrictId district,
+            string name,
+            Vector3 position,
+            Vector3 scale,
+            Material areaMaterial,
+            Material lockedMaterial,
+            Material unlockedMaterial)
+        {
+            GameObject area = new GameObject(name);
+            area.transform.SetParent(parent, false);
+            GameObject floor = CreatePrimitiveChild(
+                name + " Boundary", PrimitiveType.Cube, area.transform, areaMaterial);
+            floor.transform.position = position;
+            floor.transform.localScale = scale;
+            Object.DestroyImmediate(floor.GetComponent<Collider>());
+
+            Vector3 entrance = position + new Vector3(0f, 0.12f, -scale.z * 0.48f);
+            TextMesh label = CreateWorldLabel(
+                name + " Entrance Label", area.transform,
+                WorldProgressionPresentation.GetDistrictName(district) + " — LOCKED",
+                entrance + new Vector3(0f, 2.0f, 0f),
+                new Color(1f, 0.72f, 0.24f));
+            label.characterSize = 0.044f;
+
+            GameObject locked = CreatePrimitiveChild(
+                name + " Locked Marker", PrimitiveType.Cube, area.transform, lockedMaterial);
+            locked.transform.position = entrance + new Vector3(0f, 0.72f, 0f);
+            locked.transform.localScale = new Vector3(2.8f, 0.16f, 0.16f);
+            locked.transform.rotation = Quaternion.Euler(0f, 0f, -7f);
+            Object.DestroyImmediate(locked.GetComponent<Collider>());
+
+            GameObject unlocked = CreatePrimitiveChild(
+                name + " Open Marker", PrimitiveType.Cube, area.transform, unlockedMaterial);
+            unlocked.transform.position = entrance + new Vector3(0f, 0.18f, 0f);
+            unlocked.transform.localScale = new Vector3(2.8f, 0.10f, 0.10f);
+            Object.DestroyImmediate(unlocked.GetComponent<Collider>());
+
+            return new WorldDistrictPresentationBinding(district, label, locked, unlocked);
+        }
+
+        private static WorldLandmarkMarkerBinding CreateLandmarkMarker(
+            Transform parent,
+            WorldLandmarkId landmark,
+            Vector3 position,
+            Material material)
+        {
+            GameObject marker = CreatePrimitiveChild(
+                landmark + " Guidance Marker", PrimitiveType.Cylinder, parent, material);
+            marker.transform.position = position;
+            marker.transform.localScale = new Vector3(1.35f, 0.06f, 1.35f);
+            Object.DestroyImmediate(marker.GetComponent<Collider>());
+            marker.AddComponent<WorldGuidanceMarker>();
+            marker.SetActive(false);
+            return new WorldLandmarkMarkerBinding(landmark, marker);
+        }
+
         private static void CreateLighting(Scene scene)
         {
             GameObject lightObject = new GameObject("Directional Light");
@@ -4798,6 +4939,60 @@ namespace IndustryTycoon.Editor
             SetObjectReference(guidance, "completion", m8Services.Completion);
             SetObjectReference(guidance, "progressionService", progressionService);
             SetObjectReference(guidance, "guidanceText", guidanceText);
+
+            GameObject districtPanel = new GameObject(
+                "District Status",
+                typeof(RectTransform),
+                typeof(Image));
+            districtPanel.transform.SetParent(safeAreaObject.transform, false);
+            RectTransform districtRect = districtPanel.GetComponent<RectTransform>();
+            districtRect.anchorMin = new Vector2(0.5f, 1f);
+            districtRect.anchorMax = new Vector2(0.5f, 1f);
+            districtRect.pivot = new Vector2(0.5f, 1f);
+            districtRect.sizeDelta = new Vector2(900f, 62f);
+            districtRect.anchoredPosition = new Vector2(0f, -350f);
+            districtPanel.GetComponent<Image>().color =
+                new Color(0.07f, 0.09f, 0.07f, 0.72f);
+            Text districtText = CreateHudLine(
+                "District Status Text",
+                districtPanel.transform,
+                "LUMBER OPEN  •  MINING LOCKED  •  LOGISTICS LOCKED  •  INDUSTRIAL LOCKED",
+                Vector2.zero,
+                Vector2.one,
+                22);
+            DistrictStatusView districtStatus = districtPanel.AddComponent<DistrictStatusView>();
+            SetObjectReference(districtStatus, "progression", progressionService);
+            SetObjectReference(districtStatus, "statusText", districtText);
+
+            GameObject unlockToastRoot = new GameObject(
+                "Major Unlock Banner",
+                typeof(RectTransform),
+                typeof(CanvasGroup),
+                typeof(Image));
+            unlockToastRoot.transform.SetParent(safeAreaObject.transform, false);
+            RectTransform unlockToastRect = unlockToastRoot.GetComponent<RectTransform>();
+            unlockToastRect.anchorMin = new Vector2(0.5f, 0.72f);
+            unlockToastRect.anchorMax = new Vector2(0.5f, 0.72f);
+            unlockToastRect.pivot = new Vector2(0.5f, 0.5f);
+            unlockToastRect.sizeDelta = new Vector2(820f, 112f);
+            unlockToastRoot.GetComponent<Image>().color =
+                new Color(0.10f, 0.32f, 0.42f, 0.94f);
+            Text unlockToastText = CreateHudLine(
+                "Major Unlock Text",
+                unlockToastRoot.transform,
+                string.Empty,
+                Vector2.zero,
+                Vector2.one,
+                34);
+            MajorUnlockToastView unlockToast =
+                safeAreaObject.AddComponent<MajorUnlockToastView>();
+            SetObjectReference(unlockToast, "progression", progressionService);
+            SetObjectReference(unlockToast, "toastRoot", unlockToastRoot);
+            SetObjectReference(unlockToast, "canvasGroup", unlockToastRoot.GetComponent<CanvasGroup>());
+            SetObjectReference(unlockToast, "toastText", unlockToastText);
+            SetObjectReference(unlockToast, "audioFeedback", feedbackServices.Audio);
+            SetObjectReference(unlockToast, "hapticFeedback", feedbackServices.Haptics);
+            unlockToastRoot.SetActive(false);
 
             CreateM10ProgressionUi(
                 safeAreaObject,
@@ -5554,6 +5749,17 @@ namespace IndustryTycoon.Editor
         private static void ValidateSceneContents(Scene scene)
         {
             Require(scene.IsValid() && scene.isLoaded, "The prototype scene is not loaded.");
+            GameObject[] sceneRoots = scene.GetRootGameObjects();
+            int missingScripts = 0;
+            for (int i = 0; i < sceneRoots.Length; i++)
+            {
+                Transform[] transforms = sceneRoots[i].GetComponentsInChildren<Transform>(true);
+                for (int j = 0; j < transforms.Length; j++)
+                    missingScripts += GameObjectUtility
+                        .GetMonoBehavioursWithMissingScriptCount(transforms[j].gameObject);
+            }
+            Require(missingScripts == 0,
+                $"Prototype scene contains {missingScripts} missing script reference(s).");
 
             GameObject player = FindRoot(scene, "Player");
             GameObject cameraObject = FindRoot(scene, "Main Camera");
@@ -6060,6 +6266,7 @@ namespace IndustryTycoon.Editor
             ValidateM10Scene(scene);
             ValidateM11Scene(scene, carryStack, salePoint, playerCollider);
             ValidateM12Scene(scene, carryStack, salePoint, playerCollider);
+            ValidateM17Scene(scene);
             ValidateCoreLoopLogic();
             ValidateM3Logic();
             ValidateM4Logic();
@@ -6068,6 +6275,67 @@ namespace IndustryTycoon.Editor
             ValidateM7Logic();
             ValidateM8Logic();
             ValidateM10Logic();
+        }
+
+        private static void ValidateM17Scene(Scene scene)
+        {
+            GameObject worldRoot = FindRoot(scene, "World Areas M17");
+            GameObject hudRoot = FindRoot(scene, "HUD");
+            Require(worldRoot != null && hudRoot != null,
+                "M17 world organization or HUD is missing.");
+            WorldProgressionPresentation presentation =
+                worldRoot.GetComponent<WorldProgressionPresentation>();
+            Require(presentation != null && presentation.Progression != null,
+                "M17 world presentation is not connected to authoritative progression.");
+            Require(worldRoot.transform.Find("Lumber Area") != null
+                    && worldRoot.transform.Find("Mining Area") != null
+                    && worldRoot.transform.Find("Central Logistics - Warehouse Area") != null
+                    && worldRoot.transform.Find("Industrial District") != null,
+                "M17 must expose four readable world-area presentation roots.");
+            Require(worldRoot.GetComponentsInChildren<WorldGuidanceMarker>(true).Length == 8,
+                "M17 requires one reusable marker for every major landmark.");
+            Require(worldRoot.GetComponentsInChildren<Collider>(true).Length == 0,
+                "M17 presentation geometry must not add blockers or interaction colliders.");
+            Require(hudRoot.GetComponentsInChildren<NextUnlockGuidance>(true).Length == 1,
+                "M17 must retain exactly one primary guidance view.");
+            DistrictStatusView districtStatus =
+                hudRoot.GetComponentInChildren<DistrictStatusView>(true);
+            MajorUnlockToastView unlockToast =
+                hudRoot.GetComponentInChildren<MajorUnlockToastView>(true);
+            Require(districtStatus != null && districtStatus.StatusText != null
+                    && unlockToast != null,
+                "M17 district status or major unlock feedback is missing.");
+
+            Collider[] criticalZones =
+            {
+                FindRoot(scene, "Tool Workshop")?.transform
+                    .Find("Workshop Plank Input Zone")?.GetComponent<Collider>(),
+                FindRoot(scene, "Tool Workshop")?.transform
+                    .Find("Workshop Iron Bar Input Zone")?.GetComponent<Collider>(),
+                FindRoot(scene, "Tool Workshop")?.transform
+                    .Find("Workshop Tool Output Zone")?.GetComponent<Collider>(),
+                FindRoot(scene, "Central Warehouse")?.transform
+                    .Find("Warehouse Deposit")?.GetComponent<Collider>(),
+                FindRoot(scene, "Central Warehouse")?.transform
+                    .Find("Warehouse Withdraw")?.GetComponent<Collider>(),
+                FindRoot(scene, "Assembly Plant")?.transform
+                    .Find("Assembly Iron Bar Input")?.GetComponent<Collider>(),
+                FindRoot(scene, "Assembly Plant")?.transform
+                    .Find("Assembly Tool Input")?.GetComponent<Collider>(),
+                FindRoot(scene, "Assembly Plant")?.transform
+                    .Find("Assembly Machine Part Output")?.GetComponent<Collider>()
+            };
+            for (int i = 0; i < criticalZones.Length; i++)
+            {
+                Require(criticalZones[i] != null && criticalZones[i].isTrigger,
+                    $"M17 critical interaction zone {i} is missing or not a trigger.");
+                for (int j = i + 1; j < criticalZones.Length; j++)
+                {
+                    Require(!criticalZones[i].bounds.Intersects(criticalZones[j].bounds),
+                        $"M17 critical interaction zones overlap: "
+                        + $"{criticalZones[i].name} / {criticalZones[j].name}.");
+                }
+            }
         }
 
         private static void ValidateM9Scene(

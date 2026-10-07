@@ -1,5 +1,6 @@
 using System;
 using IndustryTycoon.Feedback;
+using IndustryTycoon.Market;
 using IndustryTycoon.Progression;
 using IndustryTycoon.Persistence;
 using UnityEngine;
@@ -60,7 +61,7 @@ namespace IndustryTycoon.UI
             int safeLevel = Mathf.Clamp(
                 empireLevel,
                 M10ProgressionRules.MinimumEmpireLevel,
-                M15FactoryRules.MaximumEmpireLevel);
+                M16MarketSaveData.MaximumEmpireLevel);
             return $"EMPIRE LEVEL {safeLevel}";
         }
 
@@ -76,7 +77,7 @@ namespace IndustryTycoon.UI
             int safeLevel = Mathf.Clamp(
                 empireLevel,
                 M10ProgressionRules.MinimumEmpireLevel,
-                M15FactoryRules.MaximumEmpireLevel);
+                M16MarketSaveData.MaximumEmpireLevel);
             if (safeLevel <= _displayedLevel)
             {
                 return;
@@ -94,7 +95,7 @@ namespace IndustryTycoon.UI
             _displayedLevel = Mathf.Clamp(
                 empireLevel,
                 M10ProgressionRules.MinimumEmpireLevel,
-                M15FactoryRules.MaximumEmpireLevel);
+                M16MarketSaveData.MaximumEmpireLevel);
             _displayText = BuildDisplayText(_displayedLevel);
             if (levelText != null)
             {

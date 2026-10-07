@@ -422,8 +422,8 @@ namespace IndustryTycoon.Editor
                     == LumberCampProgressionCatalog.ObjectiveCount,
                 "Five Tools did not resolve the already-established Level 5 objective.");
             Require(model.BuildObjectiveDisplayText()
-                    == "OBJECTIVES COMPLETE — EMPIRE LEVEL 5",
-                "Completed objective HUD text is wrong.");
+                    == "OBJECTIVE: OPEN CENTRAL WAREHOUSE",
+                "Completed Lumber objectives did not hand off to world progression.");
             model.GetObjectiveProgress(out long current, out long target);
             Require(current == 1L && target == 1L,
                 "Completed objective progress is not stable.");

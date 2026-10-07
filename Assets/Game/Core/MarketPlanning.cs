@@ -30,6 +30,7 @@ namespace IndustryTycoon.Market
     [Serializable]
     public sealed class M16MarketSaveData
     {
+        public const int MaximumEmpireLevel = 25;
         public const int ResourceCount = 7;
         public const int VisibleOrderCount = 3;
 

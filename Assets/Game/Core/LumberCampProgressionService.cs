@@ -98,6 +98,9 @@ namespace IndustryTycoon.Progression
         public string ObjectiveDisplayText => _model != null
             ? _model.BuildObjectiveDisplayText()
             : "OBJECTIVE: UNLOCK WORKER";
+        public WorldLandmarkId RecommendedLandmark => _model != null
+            ? _model.RecommendedLandmark
+            : WorldLandmarkId.LumberCamp;
 
         private void Awake()
         {
