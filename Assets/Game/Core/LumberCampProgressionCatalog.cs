@@ -1,4 +1,5 @@
 using System;
+using IndustryTycoon.Persistence;
 
 namespace IndustryTycoon.Progression
 {
@@ -92,7 +93,11 @@ namespace IndustryTycoon.Progression
         MineTwentyFiveIronOre = 8,
         ProduceFifteenTools = 9,
         TransportTenIronBars = 10,
-        ProduceTenMachineParts = 11
+        ProduceTenMachineParts = 11,
+        CompleteEfficiencyCycles = 12,
+        TransportOnUpgradedRoutes = 13,
+        SpecializeAnotherFactory = 14,
+        ClearOutputBottleneck = 15
     }
 
     public enum ContractProgressState
@@ -214,6 +219,28 @@ namespace IndustryTycoon.Progression
             RewardCash = Math.Max(1, rewardCash);
             UnlockRequirement = unlockRequirement;
             IsCrossIndustryLogistics = crossIndustryLogistics;
+            IsStrategyContract = false;
+            StrategyKind = default;
+        }
+
+        public LumberCampContractDefinition(
+            LumberCampContractId id,
+            string stableId,
+            string description,
+            long target,
+            int rewardCash,
+            M15StrategyContractKind strategyKind)
+        {
+            Id = id;
+            StableId = stableId;
+            Description = description;
+            Metric = default;
+            Target = Math.Max(1L, target);
+            RewardCash = Math.Max(1, rewardCash);
+            UnlockRequirement = ContractUnlockRequirement.None;
+            IsCrossIndustryLogistics = false;
+            IsStrategyContract = true;
+            StrategyKind = strategyKind;
         }
 
         public LumberCampContractId Id { get; }
@@ -224,6 +251,8 @@ namespace IndustryTycoon.Progression
         public int RewardCash { get; }
         public ContractUnlockRequirement UnlockRequirement { get; }
         public bool IsCrossIndustryLogistics { get; }
+        public bool IsStrategyContract { get; }
+        public M15StrategyContractKind StrategyKind { get; }
     }
 
     public readonly struct LumberCampAchievementDefinition
@@ -473,7 +502,35 @@ namespace IndustryTycoon.Progression
                 ProgressMetricId.MachinePartsProduced,
                 10L,
                 3000,
-                ContractUnlockRequirement.AssemblyPlant)
+                ContractUnlockRequirement.AssemblyPlant),
+            new LumberCampContractDefinition(
+                LumberCampContractId.CompleteEfficiencyCycles,
+                "complete_efficiency_cycles",
+                "COMPLETE 10 CYCLES WITH EFFICIENCY SPECIALIZATION",
+                10L,
+                3200,
+                M15StrategyContractKind.EfficiencyCycles),
+            new LumberCampContractDefinition(
+                LumberCampContractId.TransportOnUpgradedRoutes,
+                "transport_on_upgraded_routes",
+                "TRANSPORT 25 UNITS ON UPGRADED ROUTES",
+                25L,
+                3400,
+                M15StrategyContractKind.UpgradedRouteThroughput),
+            new LumberCampContractDefinition(
+                LumberCampContractId.SpecializeAnotherFactory,
+                "specialize_another_factory",
+                "SPECIALIZE 1 ADDITIONAL FACTORY",
+                1L,
+                3600,
+                M15StrategyContractKind.SpecializedFactories),
+            new LumberCampContractDefinition(
+                LumberCampContractId.ClearOutputBottleneck,
+                "clear_output_bottleneck",
+                "PURCHASE 1 OUTPUT CAPACITY UPGRADE",
+                1L,
+                3800,
+                M15StrategyContractKind.ClearOutputBottleneck)
         };
 
         private static readonly LumberCampAchievementDefinition[] Achievements =
@@ -598,6 +655,8 @@ namespace IndustryTycoon.Progression
         public static int FlagCount => FlagStableIds.Length;
         public static int ObjectiveCount => Objectives.Length;
         public static int ContractCount => Contracts.Length;
+        public const int LegacyContractCount = 12;
+        public static int FirstStrategyContractIndex => LegacyContractCount;
         public static int AchievementCount => Achievements.Length;
 
         public static string GetMetricStableId(ProgressMetricId id)

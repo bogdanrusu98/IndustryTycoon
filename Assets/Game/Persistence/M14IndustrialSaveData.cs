@@ -176,4 +176,93 @@ namespace IndustryTycoon.Persistence
             return recipes;
         }
     }
+
+    public static class M15SmelterOfflineProductionCalculator
+    {
+        private const int OrePerRecipe = 2;
+        private const int BarsPerRecipe = 1;
+        private const int BaseInputCapacity = 24;
+        private const int BaseOutputCapacity = 12;
+        private const float BaseDurationSeconds = 1.5f;
+
+        public static int Settle(
+            M9SaveData data,
+            long creditedAwaySeconds,
+            double efficiency)
+        {
+            if (data?.mining?.purchasePads == null
+                || !IsSmelterUnlocked(data.mining)
+                || data.returnScreenPending
+                || creditedAwaySeconds <= 0L
+                || efficiency <= 0d)
+            {
+                return 0;
+            }
+
+            M14BuildingUpgradeSaveRecord upgrade =
+                data.industrial?.GetBuildingUpgrade("iron_smelter");
+            M15FactoryRecord factory =
+                data.factoryScaling?.GetFactory("iron_smelter");
+            double duration = M15FactoryTuning.CalculateDuration(
+                BaseDurationSeconds,
+                upgrade?.speedLevel ?? 0,
+                factory?.specialization ?? FactorySpecialization.None,
+                "iron_smelter",
+                data.factoryScaling?.industrialDistrictLevel ?? 1);
+            long timeBudget = (long)Math.Floor(
+                creditedAwaySeconds
+                * Math.Min(1d, Math.Max(0d, efficiency))
+                / Math.Max(0.02d, duration));
+            int inputCapacity = BaseInputCapacity
+                                + M14ProductionUpgradeTuning.GetCapacityBonus(
+                                    BaseInputCapacity,
+                                    upgrade?.inputCapacityLevel ?? 0);
+            int outputCapacity = BaseOutputCapacity
+                                 + M14ProductionUpgradeTuning.GetCapacityBonus(
+                                     BaseOutputCapacity,
+                                     upgrade?.outputCapacityLevel ?? 0);
+            int persistedOre = Math.Min(
+                Math.Max(0, data.mining.smelterInputIronOre),
+                inputCapacity);
+            int availableOutput = Math.Max(
+                0,
+                outputCapacity - Math.Max(0, data.mining.smelterOutputIronBars));
+            int recipes = (int)Math.Min(
+                int.MaxValue,
+                Math.Min(
+                    timeBudget,
+                    Math.Min(persistedOre / OrePerRecipe,
+                        availableOutput / BarsPerRecipe)));
+            if (recipes <= 0)
+            {
+                return 0;
+            }
+
+            M15FactoryRules.CompleteRecipes(factory, recipes, out int conservedOre);
+            data.mining.smelterInputIronOre = persistedOre
+                                                - (recipes * OrePerRecipe)
+                                                + conservedOre;
+            data.mining.smelterOutputIronBars += recipes * BarsPerRecipe;
+            M15FactoryRules.RecalculateDistrictLevel(data.factoryScaling);
+            return recipes;
+        }
+
+        private static bool IsSmelterUnlocked(M11MiningSaveData mining)
+        {
+            for (int i = 0; i < mining.purchasePads.Length; i++)
+            {
+                M9PurchasePadSaveRecord pad = mining.purchasePads[i];
+                if (pad != null
+                    && string.Equals(
+                        pad.id,
+                        M11MiningPurchasePadIds.Smelter,
+                        StringComparison.Ordinal))
+                {
+                    return pad.completed;
+                }
+            }
+
+            return false;
+        }
+    }
 }

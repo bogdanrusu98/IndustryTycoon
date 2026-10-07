@@ -61233,6 +61233,7 @@ MonoBehaviour:
   toolWorkshop: {fileID: 514652912}
   centralWarehouse: {fileID: 805616367}
   logisticsNetwork: {fileID: 1718962755}
+  industrialDistrictService: {fileID: 1946546139}
   productionUpgrade: {fileID: 1988710697}
   workerUnlock: {fileID: 30333231}
   processorUnlock: {fileID: 2123617998}
@@ -128406,7 +128407,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1628779860}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 1985683980}
+  m_Script: {fileID: 11500000, guid: 4c662ced7bca4dde99fc22d902cfb813, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::IndustryTycoon.Processing.AssemblyPlantOutputZone
   plant: {fileID: 1631029821}
@@ -139335,7 +139336,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1717143275}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 1975926575}
+  m_Script: {fileID: 11500000, guid: d4e47cab6d5244aaa82572be9da2cd65, type: 3}
   m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::IndustryTycoon.Progression.RetentionGoalService
   progressionService: {fileID: 1045176728}
@@ -162835,36 +162836,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: -360}
   m_SizeDelta: {x: 900, y: 82}
   m_Pivot: {x: 0.5, y: 1}
---- !u!115 &1975926575
-MonoScript:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name:
-  serializedVersion: 7
-  m_DefaultReferences: {}
-  m_Icon: {fileID: 0}
-  m_Type: 0
-  m_ExecutionOrder: 0
-  m_ClassName: RetentionGoalService
-  m_Namespace: IndustryTycoon.Progression
-  m_AssemblyName: Assembly-CSharp
---- !u!115 &1985683980
-MonoScript:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name:
-  serializedVersion: 7
-  m_DefaultReferences: {}
-  m_Icon: {fileID: 0}
-  m_Type: 0
-  m_ExecutionOrder: 0
-  m_ClassName: AssemblyPlantOutputZone
-  m_Namespace: IndustryTycoon.Processing
-  m_AssemblyName: Assembly-CSharp
 --- !u!1 &1987504602
 GameObject:
   m_ObjectHideFlags: 0

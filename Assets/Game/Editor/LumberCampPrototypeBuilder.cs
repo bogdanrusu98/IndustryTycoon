@@ -4398,6 +4398,7 @@ namespace IndustryTycoon.Editor
 
             IndustrialDistrictService service =
                 districtRoot.AddComponent<IndustrialDistrictService>();
+            SetObjectReference(progression, "industrialDistrictService", service);
             SetObjectReference(service, "progression", progression);
             SetObjectReference(service, "wallet", wallet);
             SetObjectReference(service, "playerCollider", playerCollider);

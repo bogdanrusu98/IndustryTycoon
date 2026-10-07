@@ -31,6 +31,7 @@ namespace IndustryTycoon.Progression
         [SerializeField] private ToolWorkshop toolWorkshop;
         [SerializeField] private CentralWarehouse centralWarehouse;
         [SerializeField] private IndustrialLogisticsNetwork logisticsNetwork;
+        [SerializeField] private IndustrialDistrictService industrialDistrictService;
 
         [Header("Authoritative Unlocks")]
         [SerializeField] private WoodProductionUpgrade productionUpgrade;
@@ -209,7 +210,35 @@ namespace IndustryTycoon.Progression
 
         public bool TryClaimActiveContract()
         {
-            return _model != null && _model.TryClaimActiveContract();
+            if (_model == null || !_model.HasActiveContract)
+            {
+                return false;
+            }
+
+            LumberCampContractDefinition contract =
+                LumberCampProgressionCatalog.GetContract(_model.ActiveContractIndex);
+            bool claimed = _model.TryClaimActiveContract();
+            if (claimed
+                && contract.IsStrategyContract
+                && contract.StrategyKind
+                == Persistence.M15StrategyContractKind.ClearOutputBottleneck)
+            {
+                industrialDistrictService?.MarkOptimizationObjectiveCompleted();
+            }
+
+            return claimed;
+        }
+
+        public bool SynchronizeIndustrialContext(
+            Persistence.M14IndustrialSaveData industrial,
+            Persistence.M15FactorySaveData factoryScaling,
+            bool publishTransitions)
+        {
+            return _model != null
+                   && _model.UpdateIndustrialContext(
+                       industrial,
+                       factoryScaling,
+                       publishTransitions);
         }
 
         public bool RecordDailyGoalCompleted()
@@ -641,12 +670,14 @@ namespace IndustryTycoon.Progression
         {
             _model.RecordPlanksProduced(
                 processor != null ? processor.RecipeOutputPlanks : 1);
+            RefreshIndustrialContext();
         }
 
         private void HandlePackingRecipeCompleted(int inputPlanks, int outputCrates)
         {
             _model.RecordCratesProduced(
                 packingStation != null ? packingStation.RecipeOutputCrates : 1);
+            RefreshIndustrialContext();
         }
 
         private void HandleCourierDeliveryCompleted(
@@ -668,6 +699,7 @@ namespace IndustryTycoon.Progression
         {
             _model.RecordIronBarsProduced(
                 smelter != null ? smelter.RecipeOutputBars : 1);
+            RefreshIndustrialContext();
         }
 
         private void HandleAutomatedDrillOreProduced(int amount)
@@ -681,6 +713,20 @@ namespace IndustryTycoon.Progression
             int producedTools)
         {
             _model.RecordToolsProduced(producedTools);
+            RefreshIndustrialContext();
+        }
+
+        private void RefreshIndustrialContext()
+        {
+            if (industrialDistrictService == null)
+            {
+                return;
+            }
+
+            SynchronizeIndustrialContext(
+                industrialDistrictService.CapturePersistentState(),
+                industrialDistrictService.CaptureFactoryScalingState(),
+                true);
         }
 
         private void HandleIndustrialResourceTransported(

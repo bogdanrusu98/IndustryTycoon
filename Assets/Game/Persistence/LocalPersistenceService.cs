@@ -444,6 +444,16 @@ namespace IndustryTycoon.Persistence
                     data.lastEvaluationUtcUnixSeconds,
                     now,
                     Math.Max(0L, (long)Math.Floor(maximumCreditedAwaySeconds)));
+            int offlineIronBars = M15SmelterOfflineProductionCalculator.Settle(
+                data,
+                creditedRouteSeconds,
+                offlineEfficiency);
+            if (offlineIronBars > 0)
+            {
+                data.progression?.IncrementMetric(
+                    ProgressMetricId.IronBarsProduced,
+                    offlineIronBars);
+            }
             M13OfflineLogisticsCalculator.Settle(
                 data,
                 creditedRouteSeconds,

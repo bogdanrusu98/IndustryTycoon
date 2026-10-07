@@ -592,7 +592,9 @@ namespace IndustryTycoon.Progression
 
             if (source.claimedContracts == null
                 || source.claimedContracts.Length
-                != LumberCampProgressionCatalog.ContractCount)
+                < LumberCampProgressionCatalog.LegacyContractCount
+                || source.claimedContracts.Length
+                > LumberCampProgressionCatalog.ContractCount)
             {
                 failureReason = "M10 contract claim state has the wrong size.";
                 return false;
@@ -628,11 +630,15 @@ namespace IndustryTycoon.Progression
             {
                 if (!source.claimedContracts[i])
                 {
-                    encounteredUnclaimed = true;
+                    if (i < LumberCampProgressionCatalog.LegacyContractCount)
+                    {
+                        encounteredUnclaimed = true;
+                    }
                     continue;
                 }
 
-                if (encounteredUnclaimed)
+                if (i < LumberCampProgressionCatalog.LegacyContractCount
+                    && encounteredUnclaimed)
                 {
                     failureReason =
                         "M10 claimed contracts must form one ordered prefix.";
@@ -640,24 +646,54 @@ namespace IndustryTycoon.Progression
                 }
 
                 normalized.claimedContracts[i] = true;
-                activeIndex++;
+                if (i < LumberCampProgressionCatalog.LegacyContractCount)
+                {
+                    activeIndex++;
+                }
             }
 
-            if (source.activeContractIndex != activeIndex)
+            bool legacySequenceComplete = activeIndex
+                                          >= LumberCampProgressionCatalog
+                                              .LegacyContractCount;
+            if (!legacySequenceComplete && source.activeContractIndex != activeIndex)
             {
                 failureReason =
                     "M10 active contract index contradicts claimed state.";
                 return false;
             }
 
-            normalized.activeContractIndex = activeIndex;
-            if (activeIndex >= LumberCampProgressionCatalog.ContractCount)
+            if (legacySequenceComplete)
             {
-                normalized.activeContractBaseline = 0L;
-                normalized.activeContractState = ContractProgressState.Claimed;
+                int sourceIndex = source.claimedContracts.Length
+                                  == LumberCampProgressionCatalog.LegacyContractCount
+                                  && source.activeContractIndex
+                                  == LumberCampProgressionCatalog.LegacyContractCount
+                    ? -1
+                    : source.activeContractIndex;
+                if (sourceIndex < -1
+                    || sourceIndex >= LumberCampProgressionCatalog.ContractCount
+                    || (sourceIndex >= 0
+                        && (sourceIndex
+                            < LumberCampProgressionCatalog.FirstStrategyContractIndex
+                            || normalized.claimedContracts[sourceIndex])))
+                {
+                    failureReason =
+                        "M15 strategy contract cursor contradicts claim state.";
+                    normalized = null;
+                    return false;
+                }
+
+                normalized.activeContractIndex = sourceIndex;
+                normalized.activeContractBaseline = sourceIndex >= 0
+                    ? Math.Max(0L, source.activeContractBaseline)
+                    : 0L;
+                normalized.activeContractState = sourceIndex >= 0
+                    ? source.activeContractState
+                    : ContractProgressState.Claimed;
             }
             else
             {
+                normalized.activeContractIndex = activeIndex;
                 LumberCampContractDefinition contract =
                     LumberCampProgressionCatalog.GetContract(activeIndex);
                 long currentMetric = normalized.GetMetric(contract.Metric);
@@ -676,7 +712,8 @@ namespace IndustryTycoon.Progression
                         : ContractProgressState.Active;
             }
 
-            if (source.activeContractState != normalized.activeContractState)
+            if (!legacySequenceComplete
+                && source.activeContractState != normalized.activeContractState)
             {
                 failureReason =
                     "M10 active contract state contradicts shared metrics.";

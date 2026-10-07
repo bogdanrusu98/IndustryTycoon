@@ -1,5 +1,7 @@
 using System;
 using IndustryTycoon.Core;
+using IndustryTycoon.Persistence;
+using IndustryTycoon.Processing;
 
 namespace IndustryTycoon.Progression
 {
@@ -11,6 +13,8 @@ namespace IndustryTycoon.Progression
         private bool _evaluationPending;
         private bool _reentrantMutationChanged;
         private int _lastNotifiedEmpireLevel;
+        private M15FactorySaveData _factoryScaling = M15FactorySaveData.CreateFresh();
+        private M14IndustrialSaveData _industrial = M14IndustrialSaveData.CreateFresh();
 
         public LumberCampProgressionModel(
             M10ProgressionSaveData state,
@@ -40,7 +44,7 @@ namespace IndustryTycoon.Progression
             HasContractCursor
                 ? _state.activeContractState
                 : ContractProgressState.Claimed;
-        public int EmpireLevel => M10ProgressionRules.ResolveEmpireLevel(_state);
+        public int EmpireLevel => ResolveEmpireLevel();
 
         public long GetMetric(ProgressMetricId metric)
         {
@@ -139,7 +143,7 @@ namespace IndustryTycoon.Progression
                 return;
             }
 
-            long lifetime = _state.GetMetric(contract.Metric);
+            long lifetime = GetContractLifetime(contract);
             current = Math.Min(
                 target,
                 Math.Max(0L, lifetime - _state.activeContractBaseline));
@@ -177,7 +181,46 @@ namespace IndustryTycoon.Progression
             // Loading/resetting establishes the comparison baseline silently. Only
             // subsequent authoritative mutations may publish level-up feedback.
             _lastNotifiedEmpireLevel =
-                M10ProgressionRules.ResolveEmpireLevel(_state);
+                ResolveEmpireLevel();
+        }
+
+        public bool UpdateIndustrialContext(
+            M14IndustrialSaveData industrial,
+            M15FactorySaveData factoryScaling,
+            bool publishTransitions)
+        {
+            if (!M14IndustrialSaveValidator.TryNormalize(
+                    industrial,
+                    out M14IndustrialSaveData normalizedIndustrial,
+                    out string industrialFailure))
+            {
+                throw new ArgumentException(industrialFailure, nameof(industrial));
+            }
+
+            if (!M15FactorySaveValidator.TryNormalize(
+                    factoryScaling,
+                    out M15FactorySaveData normalizedFactory,
+                    out string factoryFailure))
+            {
+                throw new ArgumentException(factoryFailure, nameof(factoryScaling));
+            }
+
+            _industrial = normalizedIndustrial;
+            _factoryScaling = normalizedFactory;
+            if (!publishTransitions)
+            {
+                NormalizeStrategyContractAfterContextRestore();
+                _lastNotifiedEmpireLevel = ResolveEmpireLevel();
+                return false;
+            }
+
+            bool changed = EvaluateTransitions();
+            if (changed)
+            {
+                StateChanged?.Invoke();
+            }
+
+            return changed;
         }
 
         public bool EvaluateAll()
@@ -440,24 +483,7 @@ namespace IndustryTycoon.Progression
                     }
 
                     _state.claimedContracts[ActiveContractIndex] = true;
-                    _state.activeContractIndex++;
-                    if (_state.activeContractIndex
-                        >= LumberCampProgressionCatalog.ContractCount)
-                    {
-                        _state.activeContractBaseline = 0L;
-                        _state.activeContractState = ContractProgressState.Claimed;
-                    }
-                    else
-                    {
-                        LumberCampContractDefinition next =
-                            LumberCampProgressionCatalog.GetContract(
-                                _state.activeContractIndex);
-                        _state.activeContractBaseline = _state.GetMetric(next.Metric);
-                        _state.activeContractState =
-                            M10ProgressionRules.IsContractEligible(_state, next)
-                                ? ContractProgressState.Active
-                                : ContractProgressState.Locked;
-                    }
+                    ActivateNextContract(ActiveContractIndex + 1);
                 }
             }
             finally
@@ -542,7 +568,7 @@ namespace IndustryTycoon.Progression
 
                     PublishEmpireLevelAdvancements();
 
-                    int empireLevel = M10ProgressionRules.ResolveEmpireLevel(_state);
+                    int empireLevel = ResolveEmpireLevel();
                     if (empireLevel == 9
                         && _state.SetMetricOnce(
                             ProgressMetricId.IndustrialDistrictReady))
@@ -551,27 +577,37 @@ namespace IndustryTycoon.Progression
                         PublishEmpireLevelAdvancements();
                     }
 
+                    if (!HasContractCursor && AreLegacyContractsClaimed())
+                    {
+                        changed |= ActivateNextContract(
+                            LumberCampProgressionCatalog.FirstStrategyContractIndex);
+                    }
+
                     if (HasContractCursor)
                     {
                         LumberCampContractDefinition contract =
                             LumberCampProgressionCatalog.GetContract(
                                 ActiveContractIndex);
-                        bool eligible = M10ProgressionRules.IsContractEligible(
-                            _state,
-                            contract);
+                        bool eligible = IsContractEligible(contract);
+                        if (contract.IsStrategyContract && !eligible)
+                        {
+                            changed |= ActivateNextContract(ActiveContractIndex + 1);
+                            _evaluationPending = true;
+                            continue;
+                        }
                         if (eligible
                             && _state.activeContractState
                             == ContractProgressState.Locked)
                         {
                             _state.activeContractBaseline =
-                                _state.GetMetric(contract.Metric);
+                                GetContractLifetime(contract);
                             _state.activeContractState = ContractProgressState.Active;
                             changed = true;
                         }
 
                         long progress = Math.Max(
                             0L,
-                            _state.GetMetric(contract.Metric)
+                            GetContractLifetime(contract)
                             - _state.activeContractBaseline);
                         if (eligible
                             && progress >= contract.Target
@@ -636,7 +672,7 @@ namespace IndustryTycoon.Progression
 
         private void PublishEmpireLevelAdvancements()
         {
-            int resolvedLevel = M10ProgressionRules.ResolveEmpireLevel(_state);
+            int resolvedLevel = ResolveEmpireLevel();
             if (resolvedLevel <= _lastNotifiedEmpireLevel)
             {
                 return;
@@ -650,6 +686,211 @@ namespace IndustryTycoon.Progression
             {
                 EmpireLevelAdvanced?.Invoke(level);
             }
+        }
+
+        private int ResolveEmpireLevel()
+        {
+            int legacyLevel = M10ProgressionRules.ResolveEmpireLevel(_state);
+            return legacyLevel < M10ProgressionRules.MaximumEmpireLevel
+                ? legacyLevel
+                : Math.Max(legacyLevel, M15FactoryRules.GetEmpireLevel(_factoryScaling));
+        }
+
+        private bool IsContractEligible(LumberCampContractDefinition contract)
+        {
+            if (!contract.IsStrategyContract)
+            {
+                return M10ProgressionRules.IsContractEligible(_state, contract);
+            }
+
+            if (M10ProgressionRules.ResolveEmpireLevel(_state)
+                < M10ProgressionRules.MaximumEmpireLevel
+                || !M15FactoryRules.IsContractEligible(
+                    _factoryScaling,
+                    contract.StrategyKind))
+            {
+                return false;
+            }
+
+            if (contract.StrategyKind != M15StrategyContractKind.ClearOutputBottleneck)
+            {
+                return true;
+            }
+
+            return HasAvailableSpecializedOutputUpgrade();
+        }
+
+        private long GetContractLifetime(LumberCampContractDefinition contract)
+        {
+            if (!contract.IsStrategyContract)
+            {
+                return _state.GetMetric(contract.Metric);
+            }
+
+            switch (contract.StrategyKind)
+            {
+                case M15StrategyContractKind.EfficiencyCycles:
+                    return M15FactoryRules.GetEfficiencyCycleCount(_factoryScaling);
+                case M15StrategyContractKind.UpgradedRouteThroughput:
+                    return Math.Max(0L, _factoryScaling.upgradedRouteUnitsTransported);
+                case M15StrategyContractKind.SpecializedFactories:
+                    return M15FactoryRules.GetSpecializedFactoryCount(_factoryScaling);
+                case M15StrategyContractKind.ClearOutputBottleneck:
+                    return GetSpecializedOutputUpgradeCount();
+                default:
+                    return 0L;
+            }
+        }
+
+        private long GetSpecializedOutputUpgradeCount()
+        {
+            long count = 0L;
+            if (_industrial?.buildingUpgrades == null || _factoryScaling?.factories == null)
+            {
+                return count;
+            }
+
+            for (int i = 0; i < _factoryScaling.factories.Length; i++)
+            {
+                M15FactoryRecord factory = _factoryScaling.factories[i];
+                if (factory == null || factory.specialization == FactorySpecialization.None)
+                {
+                    continue;
+                }
+
+                M14BuildingUpgradeSaveRecord upgrade =
+                    _industrial.GetBuildingUpgrade(factory.buildingId);
+                count += upgrade?.outputCapacityLevel ?? 0;
+            }
+
+            return count;
+        }
+
+        private bool HasAvailableSpecializedOutputUpgrade()
+        {
+            if (_factoryScaling?.factories == null || _industrial == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _factoryScaling.factories.Length; i++)
+            {
+                M15FactoryRecord factory = _factoryScaling.factories[i];
+                M14BuildingUpgradeSaveRecord upgrade = factory != null
+                    ? _industrial.GetBuildingUpgrade(factory.buildingId)
+                    : null;
+                if (factory != null
+                    && factory.specialization != FactorySpecialization.None
+                    && upgrade != null
+                    && upgrade.outputCapacityLevel < M14ProductionUpgradeTuning.MaximumLevel)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool ActivateNextContract(int startIndex)
+        {
+            int oldIndex = _state.activeContractIndex;
+            ContractProgressState oldState = _state.activeContractState;
+            long oldBaseline = _state.activeContractBaseline;
+            int legacyCount = LumberCampProgressionCatalog.LegacyContractCount;
+            if (startIndex < legacyCount)
+            {
+                _state.activeContractIndex = startIndex;
+                LumberCampContractDefinition next =
+                    LumberCampProgressionCatalog.GetContract(startIndex);
+                _state.activeContractBaseline = GetContractLifetime(next);
+                _state.activeContractState = IsContractEligible(next)
+                    ? ContractProgressState.Active
+                    : ContractProgressState.Locked;
+            }
+            else
+            {
+                int strategyCount = LumberCampProgressionCatalog.ContractCount - legacyCount;
+                int offset = Math.Max(0, startIndex - legacyCount) % strategyCount;
+                int selected = -1;
+                for (int step = 0; step < strategyCount; step++)
+                {
+                    int candidate = legacyCount + ((offset + step) % strategyCount);
+                    if (!_state.claimedContracts[candidate]
+                        && IsContractEligible(
+                            LumberCampProgressionCatalog.GetContract(candidate)))
+                    {
+                        selected = candidate;
+                        break;
+                    }
+                }
+
+                _state.activeContractIndex = selected;
+                if (selected < 0)
+                {
+                    _state.activeContractBaseline = 0L;
+                    _state.activeContractState = ContractProgressState.Claimed;
+                }
+                else
+                {
+                    LumberCampContractDefinition next =
+                        LumberCampProgressionCatalog.GetContract(selected);
+                    _state.activeContractBaseline = GetContractLifetime(next);
+                    _state.activeContractState = ContractProgressState.Active;
+                }
+            }
+
+            return oldIndex != _state.activeContractIndex
+                   || oldState != _state.activeContractState
+                   || oldBaseline != _state.activeContractBaseline;
+        }
+
+        private bool AreLegacyContractsClaimed()
+        {
+            if (_state.claimedContracts == null)
+            {
+                return false;
+            }
+
+            for (int i = 0;
+                 i < LumberCampProgressionCatalog.LegacyContractCount;
+                 i++)
+            {
+                if (!_state.claimedContracts[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void NormalizeStrategyContractAfterContextRestore()
+        {
+            if (_state.activeContractIndex >= 0
+                && _state.activeContractIndex
+                < LumberCampProgressionCatalog.LegacyContractCount)
+            {
+                return;
+            }
+
+            if (!HasContractCursor
+                || _state.claimedContracts[_state.activeContractIndex]
+                || !IsContractEligible(LumberCampProgressionCatalog.GetContract(
+                    _state.activeContractIndex)))
+            {
+                ActivateNextContract(LumberCampProgressionCatalog.FirstStrategyContractIndex);
+                return;
+            }
+
+            LumberCampContractDefinition contract =
+                LumberCampProgressionCatalog.GetContract(_state.activeContractIndex);
+            long lifetime = GetContractLifetime(contract);
+            _state.activeContractBaseline = Math.Min(
+                Math.Max(0L, _state.activeContractBaseline), lifetime);
+            _state.activeContractState = lifetime - _state.activeContractBaseline
+                                         >= contract.Target
+                ? ContractProgressState.CompletedUnclaimed
+                : ContractProgressState.Active;
         }
     }
 }

@@ -48,7 +48,9 @@ namespace IndustryTycoon.Progression
         public bool RestoreFactoryScalingState(M15FactorySaveData data)
         {
             if (!M15FactorySaveValidator.TryNormalize(data, out var normalized, out _)) return false;
-            _factoryScaling = normalized; ApplyFactoryModifiers(); StateChanged?.Invoke(); return true;
+            _factoryScaling = normalized; ApplyFactoryModifiers();
+            SynchronizeProgression(false);
+            StateChanged?.Invoke(); return true;
         }
 
         public int GetSpecializationCost(string buildingId)
@@ -94,6 +96,7 @@ namespace IndustryTycoon.Progression
             if (!M15FactoryRules.TryChoose(_factoryScaling, buildingId, specialization))
             { wallet.Deposit(definition.Cost); return false; }
             ApplyFactoryModifiers();
+            SynchronizeProgression(true);
             StateChanged?.Invoke(); return true;
         }
 
@@ -102,7 +105,21 @@ namespace IndustryTycoon.Progression
             if (units <= 0) return;
             _factoryScaling.upgradedRouteUnitsTransported = Math.Min(long.MaxValue,
                 _factoryScaling.upgradedRouteUnitsTransported + units);
+            SynchronizeProgression(true);
             StateChanged?.Invoke();
+        }
+
+        public bool MarkOptimizationObjectiveCompleted()
+        {
+            if (_factoryScaling.optimizationObjectiveCompleted)
+            {
+                return false;
+            }
+
+            _factoryScaling.optimizationObjectiveCompleted = true;
+            SynchronizeProgression(true);
+            StateChanged?.Invoke();
+            return true;
         }
 
         private void ApplyFactoryModifiers()
@@ -177,6 +194,7 @@ namespace IndustryTycoon.Progression
                 return false;
             }
             progression?.RecordProductionUpgradePurchased();
+            SynchronizeProgression(true);
             StateChanged?.Invoke();
             return true;
         }
@@ -194,6 +212,7 @@ namespace IndustryTycoon.Progression
                 return false;
             }
             progression?.RecordLogisticsUpgradePurchased();
+            SynchronizeProgression(true);
             StateChanged?.Invoke();
             return true;
         }
@@ -260,6 +279,7 @@ namespace IndustryTycoon.Progression
                     data.assemblyInputTools, data.assemblyOutputMachineParts);
             }
             SynchronizeAccess();
+            SynchronizeProgression(false);
             StateChanged?.Invoke();
             return true;
         }
@@ -277,7 +297,16 @@ namespace IndustryTycoon.Progression
         private void HandleRecipeCompleted(int amount)
         {
             progression?.RecordMachinePartsProduced(amount);
+            SynchronizeProgression(true);
             StateChanged?.Invoke();
+        }
+
+        private void SynchronizeProgression(bool publishTransitions)
+        {
+            progression?.SynchronizeIndustrialContext(
+                CapturePersistentState(),
+                CaptureFactoryScalingState(),
+                publishTransitions);
         }
 
         private void HandleRouteTransfer(IndustrialLogisticsRoute route,
