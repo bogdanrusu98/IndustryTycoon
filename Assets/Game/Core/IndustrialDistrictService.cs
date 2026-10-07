@@ -1,4 +1,5 @@
 using System;
+using IndustryTycoon.Core;
 using IndustryTycoon.Economy;
 using IndustryTycoon.Interaction;
 using IndustryTycoon.Logistics;
@@ -22,6 +23,7 @@ namespace IndustryTycoon.Progression
 
         private bool _districtEntered;
         private bool _subscribed;
+        private M15FactorySaveData _factoryScaling = M15FactorySaveData.CreateFresh();
 
         public event Action StateChanged;
         public bool IsGateOpen => progression != null
@@ -30,6 +32,95 @@ namespace IndustryTycoon.Progression
         public bool AssemblyPlantUnlocked => assemblyPurchasePad != null
                                              && assemblyPurchasePad.IsCompleted;
         public AssemblyPlant AssemblyPlant => assemblyPlant;
+        public int DistrictLevel => _factoryScaling.industrialDistrictLevel;
+        public int EffectiveEmpireLevel => Math.Max(progression?.EmpireLevel ?? 1,
+            M15FactoryRules.GetEmpireLevel(_factoryScaling));
+        public M15FactorySaveData CaptureFactoryScalingState()
+        {
+            if (upgradeableBuildings != null) for(int i=0;i<upgradeableBuildings.Length;i++)
+                if(upgradeableBuildings[i] is IProductionUpgradeable building && upgradeableBuildings[i] is IFactorySpecializable specialized)
+                { var record=_factoryScaling.GetFactory(building.ProductionBuildingId); if(record!=null){record.efficiencyCompletedRemainder=specialized.EfficiencyCompletedRemainder;record.completedSpecializedCycles=specialized.CompletedSpecializedCycles;} }
+            M15FactoryRules.RecalculateDistrictLevel(_factoryScaling);
+            M15FactorySaveValidator.TryNormalize(_factoryScaling, out var copy, out _);
+            return copy ?? M15FactorySaveData.CreateFresh();
+        }
+
+        public bool RestoreFactoryScalingState(M15FactorySaveData data)
+        {
+            if (!M15FactorySaveValidator.TryNormalize(data, out var normalized, out _)) return false;
+            _factoryScaling = normalized; ApplyFactoryModifiers(); StateChanged?.Invoke(); return true;
+        }
+
+        public int GetSpecializationCost(string buildingId)
+        {
+            return M15FactoryTuning.TryGet(buildingId, out var definition)
+                ? definition.Cost : int.MaxValue;
+        }
+
+        public ProductionStatus GetProductionStatus(string buildingId)
+        {
+            IProductionUpgradeable building = FindBuilding(buildingId);
+            bool logisticsExpected = false;
+            IndustrialLogisticsRoute[] routes = logisticsNetwork?.Routes;
+            if (routes != null) for (int i=0;i<routes.Length;i++)
+                logisticsExpected |= routes[i] != null && routes[i].RouteEnabled
+                    && string.Equals(routes[i].SourceEndpointId, buildingId, StringComparison.Ordinal);
+            if (building is WoodProcessor wood)
+                return ProductionStatusRules.Derive(IsBuildingUnlocked(buildingId), wood.isActiveAndEnabled,
+                    wood.IsProcessing, wood.InputWood >= wood.RecipeInputWood,
+                    wood.OutputPlanks + wood.RecipeOutputPlanks <= wood.OutputCapacity, logisticsExpected);
+            if (building is PackingStation packing)
+                return ProductionStatusRules.Derive(IsBuildingUnlocked(buildingId), packing.isActiveAndEnabled,
+                    packing.IsProcessing, packing.InputPlanks >= packing.RecipeInputPlanks,
+                    packing.OutputCrates + packing.RecipeOutputCrates <= packing.OutputCapacity, logisticsExpected);
+            if (building is ToolWorkshop workshop)
+                return ProductionStatusRules.Derive(IsBuildingUnlocked(buildingId), workshop.isActiveAndEnabled,
+                    workshop.IsProcessing, !workshop.IsStarved, !workshop.IsOutputFull, logisticsExpected);
+            if (building is AssemblyPlant plant)
+                return ProductionStatusRules.Derive(IsBuildingUnlocked(buildingId), plant.isActiveAndEnabled,
+                    plant.IsProcessing, plant.InputIronBars >= 2 && plant.InputTools >= 1,
+                    plant.OutputMachineParts < plant.OutputCapacity, logisticsExpected);
+            return ProductionStatus.LockedInactive;
+        }
+
+        public bool TryPurchaseSpecialization(string buildingId, FactorySpecialization specialization)
+        {
+            if (wallet == null || !IsBuildingUnlocked(buildingId)
+                || !M15FactoryTuning.TryGet(buildingId, out var definition)
+                || specialization == FactorySpecialization.None
+                || _factoryScaling.GetFactory(buildingId)?.specialization != FactorySpecialization.None
+                || wallet.Balance < definition.Cost || wallet.SpendUpTo(definition.Cost) != definition.Cost)
+                return false;
+            if (!M15FactoryRules.TryChoose(_factoryScaling, buildingId, specialization))
+            { wallet.Deposit(definition.Cost); return false; }
+            ApplyFactoryModifiers();
+            StateChanged?.Invoke(); return true;
+        }
+
+        public void RecordUpgradedRouteTransport(int units)
+        {
+            if (units <= 0) return;
+            _factoryScaling.upgradedRouteUnitsTransported = Math.Min(long.MaxValue,
+                _factoryScaling.upgradedRouteUnitsTransported + units);
+            StateChanged?.Invoke();
+        }
+
+        private void ApplyFactoryModifiers()
+        {
+            if (upgradeableBuildings == null) return;
+            for (int i=0;i<upgradeableBuildings.Length;i++)
+                if (upgradeableBuildings[i] is IProductionUpgradeable building
+                    && upgradeableBuildings[i] is IFactorySpecializable specialized)
+                    specialized.ApplyFactorySpecialization(
+                        _factoryScaling.GetFactory(building.ProductionBuildingId)?.specialization
+                        ?? FactorySpecialization.None, _factoryScaling.industrialDistrictLevel);
+            for (int i=0;upgradeableBuildings!=null&&i<upgradeableBuildings.Length;i++)
+                if(upgradeableBuildings[i] is IProductionUpgradeable building && upgradeableBuildings[i] is IFactorySpecializable specialized)
+                {var r=_factoryScaling.GetFactory(building.ProductionBuildingId);specialized.RestoreFactoryProgress(r?.efficiencyCompletedRemainder??0,r?.completedSpecializedCycles??0);}
+            IndustrialLogisticsRoute[] routes = logisticsNetwork?.Routes;
+            if (routes != null) for (int i=0;i<routes.Length;i++)
+                routes[i]?.ApplyIndustrialDistrictLevel(_factoryScaling.industrialDistrictLevel);
+        }
 
         public int GetProductionUpgradeCost(string buildingId,
             ProductionUpgradeCategory category)
@@ -189,6 +280,13 @@ namespace IndustryTycoon.Progression
             StateChanged?.Invoke();
         }
 
+        private void HandleRouteTransfer(IndustrialLogisticsRoute route,
+            ResourceType resourceType, int amount)
+        {
+            if (route != null && (route.SpeedUpgradeLevel > 0 || route.CapacityUpgradeLevel > 0))
+                RecordUpgradedRouteTransport(amount);
+        }
+
         private void SynchronizeAccess()
         {
             if (gateBlocker != null) gateBlocker.SetActive(!IsGateOpen);
@@ -248,6 +346,12 @@ namespace IndustryTycoon.Progression
             {
                 if (subscribe) assemblyPlant.RecipeCompleted += HandleRecipeCompleted;
                 else assemblyPlant.RecipeCompleted -= HandleRecipeCompleted;
+            }
+            IndustrialLogisticsRoute[] routes = logisticsNetwork?.Routes;
+            if (routes != null) for (int i=0;i<routes.Length;i++) if(routes[i]!=null)
+            {
+                if(subscribe) routes[i].TransferCommitted += HandleRouteTransfer;
+                else routes[i].TransferCommitted -= HandleRouteTransfer;
             }
         }
     }

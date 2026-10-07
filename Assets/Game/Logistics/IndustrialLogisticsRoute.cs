@@ -1,5 +1,6 @@
 using System;
 using IndustryTycoon.Core;
+using IndustryTycoon.Processing;
 using UnityEngine;
 
 namespace IndustryTycoon.Logistics
@@ -30,6 +31,9 @@ namespace IndustryTycoon.Logistics
         private IIndustrialResourceEndpoint _destination;
         private float _elapsed;
         private IndustrialRouteState _state = IndustrialRouteState.Disabled;
+        private float _baseTransferInterval;
+        private int _baseBatchSize;
+        private int _districtLevel = 1;
 
         public event Action StateChanged;
         public event Action<IndustrialLogisticsRoute, ResourceType, int>
@@ -47,6 +51,16 @@ namespace IndustryTycoon.Logistics
         public IndustrialRouteState State => _state;
         public int CapacityUpgradeLevel => capacityUpgradeLevel;
         public int SpeedUpgradeLevel => speedUpgradeLevel;
+        public int IndustrialDistrictLevel => _districtLevel;
+
+        public void ApplyIndustrialDistrictLevel(int level)
+        {
+            CaptureBaseTuning();
+            _districtLevel = Mathf.Clamp(level, 1, 3);
+            transferInterval = M15FactoryTuning.CalculateRouteInterval(
+                _baseTransferInterval, speedUpgradeLevel, _districtLevel);
+            _elapsed = 0f; RefreshState(); StateChanged?.Invoke();
+        }
 
         public int GetNextUpgradeCost(bool capacity)
         {
@@ -60,13 +74,16 @@ namespace IndustryTycoon.Logistics
             {
                 if (capacityUpgradeLevel >= 3) return false;
                 capacityUpgradeLevel++;
-                batchSize++;
+                CaptureBaseTuning();
+                batchSize = _baseBatchSize + capacityUpgradeLevel;
             }
             else
             {
                 if (speedUpgradeLevel >= 3) return false;
                 speedUpgradeLevel++;
-                transferInterval = Mathf.Max(0.1f, transferInterval * 0.8f);
+                CaptureBaseTuning();
+                transferInterval = M15FactoryTuning.CalculateRouteInterval(
+                    _baseTransferInterval, speedUpgradeLevel, _districtLevel);
             }
 
             // Timers are presentation-only. Restarting the interval means an upgrade
@@ -79,16 +96,28 @@ namespace IndustryTycoon.Logistics
 
         public void RestoreUpgradeLevels(int capacityLevel, int speedLevel)
         {
+            CaptureBaseTuning();
             capacityUpgradeLevel = Mathf.Clamp(capacityLevel, 0, 3);
             speedUpgradeLevel = Mathf.Clamp(speedLevel, 0, 3);
+            batchSize = _baseBatchSize + capacityUpgradeLevel;
+            transferInterval = M15FactoryTuning.CalculateRouteInterval(
+                _baseTransferInterval, speedUpgradeLevel, _districtLevel);
             _elapsed = 0f;
             RefreshState();
         }
 
         private void Awake()
         {
+            CaptureBaseTuning();
             ResolveEndpoints();
             RefreshState();
+        }
+
+        private void CaptureBaseTuning()
+        {
+            if (_baseTransferInterval > 0f) return;
+            _baseTransferInterval = Mathf.Max(.1f, transferInterval);
+            _baseBatchSize = Mathf.Max(1, batchSize);
         }
 
         private void OnEnable()

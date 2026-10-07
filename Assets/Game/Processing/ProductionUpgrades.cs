@@ -18,6 +18,16 @@ namespace IndustryTycoon.Processing
         bool ApplyUpgradeLevels(int speed, int input, int output);
     }
 
+    public interface IFactorySpecializable
+    {
+        FactorySpecialization Specialization { get; }
+        int IndustrialDistrictLevel { get; }
+        int EfficiencyCompletedRemainder { get; }
+        long CompletedSpecializedCycles { get; }
+        void ApplyFactorySpecialization(FactorySpecialization specialization, int districtLevel);
+        void RestoreFactoryProgress(int efficiencyRemainder, long completedCycles);
+    }
+
     public static class M14ProductionUpgradeTuning
     {
         public const int MaximumLevel = 3;

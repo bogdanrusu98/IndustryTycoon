@@ -23,7 +23,8 @@ namespace IndustryTycoon.UI
             float width = Mathf.Min(340f, Screen.width - 24f);
             GUILayout.BeginArea(new Rect(12f, Screen.height * 0.48f, width, Screen.height * 0.48f),
                 GUI.skin.box);
-            GUILayout.Label($"INDUSTRIAL DISTRICT  •  EMPIRE {progression.EmpireLevel}/15");
+            GUILayout.Label($"INDUSTRIAL DISTRICT L{district.DistrictLevel}  •  EMPIRE {district.EffectiveEmpireLevel}/20");
+            GUILayout.Label($"{_buildingId}: {district.GetProductionStatus(_buildingId)}");
             AssemblyPlant plant = district.AssemblyPlant;
             if (plant == null || !district.AssemblyPlantUnlocked)
             {
@@ -46,6 +47,11 @@ namespace IndustryTycoon.UI
                 district.TryPurchaseProductionUpgrade(_buildingId, ProductionUpgradeCategory.InputCapacity);
             if (GUILayout.Button("Output Capacity " + Cost(ProductionUpgradeCategory.OutputCapacity)))
                 district.TryPurchaseProductionUpgrade(_buildingId, ProductionUpgradeCategory.OutputCapacity);
+            GUILayout.Label("Specialization (permanent)");
+            if (GUILayout.Button("Throughput  $" + district.GetSpecializationCost(_buildingId)))
+                district.TryPurchaseSpecialization(_buildingId, FactorySpecialization.Throughput);
+            if (GUILayout.Button("Efficiency  $" + district.GetSpecializationCost(_buildingId)))
+                district.TryPurchaseSpecialization(_buildingId, FactorySpecialization.Efficiency);
             IndustrialLogisticsRoute route = FindFirstRoute();
             if (route != null)
             {

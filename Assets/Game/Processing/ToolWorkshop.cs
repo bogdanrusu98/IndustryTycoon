@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace IndustryTycoon.Processing
 {
-    public sealed class ToolWorkshop : MonoBehaviour, IProductionUpgradeable
+    public sealed class ToolWorkshop : MonoBehaviour, IProductionUpgradeable, IFactorySpecializable
     {
         private const int PlankInputIndex = 0;
         private const int IronBarInputIndex = 1;
@@ -43,6 +43,9 @@ namespace IndustryTycoon.Processing
         private int _speedUpgradeLevel;
         private int _inputUpgradeLevel;
         private int _outputUpgradeLevel;
+        private FactorySpecialization _specialization;
+        private int _districtLevel = 1;
+        private readonly Persistence.M15FactoryRecord _factoryProgress = new Persistence.M15FactoryRecord { buildingId = "tool_workshop" };
 
         public event Action<int, int, int, int, int, int> BufferChanged;
         public event Action<int, int, int> RecipeCompleted;
@@ -85,6 +88,13 @@ namespace IndustryTycoon.Processing
         public int SpeedUpgradeLevel => _speedUpgradeLevel;
         public int InputCapacityUpgradeLevel => _inputUpgradeLevel;
         public int OutputCapacityUpgradeLevel => _outputUpgradeLevel;
+        public FactorySpecialization Specialization => _specialization;
+        public int IndustrialDistrictLevel => _districtLevel;
+        public int EfficiencyCompletedRemainder => _factoryProgress.efficiencyCompletedRemainder;
+        public long CompletedSpecializedCycles => _factoryProgress.completedSpecializedCycles;
+        public void ApplyFactorySpecialization(FactorySpecialization specialization, int districtLevel)
+        { _specialization=specialization;_factoryProgress.specialization=specialization;_districtLevel=Mathf.Clamp(districtLevel,1,3);ApplyUpgradeLevels(_speedUpgradeLevel,_inputUpgradeLevel,_outputUpgradeLevel); }
+        public void RestoreFactoryProgress(int remainder,long cycles){_factoryProgress.efficiencyCompletedRemainder=Mathf.Clamp(remainder,0,4);_factoryProgress.completedSpecializedCycles=Math.Max(0,cycles);}
 
         private void Awake()
         {
@@ -105,8 +115,8 @@ namespace IndustryTycoon.Processing
                 + M14ProductionUpgradeTuning.GetCapacityBonus(_baseIronBarInputCapacity, _inputUpgradeLevel);
             outputCapacity = _baseOutputCapacity
                 + M14ProductionUpgradeTuning.GetCapacityBonus(_baseOutputCapacity, _outputUpgradeLevel);
-            processingDuration = _baseProcessingDuration
-                * M14ProductionUpgradeTuning.GetDurationMultiplier(_speedUpgradeLevel);
+            processingDuration = M15FactoryTuning.CalculateDuration(_baseProcessingDuration,
+                _speedUpgradeLevel, _specialization, ProductionBuildingId, _districtLevel);
             _processingWait = new WaitForSeconds(processingDuration);
             EnsureRuntimeState();
             NotifyBufferChanged();
@@ -380,6 +390,9 @@ namespace IndustryTycoon.Processing
             }
 
             _isProcessing = false;
+            Persistence.M15FactoryRules.CompleteRecipe(_factoryProgress, out bool conserve);
+            if (conserve) _storedInputs[PlankInputIndex] = Mathf.Min(
+                plankInputCapacity, _storedInputs[PlankInputIndex] + 1);
             _completedRecipeCount++;
             AssertInvariants();
             RecipeCompleted?.Invoke(

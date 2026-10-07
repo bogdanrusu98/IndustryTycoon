@@ -259,6 +259,9 @@ namespace IndustryTycoon.Persistence
                         trimmedJson,
                         validationSettings,
                         fallbackUtcUnixSeconds);
+                case M9SaveSchema.Version7:
+                    return DecodeVersion7(trimmedJson, validationSettings,
+                        fallbackUtcUnixSeconds);
                 default:
                     return M9SaveDecodeResult.Failed(
                         M9SaveDecodeStatus.UnsupportedVersion,
@@ -727,6 +730,8 @@ namespace IndustryTycoon.Persistence
                     $"Save body could not be decoded: {exception.Message}");
             }
 
+            decoded.version = M9SaveSchema.Version7;
+            decoded.factoryScaling = M15FactorySaveData.CreateFresh();
             if (!M9SaveValidator.TryNormalize(decoded, validationSettings,
                     fallbackUtcUnixSeconds, out M9SaveData normalized,
                     out string failure))
@@ -734,7 +739,20 @@ namespace IndustryTycoon.Persistence
                 return M9SaveDecodeResult.Failed(
                     M9SaveDecodeStatus.ValidationFailed, failure);
             }
-            return M9SaveDecodeResult.Succeeded(normalized);
+            return M9SaveDecodeResult.Succeeded(normalized, true);
+        }
+
+        private static M9SaveDecodeResult DecodeVersion7(string json,
+            M9SaveValidationSettings settings, long fallback)
+        {
+            M9SaveData decoded;
+            try { decoded = JsonUtility.FromJson<M9SaveData>(json); }
+            catch (Exception exception)
+            { return M9SaveDecodeResult.Failed(M9SaveDecodeStatus.MalformedJson, exception.Message); }
+            return M9SaveValidator.TryNormalize(decoded, settings, fallback,
+                    out M9SaveData normalized, out string failure)
+                ? M9SaveDecodeResult.Succeeded(normalized)
+                : M9SaveDecodeResult.Failed(M9SaveDecodeStatus.ValidationFailed, failure);
         }
 
         private static bool TryUpgradeVersion5Logistics(

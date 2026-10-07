@@ -296,11 +296,11 @@ namespace IndustryTycoon.Editor
             M9SaveDecodeResult result = M9SaveCodec.Decode(JsonUtility.ToJson(legacy),
                 M9SaveValidationSettings.CreateDefault(), Now);
             Require(result.IsSuccess && result.WasMigrated
-                    && result.Data.version == M9SaveSchema.Version6
+                    && result.Data.version == M9SaveSchema.CurrentVersion
                     && result.Data.logistics.warehouse.Get(ResourceType.IronBar).amount == 7
                     && result.Data.industrial != null
                     && !result.Data.industrial.districtEntered,
-                "M13 v5 save did not migrate to canonical v6 without reset: " + result.Diagnostic);
+                "M13 v5 save did not migrate to the current canonical schema without reset: " + result.Diagnostic);
         }
 
         private static void TestRoundTripAndReset()

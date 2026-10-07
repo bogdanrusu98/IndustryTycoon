@@ -13,7 +13,8 @@ namespace IndustryTycoon.Persistence
         public const int Version4 = 4;
         public const int Version5 = 5;
         public const int Version6 = 6;
-        public const int CurrentVersion = Version6;
+        public const int Version7 = 7;
+        public const int CurrentVersion = Version7;
     }
 
     public static class M9PurchasePadIds
@@ -267,6 +268,7 @@ namespace IndustryTycoon.Persistence
             M13RetentionSaveData.CreateFresh();
         public M14IndustrialSaveData industrial =
             M14IndustrialSaveData.CreateFresh();
+        public M15FactorySaveData factoryScaling = M15FactorySaveData.CreateFresh();
 
         public static M9SaveData CreateFresh(long utcNowUnixSeconds)
         {
@@ -282,6 +284,7 @@ namespace IndustryTycoon.Persistence
                 logistics = M13LogisticsSaveData.CreateFresh(),
                 retention = M13RetentionSaveData.CreateFresh(safeTimestamp),
                 industrial = M14IndustrialSaveData.CreateFresh(),
+                factoryScaling = M15FactorySaveData.CreateFresh(),
                 lastEvaluationUtcUnixSeconds = safeTimestamp,
                 lastWriteUtcUnixSeconds = safeTimestamp
             };
@@ -492,6 +495,9 @@ namespace IndustryTycoon.Persistence
                 || !M14IndustrialSaveValidator.TryNormalize(
                     source.industrial,
                     out M14IndustrialSaveData normalizedIndustrial,
+                    out failureReason)
+                || !M15FactorySaveValidator.TryNormalize(source.factoryScaling,
+                    out M15FactorySaveData normalizedFactoryScaling,
                     out failureReason))
             {
                 return false;
@@ -606,7 +612,8 @@ namespace IndustryTycoon.Persistence
                 workshop = normalizedWorkshop,
                 logistics = normalizedLogistics,
                 retention = normalizedRetention
-                ,industrial = normalizedIndustrial
+                ,industrial = normalizedIndustrial,
+                factoryScaling = normalizedFactoryScaling
             };
             return true;
         }

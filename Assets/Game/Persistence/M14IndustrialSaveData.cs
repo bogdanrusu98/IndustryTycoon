@@ -153,6 +153,11 @@ namespace IndustryTycoon.Persistence
                 AssemblyPlant.StableEndpointId);
             double duration = 3d * M14ProductionUpgradeTuning.GetDurationMultiplier(
                 upgrade?.speedLevel ?? 0);
+            M15FactoryRecord factory = data.factoryScaling?.GetFactory(AssemblyPlant.StableEndpointId);
+            duration = M15FactoryTuning.CalculateDuration(3f, upgrade?.speedLevel ?? 0,
+                factory?.specialization ?? FactorySpecialization.None,
+                AssemblyPlant.StableEndpointId,
+                data.factoryScaling?.industrialDistrictLevel ?? 1);
             long timeBudget = (long)Math.Floor(
                 creditedAwaySeconds * Math.Min(1d, Math.Max(0d, efficiency)) / duration);
             int outputCapacity = 12 + M14ProductionUpgradeTuning.GetCapacityBonus(
@@ -162,7 +167,10 @@ namespace IndustryTycoon.Persistence
                     Math.Min(data.industrial.assemblyInputTools,
                         outputCapacity - data.industrial.assemblyOutputMachineParts))));
             if (recipes <= 0) return 0;
-            data.industrial.assemblyInputIronBars -= recipes * 2;
+            int conserved = 0;
+            for (int i = 0; i < recipes; i++)
+                if (M15FactoryRules.CompleteRecipe(factory, out bool conserve) && conserve) conserved++;
+            data.industrial.assemblyInputIronBars -= recipes * 2 - conserved;
             data.industrial.assemblyInputTools -= recipes;
             data.industrial.assemblyOutputMachineParts += recipes;
             return recipes;

@@ -584,8 +584,11 @@ namespace IndustryTycoon.Persistence
             M9SaveData data, string id, double baseDuration)
         {
             M14BuildingUpgradeSaveRecord record = data?.industrial?.GetBuildingUpgrade(id);
-            return baseDuration * M14ProductionUpgradeTuning.GetDurationMultiplier(
-                record?.speedLevel ?? 0);
+            M15FactoryRecord factory = data?.factoryScaling?.GetFactory(id);
+            return M15FactoryTuning.CalculateDuration((float)baseDuration,
+                record?.speedLevel ?? 0,
+                factory?.specialization ?? FactorySpecialization.None,
+                id, data?.factoryScaling?.industrialDistrictLevel ?? 1);
         }
 
         private double ResolveOfflineProductionSeconds(M9SaveData data)
@@ -639,6 +642,18 @@ namespace IndustryTycoon.Persistence
             data.workshop.inputPlanks = result.ToolWorkshopInputPlanks;
             data.workshop.inputIronBars = result.ToolWorkshopInputIronBars;
             data.workshop.outputTools = result.ToolWorkshopOutputTools;
+            if (data.factoryScaling != null)
+            {
+                M15FactoryRules.CompleteRecipes(data.factoryScaling.GetFactory("wood_processor"),
+                    result.ProcessorRecipesCompleted, out int conservedWood);
+                data.processorInputWood = Math.Min(ResolveUpgradedCapacity(
+                    data, "wood_processor", 24, true), data.processorInputWood + conservedWood);
+                M15FactoryRules.CompleteRecipes(data.factoryScaling.GetFactory("tool_workshop"),
+                    result.ToolWorkshopRecipesCompleted, out int conservedPlanks);
+                data.workshop.inputPlanks = Math.Min(ResolveUpgradedCapacity(
+                    data, "tool_workshop", 24, true), data.workshop.inputPlanks + conservedPlanks);
+                M15FactoryRules.RecalculateDistrictLevel(data.factoryScaling);
+            }
             data.pendingOfflineCash = result.PendingOfflineCash;
             data.pendingOfflineAwaySeconds = result.PendingOfflineAwaySeconds;
             data.returnScreenPending = result.ReturnScreenPending;
@@ -676,6 +691,7 @@ namespace IndustryTycoon.Persistence
             {
                 progressionService?.RestorePersistentState(data.progression);
                 industrialDistrictService?.RestorePersistentState(data.industrial);
+                industrialDistrictService?.RestoreFactoryScalingState(data.factoryScaling);
                 retentionGoalService?.RestorePersistentState(
                     data.retention,
                     utcNowUnixSeconds);
@@ -995,6 +1011,9 @@ namespace IndustryTycoon.Persistence
             snapshot.industrial = industrialDistrictService != null
                 ? industrialDistrictService.CapturePersistentState()
                 : _state.industrial;
+            snapshot.factoryScaling = industrialDistrictService != null
+                ? industrialDistrictService.CaptureFactoryScalingState()
+                : _state.factoryScaling;
             snapshot.pendingOfflineCash = _state.pendingOfflineCash;
             snapshot.pendingOfflineAwaySeconds = _state.pendingOfflineAwaySeconds;
             snapshot.returnScreenPending = _state.returnScreenPending;

@@ -29,7 +29,7 @@ namespace IndustryTycoon.Processing
     }
 
     public class PackingStation : MonoBehaviour, IIndustrialResourceEndpoint,
-        IProductionUpgradeable
+        IProductionUpgradeable, IFactorySpecializable
     {
         private const int PlanksRequiredPerRecipe = 2;
         private const int CratesProducedPerRecipe = 1;
@@ -67,6 +67,9 @@ namespace IndustryTycoon.Processing
         private int _speedUpgradeLevel;
         private int _inputUpgradeLevel;
         private int _outputUpgradeLevel;
+        private FactorySpecialization _specialization;
+        private int _districtLevel = 1;
+        private readonly Persistence.M15FactoryRecord _factoryProgress = new Persistence.M15FactoryRecord();
 
         public event Action<int, int, int, int> BufferChanged;
         public event Action<int> CourierOutputReservationChanged;
@@ -104,6 +107,13 @@ namespace IndustryTycoon.Processing
         public int SpeedUpgradeLevel => _speedUpgradeLevel;
         public int InputCapacityUpgradeLevel => _inputUpgradeLevel;
         public int OutputCapacityUpgradeLevel => _outputUpgradeLevel;
+        public FactorySpecialization Specialization => _specialization;
+        public int IndustrialDistrictLevel => _districtLevel;
+        public int EfficiencyCompletedRemainder => _factoryProgress.efficiencyCompletedRemainder;
+        public long CompletedSpecializedCycles => _factoryProgress.completedSpecializedCycles;
+        public void ApplyFactorySpecialization(FactorySpecialization specialization, int districtLevel)
+        { _specialization=specialization;_factoryProgress.buildingId=ProductionBuildingId;_factoryProgress.specialization=specialization;_districtLevel=Mathf.Clamp(districtLevel,1,3);ApplyUpgradeLevels(_speedUpgradeLevel,_inputUpgradeLevel,_outputUpgradeLevel); }
+        public void RestoreFactoryProgress(int remainder,long cycles){_factoryProgress.efficiencyCompletedRemainder=Mathf.Clamp(remainder,0,4);_factoryProgress.completedSpecializedCycles=Math.Max(0,cycles);}
 
         protected virtual ResourceType InputResourceType => ResourceType.Plank;
         protected virtual ResourceType OutputResourceType => ResourceType.Crate;
@@ -125,8 +135,8 @@ namespace IndustryTycoon.Processing
                 + M14ProductionUpgradeTuning.GetCapacityBonus(_baseInputCapacity, _inputUpgradeLevel);
             outputCapacity = _baseOutputCapacity
                 + M14ProductionUpgradeTuning.GetCapacityBonus(_baseOutputCapacity, _outputUpgradeLevel);
-            processingDuration = _baseProcessingDuration
-                * M14ProductionUpgradeTuning.GetDurationMultiplier(_speedUpgradeLevel);
+            processingDuration = M15FactoryTuning.CalculateDuration(_baseProcessingDuration,
+                _speedUpgradeLevel, _specialization, ProductionBuildingId, _districtLevel);
             RebuildProcessingWait();
             NotifyBufferChanged();
             return true;
@@ -662,6 +672,8 @@ namespace IndustryTycoon.Processing
             _reservedOutputCapacity = 0;
             _outputCrates += CratesProducedPerRecipe;
             _isProcessing = false;
+            Persistence.M15FactoryRules.CompleteRecipe(_factoryProgress, out bool conserve);
+            if (conserve) _inputPlanks = Mathf.Min(inputCapacity, _inputPlanks + 1);
             _completedRecipeCount++;
 
             AssertInvariants();

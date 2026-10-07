@@ -8,7 +8,7 @@ using UnityEngine;
 namespace IndustryTycoon.Processing
 {
     public sealed class AssemblyPlant : MonoBehaviour, IIndustrialResourceEndpoint,
-        IProductionUpgradeable
+        IProductionUpgradeable, IFactorySpecializable
     {
         public const string StableEndpointId = "assembly_plant";
         private const int IronBarIndex = 0;
@@ -32,6 +32,9 @@ namespace IndustryTycoon.Processing
         private int _speedLevel;
         private int _inputLevel;
         private int _outputLevel;
+        private FactorySpecialization _specialization;
+        private int _districtLevel = 1;
+        private readonly Persistence.M15FactoryRecord _factoryProgress = new Persistence.M15FactoryRecord { buildingId = StableEndpointId };
         private int _reservedIncomingBars;
         private int _reservedIncomingTools;
         private int _reservedOutgoing;
@@ -49,14 +52,21 @@ namespace IndustryTycoon.Processing
         public int SpeedUpgradeLevel => _speedLevel;
         public int InputCapacityUpgradeLevel => _inputLevel;
         public int OutputCapacityUpgradeLevel => _outputLevel;
+        public FactorySpecialization Specialization => _specialization;
+        public int IndustrialDistrictLevel => _districtLevel;
+        public int EfficiencyCompletedRemainder => _factoryProgress.efficiencyCompletedRemainder;
+        public long CompletedSpecializedCycles => _factoryProgress.completedSpecializedCycles;
+        public void ApplyFactorySpecialization(FactorySpecialization specialization, int districtLevel)
+        { _specialization=specialization;_factoryProgress.specialization=specialization;_districtLevel=Mathf.Clamp(districtLevel,1,3);StateChanged?.Invoke(); }
+        public void RestoreFactoryProgress(int remainder,long cycles){_factoryProgress.efficiencyCompletedRemainder=Mathf.Clamp(remainder,0,4);_factoryProgress.completedSpecializedCycles=Math.Max(0,cycles);}
         public int InputIronBars => _inputs[IronBarIndex];
         public int InputTools => _inputs[ToolIndex];
         public int OutputMachineParts => _output;
         public int IronBarInputCapacity => EffectiveCapacity(ironBarInputCapacity, _inputLevel);
         public int ToolInputCapacity => EffectiveCapacity(toolInputCapacity, _inputLevel);
         public int OutputCapacity => EffectiveCapacity(outputCapacity, _outputLevel);
-        public float ProcessingDuration => processingDuration
-                                           * M14ProductionUpgradeTuning.GetDurationMultiplier(_speedLevel);
+        public float ProcessingDuration => M15FactoryTuning.CalculateDuration(processingDuration,
+            _speedLevel, _specialization, ProductionBuildingId, _districtLevel);
         public bool IsProcessing => _processing;
         public int ProcessingIronBars => Owned(IronBarIndex);
         public int ProcessingTools => Owned(ToolIndex);
@@ -205,6 +215,8 @@ namespace IndustryTycoon.Processing
                 return false;
             }
             _processing = false;
+            Persistence.M15FactoryRules.CompleteRecipe(_factoryProgress, out bool conserve);
+            if (conserve) _inputs[IronBarIndex] = Mathf.Min(IronBarInputCapacity, _inputs[IronBarIndex] + 1);
             RecipeCompleted?.Invoke(OutputPerRecipe);
             StateChanged?.Invoke();
             TryStartProcessing();
