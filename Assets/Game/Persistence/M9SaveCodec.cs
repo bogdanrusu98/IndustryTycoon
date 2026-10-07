@@ -1,5 +1,6 @@
 using System;
 using IndustryTycoon.Core;
+using IndustryTycoon.Market;
 using IndustryTycoon.Progression;
 using UnityEngine;
 
@@ -261,6 +262,9 @@ namespace IndustryTycoon.Persistence
                         fallbackUtcUnixSeconds);
                 case M9SaveSchema.Version7:
                     return DecodeVersion7(trimmedJson, validationSettings,
+                        fallbackUtcUnixSeconds);
+                case M9SaveSchema.Version8:
+                    return DecodeVersion8(trimmedJson, validationSettings,
                         fallbackUtcUnixSeconds);
                 default:
                     return M9SaveDecodeResult.Failed(
@@ -730,8 +734,16 @@ namespace IndustryTycoon.Persistence
                     $"Save body could not be decoded: {exception.Message}");
             }
 
-            decoded.version = M9SaveSchema.Version7;
+            string upgradeFailure = null;
+            M10ProgressionSaveData upgraded = null;
+            if (decoded == null || !TryUpgradeLegacyProgression(decoded.progression,
+                    39, 8, 16, 19, out upgraded, out upgradeFailure))
+                return M9SaveDecodeResult.Failed(M9SaveDecodeStatus.ValidationFailed,
+                    upgradeFailure ?? "Version 6 save body is missing.");
+            decoded.version = M9SaveSchema.CurrentVersion;
+            decoded.progression = upgraded;
             decoded.factoryScaling = M15FactorySaveData.CreateFresh();
+            decoded.market = M16MarketSaveData.CreateFresh(fallbackUtcUnixSeconds);
             if (!M9SaveValidator.TryNormalize(decoded, validationSettings,
                     fallbackUtcUnixSeconds, out M9SaveData normalized,
                     out string failure))
@@ -743,6 +755,28 @@ namespace IndustryTycoon.Persistence
         }
 
         private static M9SaveDecodeResult DecodeVersion7(string json,
+            M9SaveValidationSettings settings, long fallback)
+        {
+            M9SaveData decoded;
+            try { decoded = JsonUtility.FromJson<M9SaveData>(json); }
+            catch (Exception exception)
+            { return M9SaveDecodeResult.Failed(M9SaveDecodeStatus.MalformedJson, exception.Message); }
+            string upgradeFailure = null;
+            M10ProgressionSaveData upgraded = null;
+            if (decoded == null || !TryUpgradeLegacyProgression(decoded.progression,
+                    39, 8, 16, 19, out upgraded, out upgradeFailure))
+                return M9SaveDecodeResult.Failed(M9SaveDecodeStatus.ValidationFailed,
+                    upgradeFailure ?? "Version 7 save body is missing.");
+            decoded.version = M9SaveSchema.CurrentVersion;
+            decoded.progression = upgraded;
+            decoded.market = M16MarketSaveData.CreateFresh(fallback);
+            return M9SaveValidator.TryNormalize(decoded, settings, fallback,
+                    out M9SaveData normalized, out string failure)
+                ? M9SaveDecodeResult.Succeeded(normalized, true)
+                : M9SaveDecodeResult.Failed(M9SaveDecodeStatus.ValidationFailed, failure);
+        }
+
+        private static M9SaveDecodeResult DecodeVersion8(string json,
             M9SaveValidationSettings settings, long fallback)
         {
             M9SaveData decoded;

@@ -41390,6 +41390,7 @@ MonoBehaviour:
   logisticsNetwork: {fileID: 1718962755}
   retentionGoalService: {fileID: 1717143276}
   industrialDistrictService: {fileID: 1946546139}
+  marketPlanningService: {fileID: 560176526}
   saveDebounceSeconds: 3
   returnScreenThresholdSeconds: 300
   maximumCreditedAwaySeconds: 14400
@@ -47194,6 +47195,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::IndustryTycoon.Logistics.CrateCourier
   packingStation: {fileID: 239697356}
   cashPile: {fileID: 915469156}
+  marketPlanningService: {fileID: 560176526}
   pickupPoint: {fileID: 1277790718}
   deliveryPoint: {fileID: 2037967283}
   movementSpeed: 3.5
@@ -95400,6 +95402,7 @@ MonoBehaviour:
   carryStack: {fileID: 1087536619}
   cashPile: {fileID: 915469156}
   playerCollider: {fileID: 1087536615}
+  marketPlanningService: {fileID: 560176526}
   resourceType: 0
   woodValue: 5
   plankValue: 15
@@ -170019,3 +170022,74 @@ SceneRoots:
   - {fileID: 2009858746}
   - {fileID: 169786817}
   - {fileID: 1882413790}
+  - {fileID: 560176528}
+--- !u!1 &560176525
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 560176528}
+  - component: {fileID: 560176526}
+  - component: {fileID: 560176527}
+  m_Layer: 0
+  m_Name: Market Planning
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &560176526
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 560176525}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1664b8a7518a2a4d8906b30e0d63207, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::IndustryTycoon.Market.MarketPlanningService
+  progressionService: {fileID: 1045176728}
+  industrialDistrictService: {fileID: 1946546139}
+  warehouse: {fileID: 805616367}
+  wallet: {fileID: 1087536621}
+  salePoint: {fileID: 1322070648}
+  courier: {fileID: 724316417}
+  smelter: {fileID: 2054962147}
+  toolWorkshop: {fileID: 514652912}
+  rotationSeconds: 300
+  flowWindowSeconds: 180
+  flowBonusSeconds: 180
+--- !u!114 &560176527
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 560176525}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 739f29fad4862df44b631927cf13a4ec, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::IndustryTycoon.UI.MarketPlanningView
+  market: {fileID: 560176526}
+  visible: 1
+--- !u!4 &560176528
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 560176525}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}

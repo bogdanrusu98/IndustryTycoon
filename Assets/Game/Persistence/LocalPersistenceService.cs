@@ -3,6 +3,7 @@ using IndustryTycoon.Core;
 using IndustryTycoon.Economy;
 using IndustryTycoon.Interaction;
 using IndustryTycoon.Logistics;
+using IndustryTycoon.Market;
 using IndustryTycoon.Mining;
 using IndustryTycoon.Player;
 using IndustryTycoon.Processing;
@@ -57,6 +58,7 @@ namespace IndustryTycoon.Persistence
         [SerializeField] private IndustrialLogisticsNetwork logisticsNetwork;
         [SerializeField] private RetentionGoalService retentionGoalService;
         [SerializeField] private IndustrialDistrictService industrialDistrictService;
+        [SerializeField] private MarketPlanningService marketPlanningService;
 
         [Header("Save Cadence")]
         [SerializeField, Min(0.25f)] private float saveDebounceSeconds = 3f;
@@ -125,6 +127,7 @@ namespace IndustryTycoon.Persistence
         public IndustrialLogisticsNetwork LogisticsNetwork => logisticsNetwork;
         public RetentionGoalService RetentionGoalService => retentionGoalService;
         public IndustrialDistrictService IndustrialDistrictService => industrialDistrictService;
+        public MarketPlanningService MarketPlanningService => marketPlanningService;
         public float SaveDebounceSeconds => saveDebounceSeconds;
         public float ReturnScreenThresholdSeconds => returnScreenThresholdSeconds;
         public float MaximumCreditedAwaySeconds => maximumCreditedAwaySeconds;
@@ -468,6 +471,11 @@ namespace IndustryTycoon.Persistence
                     ProgressMetricId.MachinePartsProduced,
                     offlineMachineParts);
             }
+            M16MarketRules.Advance(data.market, now,
+                marketPlanningService != null ? marketPlanningService.RotationSeconds : M16MarketRules.DefaultRotationSeconds,
+                BuildMarketUnlockContext(data.progression));
+            if (data.market != null && now >= data.market.lastAcceptedUtcUnixSeconds)
+                data.market.lastAcceptedUtcUnixSeconds = now;
             OfflineProgressionInput input = BuildOfflineInput(data, now);
             OfflineProgressionRules rules = BuildOfflineRules(data);
             LastOfflineResult = OfflineProgressionCalculator.Calculate(input, rules);
@@ -702,6 +710,7 @@ namespace IndustryTycoon.Persistence
                 progressionService?.RestorePersistentState(data.progression);
                 industrialDistrictService?.RestorePersistentState(data.industrial);
                 industrialDistrictService?.RestoreFactoryScalingState(data.factoryScaling);
+                marketPlanningService?.RestorePersistentState(data.market);
                 retentionGoalService?.RestorePersistentState(
                     data.retention,
                     utcNowUnixSeconds);
@@ -874,7 +883,8 @@ namespace IndustryTycoon.Persistence
                 || toolWorkshop == null
                 || centralWarehouse == null
                 || logisticsNetwork == null
-                || retentionGoalService == null)
+                || retentionGoalService == null
+                || marketPlanningService == null)
             {
                 failure = "Persistence references are incomplete.";
                 return false;
@@ -1024,6 +1034,9 @@ namespace IndustryTycoon.Persistence
             snapshot.factoryScaling = industrialDistrictService != null
                 ? industrialDistrictService.CaptureFactoryScalingState()
                 : _state.factoryScaling;
+            snapshot.market = marketPlanningService != null
+                ? marketPlanningService.CapturePersistentState()
+                : _state.market;
             snapshot.pendingOfflineCash = _state.pendingOfflineCash;
             snapshot.pendingOfflineAwaySeconds = _state.pendingOfflineAwaySeconds;
             snapshot.returnScreenPending = _state.returnScreenPending;
@@ -1153,6 +1166,10 @@ namespace IndustryTycoon.Persistence
             {
                 industrialDistrictService.StateChanged += HandleChanged;
             }
+            if (marketPlanningService != null)
+            {
+                marketPlanningService.StateChanged += HandleChanged;
+            }
             if (progressionService != null)
             {
                 progressionService.StateChanged += HandleChanged;
@@ -1197,6 +1214,10 @@ namespace IndustryTycoon.Persistence
             if (industrialDistrictService != null)
             {
                 industrialDistrictService.StateChanged -= HandleChanged;
+            }
+            if (marketPlanningService != null)
+            {
+                marketPlanningService.StateChanged -= HandleChanged;
             }
             if (progressionService != null)
             {
@@ -1396,6 +1417,20 @@ namespace IndustryTycoon.Persistence
         private static bool CanUseDevelopmentUtilities()
         {
             return Application.isEditor || Debug.isDebugBuild;
+        }
+
+        private static MarketUnlockContext BuildMarketUnlockContext(
+            M10ProgressionSaveData progression)
+        {
+            int mask = 1 << (int)ResourceType.Wood;
+            if (progression == null) return new MarketUnlockContext(mask);
+            if (progression.GetFlag(ProgressFlagId.ProcessorUnlocked)) mask |= 1 << (int)ResourceType.Plank;
+            if (progression.GetFlag(ProgressFlagId.PackingStationUnlocked)) mask |= 1 << (int)ResourceType.Crate;
+            if (progression.GetMetric(ProgressMetricId.MineUnlocked) > 0) mask |= 1 << (int)ResourceType.IronOre;
+            if (progression.GetFlag(ProgressFlagId.SmelterUnlocked)) mask |= 1 << (int)ResourceType.IronBar;
+            if (progression.GetMetric(ProgressMetricId.ToolWorkshopUnlocked) > 0) mask |= 1 << (int)ResourceType.Tool;
+            if (progression.GetMetric(ProgressMetricId.AssemblyPlantUnlocked) > 0) mask |= 1 << (int)ResourceType.MachinePart;
+            return new MarketUnlockContext(mask);
         }
 
         private void OnValidate()

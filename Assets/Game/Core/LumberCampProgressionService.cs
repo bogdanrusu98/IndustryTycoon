@@ -3,6 +3,7 @@ using IndustryTycoon.Core;
 using IndustryTycoon.Economy;
 using IndustryTycoon.Interaction;
 using IndustryTycoon.Logistics;
+using IndustryTycoon.Market;
 using IndustryTycoon.Mining;
 using IndustryTycoon.Player;
 using IndustryTycoon.Processing;
@@ -260,6 +261,13 @@ namespace IndustryTycoon.Progression
         {
             return _model != null && _model.RecordMachinePartsProduced(amount);
         }
+
+        public bool RecordMarketUnlocked() => _model != null && _model.RecordMarketUnlocked();
+        public bool RecordProductionOrderCompleted(bool advancedMachinePart) =>
+            _model != null && _model.RecordProductionOrderCompleted(advancedMachinePart);
+        public bool RecordMarketSale(DemandTier tier, int bonusRevenue) =>
+            _model != null && _model.RecordMarketSale(tier, bonusRevenue);
+        public bool RecordFlowBonusTriggered() => _model != null && _model.RecordFlowBonusTriggered();
 
         public bool RecordProductionUpgradePurchased()
         {

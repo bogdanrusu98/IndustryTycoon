@@ -104,7 +104,9 @@ namespace IndustryTycoon.Progression
             progressionService != null
             && progressionService.GetMetric(ProgressMetricId.IndustrialRouteOperational) > 0L,
             progressionService != null
-            && progressionService.GetMetric(ProgressMetricId.AssemblyPlantUnlocked) > 0L);
+            && progressionService.GetMetric(ProgressMetricId.AssemblyPlantUnlocked) > 0L,
+            progressionService != null
+            && progressionService.GetMetric(ProgressMetricId.MarketUnlocked) > 0L);
 
         private bool TryGrantCash(int amount) => amount > 0
                                                  && wallet != null

@@ -45,7 +45,15 @@ namespace IndustryTycoon.Progression
         MachinePartsTransported = 35,
         ProductionUpgradesPurchased = 36,
         LogisticsUpgradesPurchased = 37,
-        AdvancedManufacturingContractsCompleted = 38
+        AdvancedManufacturingContractsCompleted = 38,
+        MarketUnlocked = 39,
+        ProductionOrdersCompleted = 40,
+        HighBoomSales = 41,
+        FlowBonusesTriggered = 42,
+        AdvancedMachinePartOrdersCompleted = 43,
+        MarketBonusRevenue = 44,
+        HighDemandSales = 45,
+        BoomDemandSales = 46
     }
 
     public enum ProgressFlagId
@@ -320,7 +328,15 @@ namespace IndustryTycoon.Progression
             "machine_parts_transported",
             "production_upgrades_purchased",
             "logistics_upgrades_purchased",
-            "advanced_manufacturing_contracts_completed"
+            "advanced_manufacturing_contracts_completed",
+            "market_unlocked",
+            "production_orders_completed",
+            "high_boom_sales",
+            "flow_bonuses_triggered",
+            "advanced_machine_part_orders_completed",
+            "market_bonus_revenue",
+            "high_demand_sales",
+            "boom_demand_sales"
         };
 
         private static readonly string[] FlagStableIds =

@@ -18,7 +18,8 @@ namespace IndustryTycoon.Editor
                 LumberCampM14Tests.RunAllForValidator();
                 IndustryTycoon.EditorTests.LumberCampM151IntegrationTests
                     .RunAllForValidator();
-                Debug.Log("M9-M15 deterministic regression PASS.");
+                IndustryTycoon.EditorTests.LumberCampM16Tests.RunAllForValidator();
+                Debug.Log("M9-M16 deterministic regression PASS.");
                 EditorApplication.Exit(0);
             }
             catch (Exception exception)

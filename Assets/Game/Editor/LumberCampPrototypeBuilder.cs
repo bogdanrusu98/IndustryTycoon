@@ -7,6 +7,7 @@ using IndustryTycoon.Economy;
 using IndustryTycoon.Feedback;
 using IndustryTycoon.Interaction;
 using IndustryTycoon.Logistics;
+using IndustryTycoon.Market;
 using IndustryTycoon.Mining;
 using IndustryTycoon.Persistence;
 using IndustryTycoon.Player;
@@ -678,6 +679,9 @@ namespace IndustryTycoon.Editor
                     m12Services.Workshop,
                     m13Packing,
                     m13Services);
+            MarketPlanningService marketPlanningService = CreateM16MarketPlanning(
+                scene, progressionService, industrialDistrictService, m13Services.Warehouse,
+                wallet, salePoint, courier, m11Services.Smelter, m12Services.Workshop);
             LocalPersistenceService persistenceService = CreateM9Persistence(
                 scene,
                 wallet,
@@ -698,7 +702,8 @@ namespace IndustryTycoon.Editor
                 m12Services,
                 m13Services,
                 retentionGoalService,
-                industrialDistrictService);
+                industrialDistrictService,
+                marketPlanningService);
             CreateLighting(scene);
             NextUnlockGuidance nextUnlockGuidance = CreateHud(
                 scene,
@@ -4516,7 +4521,8 @@ namespace IndustryTycoon.Editor
             M12Services m12Services,
             M13Services m13Services,
             RetentionGoalService retentionGoalService,
-            IndustrialDistrictService industrialDistrictService)
+            IndustrialDistrictService industrialDistrictService,
+            MarketPlanningService marketPlanningService)
         {
             LumberWorker worker = workerUnlock != null && workerUnlock.WorkerRoot != null
                 ? workerUnlock.WorkerRoot.GetComponent<LumberWorker>()
@@ -4558,8 +4564,9 @@ namespace IndustryTycoon.Editor
                     && m13Services.Warehouse != null
                     && m13Services.Network != null
                     && retentionGoalService != null
-                    && industrialDistrictService != null,
-                "M14 persistence requires the complete authoritative production state graph.");
+                    && industrialDistrictService != null
+                    && marketPlanningService != null,
+                "M16 persistence requires the complete authoritative production state graph.");
 
             GameObject root = new GameObject("Local Persistence");
             SceneManager.MoveGameObjectToScene(root, scene);
@@ -4603,11 +4610,45 @@ namespace IndustryTycoon.Editor
             SetObjectReference(service, "logisticsNetwork", m13Services.Network);
             SetObjectReference(service, "retentionGoalService", retentionGoalService);
             SetObjectReference(service, "industrialDistrictService", industrialDistrictService);
+            SetObjectReference(service, "marketPlanningService", marketPlanningService);
             SetFloat(service, "saveDebounceSeconds", 3f);
             SetFloat(service, "returnScreenThresholdSeconds", 300f);
             SetFloat(service, "maximumCreditedAwaySeconds", 14400f);
             SetFloat(service, "offlineEfficiency", 0.60f);
             SetFloat(service, "workerSecondsPerWood", 6.50f);
+            return service;
+        }
+
+        private static MarketPlanningService CreateM16MarketPlanning(
+            Scene scene,
+            LumberCampProgressionService progression,
+            IndustrialDistrictService district,
+            CentralWarehouse warehouse,
+            Wallet wallet,
+            SalePoint salePoint,
+            CrateCourier courier,
+            Smelter smelter,
+            ToolWorkshop workshop)
+        {
+            Require(progression != null && district != null && warehouse != null
+                    && wallet != null && salePoint != null && smelter != null
+                    && courier != null && workshop != null && district.AssemblyPlant != null,
+                "M16 market requires authoritative sale, warehouse and production sources.");
+            GameObject root = new GameObject("Market Planning");
+            SceneManager.MoveGameObjectToScene(root, scene);
+            MarketPlanningService service = root.AddComponent<MarketPlanningService>();
+            SetObjectReference(service, "progressionService", progression);
+            SetObjectReference(service, "industrialDistrictService", district);
+            SetObjectReference(service, "warehouse", warehouse);
+            SetObjectReference(service, "wallet", wallet);
+            SetObjectReference(service, "salePoint", salePoint);
+            SetObjectReference(service, "courier", courier);
+            SetObjectReference(service, "smelter", smelter);
+            SetObjectReference(service, "toolWorkshop", workshop);
+            SetObjectReference(salePoint, "marketPlanningService", service);
+            SetObjectReference(courier, "marketPlanningService", service);
+            MarketPlanningView view = root.AddComponent<MarketPlanningView>();
+            SetObjectReference(view, "market", service);
             return service;
         }
 

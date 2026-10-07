@@ -1,6 +1,7 @@
 using System.Collections;
 using IndustryTycoon.Core;
 using IndustryTycoon.Economy;
+using IndustryTycoon.Market;
 using IndustryTycoon.Player;
 using UnityEngine;
 
@@ -57,6 +58,7 @@ namespace IndustryTycoon.Interaction
         [SerializeField] private CarryStack carryStack;
         [SerializeField] private CashPile cashPile;
         [SerializeField] private Collider playerCollider;
+        [SerializeField] private MarketPlanningService marketPlanningService;
 
         [Header("Sale")]
         [SerializeField] private ResourceType resourceType = ResourceType.Wood;
@@ -228,25 +230,13 @@ namespace IndustryTycoon.Interaction
 
         public int GetUnitValue(ResourceType carriedResourceType)
         {
-            switch (carriedResourceType)
-            {
-                case ResourceType.Wood:
-                    return woodValue;
-                case ResourceType.Plank:
-                    return plankValue;
-                case ResourceType.Crate:
-                    return crateValue;
-                case ResourceType.IronOre:
-                    return ironOreValue;
-                case ResourceType.IronBar:
-                    return ironBarValue;
-                case ResourceType.Tool:
-                    return toolValue;
-                case ResourceType.MachinePart:
-                    return machinePartValue;
-                default:
-                    return 0;
-            }
+            // All normal sales resolve through the M16 pricing pipeline. The
+            // fallback is the same calculator, so isolated tests/scenes cannot
+            // silently retain a second implementation.
+            return marketPlanningService != null
+                ? marketPlanningService.GetNormalSaleValue(carriedResourceType)
+                : M16MarketRules.CalculateSaleValue(
+                    carriedResourceType, DemandTier.Normal, false);
         }
 
         private bool TryResolveCurrentSale(

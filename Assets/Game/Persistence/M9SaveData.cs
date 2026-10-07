@@ -1,5 +1,6 @@
 using System;
 using IndustryTycoon.Core;
+using IndustryTycoon.Market;
 using IndustryTycoon.Progression;
 
 namespace IndustryTycoon.Persistence
@@ -14,7 +15,8 @@ namespace IndustryTycoon.Persistence
         public const int Version5 = 5;
         public const int Version6 = 6;
         public const int Version7 = 7;
-        public const int CurrentVersion = Version7;
+        public const int Version8 = 8;
+        public const int CurrentVersion = Version8;
     }
 
     public static class M9PurchasePadIds
@@ -269,6 +271,7 @@ namespace IndustryTycoon.Persistence
         public M14IndustrialSaveData industrial =
             M14IndustrialSaveData.CreateFresh();
         public M15FactorySaveData factoryScaling = M15FactorySaveData.CreateFresh();
+        public M16MarketSaveData market = M16MarketSaveData.CreateFresh(0L);
 
         public static M9SaveData CreateFresh(long utcNowUnixSeconds)
         {
@@ -285,6 +288,7 @@ namespace IndustryTycoon.Persistence
                 retention = M13RetentionSaveData.CreateFresh(safeTimestamp),
                 industrial = M14IndustrialSaveData.CreateFresh(),
                 factoryScaling = M15FactorySaveData.CreateFresh(),
+                market = M16MarketSaveData.CreateFresh(safeTimestamp),
                 lastEvaluationUtcUnixSeconds = safeTimestamp,
                 lastWriteUtcUnixSeconds = safeTimestamp
             };
@@ -498,6 +502,10 @@ namespace IndustryTycoon.Persistence
                     out failureReason)
                 || !M15FactorySaveValidator.TryNormalize(source.factoryScaling,
                     out M15FactorySaveData normalizedFactoryScaling,
+                    out failureReason)
+                || !M16MarketSaveValidator.TryNormalize(source.market,
+                    safeFallbackTimestamp,
+                    out M16MarketSaveData normalizedMarket,
                     out failureReason))
             {
                 return false;
@@ -613,7 +621,8 @@ namespace IndustryTycoon.Persistence
                 logistics = normalizedLogistics,
                 retention = normalizedRetention
                 ,industrial = normalizedIndustrial,
-                factoryScaling = normalizedFactoryScaling
+                factoryScaling = normalizedFactoryScaling,
+                market = normalizedMarket
             };
             return true;
         }

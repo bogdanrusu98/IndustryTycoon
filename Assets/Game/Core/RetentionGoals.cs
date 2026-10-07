@@ -20,6 +20,10 @@ namespace IndustryTycoon.Progression
         ,UpgradeBuilding = 4
         ,UpgradeRoute = 5
         ,Deliver = 6
+        ,CompleteProductionOrder = 7
+        ,SellHighDemand = 8
+        ,SellBoomDemand = 9
+        ,EarnMarketBonus = 10
     }
 
     [Serializable]
@@ -84,7 +88,8 @@ namespace IndustryTycoon.Progression
             bool smelter,
             bool workshop,
             bool logistics,
-            bool assemblyPlant = false)
+            bool assemblyPlant = false,
+            bool market = false)
         {
             Processor = processor;
             Packing = packing;
@@ -93,6 +98,7 @@ namespace IndustryTycoon.Progression
             Workshop = workshop;
             Logistics = logistics;
             AssemblyPlant = assemblyPlant;
+            Market = market;
         }
 
         public bool Processor { get; }
@@ -102,6 +108,7 @@ namespace IndustryTycoon.Progression
         public bool Workshop { get; }
         public bool Logistics { get; }
         public bool AssemblyPlant { get; }
+        public bool Market { get; }
     }
 
     internal readonly struct GoalCandidate
@@ -517,6 +524,21 @@ namespace IndustryTycoon.Progression
                         2L,
                         700));
                 }
+            }
+
+            if (unlocks.Market)
+            {
+                result.Add(new GoalCandidate(RetentionGoalType.CompleteProductionOrder,
+                    ResourceType.Wood, ProgressMetricId.ProductionOrdersCompleted, 1L, 600));
+                result.Add(new GoalCandidate(RetentionGoalType.SellHighDemand,
+                    ResourceType.Wood, ProgressMetricId.HighDemandSales, 3L, 450));
+                result.Add(new GoalCandidate(RetentionGoalType.EarnMarketBonus,
+                    ResourceType.Wood, ProgressMetricId.MarketBonusRevenue, 100L, 550));
+                // Boom is deliberately gated to the mature Machine Part economy,
+                // where it is achievable without distorting early retention pools.
+                if (unlocks.AssemblyPlant)
+                    result.Add(new GoalCandidate(RetentionGoalType.SellBoomDemand,
+                        ResourceType.MachinePart, ProgressMetricId.BoomDemandSales, 1L, 700));
             }
 
             return result;

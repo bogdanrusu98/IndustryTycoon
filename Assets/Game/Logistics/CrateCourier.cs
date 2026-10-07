@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using IndustryTycoon.Core;
 using IndustryTycoon.Economy;
+using IndustryTycoon.Market;
 using IndustryTycoon.Processing;
 using UnityEngine;
 
@@ -25,6 +26,7 @@ namespace IndustryTycoon.Logistics
         [Header("Fixed Route")]
         [SerializeField] private PackingStation packingStation;
         [SerializeField] private CashPile cashPile;
+        [SerializeField] private MarketPlanningService marketPlanningService;
         [SerializeField] private Transform pickupPoint;
         [SerializeField] private Transform deliveryPoint;
 
@@ -71,7 +73,9 @@ namespace IndustryTycoon.Logistics
         public ResourceType AcceptedResourceType => ResourceType.Crate;
         public CrateCourierState State => _state;
         public int Capacity => MaximumCratesPerTrip;
-        public int CashPerCrate => CashPerDeliveredCrate;
+        public int CashPerCrate => marketPlanningService != null
+            ? marketPlanningService.GetNormalSaleValue(ResourceType.Crate)
+            : M16MarketRules.CalculateSaleValue(ResourceType.Crate, DemandTier.Normal, false);
         public int ReservedCrates => _reservedCrates;
         public int CarriedCrates => _carriedCrates;
         public uint ActiveTripGeneration => _activeTripGeneration;
@@ -395,7 +399,7 @@ namespace IndustryTycoon.Logistics
             }
 
             crateCount = _carriedCrates;
-            cashValue = crateCount * CashPerDeliveredCrate;
+            cashValue = crateCount * CashPerCrate;
             return true;
         }
 

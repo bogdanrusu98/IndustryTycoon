@@ -1,4 +1,5 @@
 using System;
+using IndustryTycoon.Market;
 using IndustryTycoon.Core;
 using IndustryTycoon.Persistence;
 using IndustryTycoon.Processing;
@@ -327,6 +328,34 @@ namespace IndustryTycoon.Progression
         {
             return RecordSingleMetric(ProgressMetricId.MachinePartsProduced, amount);
         }
+
+        public bool RecordMarketUnlocked() => FinishAuthoritativeMutation(
+            _state.SetMetricOnce(ProgressMetricId.MarketUnlocked));
+
+        public bool RecordProductionOrderCompleted(bool advancedMachinePart)
+        {
+            bool changed = _state.IncrementMetric(ProgressMetricId.ProductionOrdersCompleted, 1);
+            if (advancedMachinePart)
+                changed |= _state.IncrementMetric(ProgressMetricId.AdvancedMachinePartOrdersCompleted, 1);
+            return FinishAuthoritativeMutation(changed);
+        }
+
+        public bool RecordMarketSale(DemandTier tier, int bonusRevenue)
+        {
+            bool changed = false;
+            if (tier == DemandTier.High)
+                changed |= _state.IncrementMetric(ProgressMetricId.HighDemandSales, 1);
+            else if (tier == DemandTier.Boom)
+                changed |= _state.IncrementMetric(ProgressMetricId.BoomDemandSales, 1);
+            if (tier == DemandTier.High || tier == DemandTier.Boom)
+                changed |= _state.IncrementMetric(ProgressMetricId.HighBoomSales, 1);
+            if (bonusRevenue > 0)
+                changed |= _state.IncrementMetric(ProgressMetricId.MarketBonusRevenue, bonusRevenue);
+            return FinishAuthoritativeMutation(changed);
+        }
+
+        public bool RecordFlowBonusTriggered() => RecordSingleMetric(
+            ProgressMetricId.FlowBonusesTriggered, 1);
 
         public bool RecordIndustrialDistrictEntered()
         {
@@ -691,9 +720,11 @@ namespace IndustryTycoon.Progression
         private int ResolveEmpireLevel()
         {
             int legacyLevel = M10ProgressionRules.ResolveEmpireLevel(_state);
-            return legacyLevel < M10ProgressionRules.MaximumEmpireLevel
-                ? legacyLevel
-                : Math.Max(legacyLevel, M15FactoryRules.GetEmpireLevel(_factoryScaling));
+            if (legacyLevel < M10ProgressionRules.MaximumEmpireLevel) return legacyLevel;
+            int factoryLevel = Math.Max(legacyLevel, M15FactoryRules.GetEmpireLevel(_factoryScaling));
+            return factoryLevel < M15FactoryRules.MaximumEmpireLevel
+                ? factoryLevel
+                : Math.Max(factoryLevel, M16MarketRules.GetEmpireLevel(_state));
         }
 
         private bool IsContractEligible(LumberCampContractDefinition contract)
