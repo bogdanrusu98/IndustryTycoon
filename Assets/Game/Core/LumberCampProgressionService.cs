@@ -29,6 +29,8 @@ namespace IndustryTycoon.Progression
         [SerializeField] private Smelter smelter;
         [SerializeField] private AutomatedDrill automatedDrill;
         [SerializeField] private ToolWorkshop toolWorkshop;
+        [SerializeField] private CentralWarehouse centralWarehouse;
+        [SerializeField] private IndustrialLogisticsNetwork logisticsNetwork;
 
         [Header("Authoritative Unlocks")]
         [SerializeField] private WoodProductionUpgrade productionUpgrade;
@@ -46,6 +48,7 @@ namespace IndustryTycoon.Progression
         private LumberCampProgressionModel _model;
         private bool _hasStarted;
         private bool _isSubscribed;
+        private bool _isSynchronizingWarehouse;
 
         public event Action StateChanged;
         public event Action<int> AchievementUnlocked;
@@ -62,6 +65,8 @@ namespace IndustryTycoon.Progression
         public Smelter Smelter => smelter;
         public AutomatedDrill AutomatedDrill => automatedDrill;
         public ToolWorkshop ToolWorkshop => toolWorkshop;
+        public CentralWarehouse CentralWarehouse => centralWarehouse;
+        public IndustrialLogisticsNetwork LogisticsNetwork => logisticsNetwork;
         public WoodProductionUpgrade ProductionUpgrade => productionUpgrade;
         public FirstWorkerUnlock WorkerUnlock => workerUnlock;
         public FirstProcessorUnlock ProcessorUnlock => processorUnlock;
@@ -81,6 +86,7 @@ namespace IndustryTycoon.Progression
             ? _model.ActiveContractIndex
             : 0;
         public bool HasActiveContract => _model != null && _model.HasActiveContract;
+        public bool HasPendingContract => _model != null && _model.HasPendingContract;
         public ContractProgressState ActiveContractState => _model != null
             ? _model.ActiveContractState
             : ContractProgressState.Active;
@@ -107,6 +113,7 @@ namespace IndustryTycoon.Progression
             SubscribeGameplayCommits();
             SynchronizeExactRuntimeFlags();
             _model.EvaluateAll();
+            SynchronizeWarehouseAvailability();
         }
 
         private void OnEnable()
@@ -116,6 +123,7 @@ namespace IndustryTycoon.Progression
                 SubscribeGameplayCommits();
                 SynchronizeExactRuntimeFlags();
                 _model.EvaluateAll();
+                SynchronizeWarehouseAvailability();
             }
         }
 
@@ -204,6 +212,11 @@ namespace IndustryTycoon.Progression
             return _model != null && _model.TryClaimActiveContract();
         }
 
+        public bool RecordDailyGoalCompleted()
+        {
+            return _model != null && _model.RecordDailyGoalCompleted();
+        }
+
         public M10ProgressionSaveData CapturePersistentState()
         {
             return _model != null
@@ -226,6 +239,7 @@ namespace IndustryTycoon.Progression
             // Restore is intentionally silent: no evaluation, rewards, metric events,
             // or achievement toast can originate from loading a save.
             _model.Restore(state ?? M10ProgressionSaveData.CreateFresh());
+            SynchronizeWarehouseAvailability();
             StateChanged?.Invoke();
         }
 
@@ -234,7 +248,9 @@ namespace IndustryTycoon.Progression
             // Persistence uses this only after applying a legitimate offline state
             // transition. It resolves objectives/achievements from the restored
             // shared truth without fabricating any gameplay metric.
-            return _model != null && _model.EvaluateAll();
+            bool changed = _model != null && _model.EvaluateAll();
+            SynchronizeWarehouseAvailability();
+            return changed;
         }
 
         private bool TryGrantRewardCash(int amount)
@@ -304,6 +320,12 @@ namespace IndustryTycoon.Progression
             if (toolWorkshop != null)
             {
                 toolWorkshop.RecipeCompleted += HandleToolWorkshopRecipeCompleted;
+            }
+
+            if (logisticsNetwork != null)
+            {
+                logisticsNetwork.ResourceTransported +=
+                    HandleIndustrialResourceTransported;
             }
 
             SetPurchaseSubscription(
@@ -421,6 +443,12 @@ namespace IndustryTycoon.Progression
             if (toolWorkshop != null)
             {
                 toolWorkshop.RecipeCompleted -= HandleToolWorkshopRecipeCompleted;
+            }
+
+            if (logisticsNetwork != null)
+            {
+                logisticsNetwork.ResourceTransported -=
+                    HandleIndustrialResourceTransported;
             }
 
             SetPurchaseSubscription(
@@ -545,6 +573,8 @@ namespace IndustryTycoon.Progression
             {
                 _model.RecordToolWorkshopUnlocked();
             }
+
+            SynchronizeWarehouseAvailability();
         }
 
         private static void SetPurchaseSubscription(
@@ -628,6 +658,13 @@ namespace IndustryTycoon.Progression
             _model.RecordToolsProduced(producedTools);
         }
 
+        private void HandleIndustrialResourceTransported(
+            ResourceType resourceType,
+            int amount)
+        {
+            _model.RecordIndustrialTransport(resourceType, amount);
+        }
+
         private void HandleProductionUpgradeCompleted()
         {
             _model.RecordFlag(ProgressFlagId.ProductionUpgradeUnlocked);
@@ -692,7 +729,40 @@ namespace IndustryTycoon.Progression
 
         private void HandleModelStateChanged()
         {
+            SynchronizeWarehouseAvailability();
             StateChanged?.Invoke();
+        }
+
+        private void SynchronizeWarehouseAvailability()
+        {
+            if (_isSynchronizingWarehouse
+                || centralWarehouse == null
+                || _model == null)
+            {
+                return;
+            }
+
+            _isSynchronizingWarehouse = true;
+            try
+            {
+                bool shouldBeUnlocked = _model.EmpireLevel >= 5
+                                        || _model.GetMetric(
+                                            ProgressMetricId.WarehouseUnlocked) >= 1L;
+                if (centralWarehouse.gameObject.activeSelf != shouldBeUnlocked)
+                {
+                    centralWarehouse.gameObject.SetActive(shouldBeUnlocked);
+                }
+
+                if (shouldBeUnlocked
+                    && _model.GetMetric(ProgressMetricId.WarehouseUnlocked) < 1L)
+                {
+                    _model.RecordWarehouseUnlocked();
+                }
+            }
+            finally
+            {
+                _isSynchronizingWarehouse = false;
+            }
         }
 
         private void HandleAchievementUnlocked(int achievementIndex)

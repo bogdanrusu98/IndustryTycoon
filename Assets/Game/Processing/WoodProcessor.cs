@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using IndustryTycoon.Core;
+using IndustryTycoon.Logistics;
 using IndustryTycoon.Player;
 using UnityEngine;
 
@@ -24,7 +25,7 @@ namespace IndustryTycoon.Processing
         internal uint Token => _token;
     }
 
-    public sealed class WoodProcessor : MonoBehaviour
+    public sealed class WoodProcessor : MonoBehaviour, IIndustrialResourceEndpoint
     {
         private const int WoodRequiredPerRecipe = 2;
         private const int PlanksProducedPerRecipe = 1;
@@ -49,6 +50,11 @@ namespace IndustryTycoon.Processing
         private bool _isStartingProcessing;
         private bool _isInputTransferInProgress;
         private bool _isOutputTransferInProgress;
+        private int _reservedIndustrialIncoming;
+        private int _reservedIndustrialOutgoing;
+        private uint _nextIndustrialToken;
+        private IndustrialResourceReservation _industrialIncoming;
+        private IndustrialResourceReservation _industrialOutgoing;
 
         public event Action<int, int, int> BufferChanged;
         public event Action<bool> ProcessingChanged;
@@ -58,7 +64,8 @@ namespace IndustryTycoon.Processing
         public int ReservedInputCapacity => _reservedInputCapacity;
         public int AvailableInputCapacity => Mathf.Max(
             0,
-            inputCapacity - _inputWood - _reservedInputCapacity);
+            inputCapacity - _inputWood - _reservedInputCapacity
+            - _reservedIndustrialIncoming);
         public int OutputPlanks => _outputPlanks;
         public int ReservedOutputCapacity => _reservedOutputCapacity;
         public int InputCapacity => inputCapacity;
@@ -68,6 +75,8 @@ namespace IndustryTycoon.Processing
         public float ProcessingDuration => processingDuration;
         public bool IsProcessing => _isProcessing;
         public int CompletedRecipeCount => _completedRecipeCount;
+        public string EndpointId => "wood_processor";
+        public bool IsEndpointOperational => isActiveAndEnabled;
 
         private void Awake()
         {
@@ -83,6 +92,7 @@ namespace IndustryTycoon.Processing
         {
             bool hadInputReservation = _reservedInputCapacity > 0;
             InvalidateInputReservation();
+            InvalidateIndustrialReservations();
             StopProcessingAndReleaseReservation();
             if (hadInputReservation)
             {
@@ -206,7 +216,7 @@ namespace IndustryTycoon.Processing
             if (!isActiveAndEnabled
                 || _isOutputTransferInProgress
                 || carryStack == null
-                || _outputPlanks <= 0
+                || _outputPlanks - _reservedIndustrialOutgoing <= 0
                 || !carryStack.TryReserveCapacity(ResourceType.Plank, 1))
             {
                 return false;
@@ -282,6 +292,7 @@ namespace IndustryTycoon.Processing
             }
 
             InvalidateInputReservation();
+            InvalidateIndustrialReservations();
             StopProcessingAndReleaseReservation();
             _isInputTransferInProgress = false;
             _isOutputTransferInProgress = false;
@@ -290,6 +301,164 @@ namespace IndustryTycoon.Processing
             _completedRecipeCount = 0;
             NotifyBufferChanged();
             return true;
+        }
+
+        public int GetAvailable(ResourceType resourceType)
+        {
+            return resourceType == ResourceType.Plank
+                ? Mathf.Max(0, _outputPlanks - _reservedIndustrialOutgoing)
+                : 0;
+        }
+
+        public int GetAvailableCapacity(ResourceType resourceType)
+        {
+            return resourceType == ResourceType.Wood ? AvailableInputCapacity : 0;
+        }
+
+        public bool TryReserveOutgoing(
+            ResourceType resourceType,
+            int amount,
+            out IndustrialResourceReservation reservation)
+        {
+            reservation = default;
+            if (!isActiveAndEnabled
+                || resourceType != ResourceType.Plank
+                || amount <= 0
+                || _industrialOutgoing.IsValid
+                || GetAvailable(resourceType) < amount)
+            {
+                return false;
+            }
+
+            _reservedIndustrialOutgoing = amount;
+            _industrialOutgoing = CreateIndustrialReservation(
+                IndustrialReservationKind.Outgoing,
+                resourceType,
+                amount);
+            reservation = _industrialOutgoing;
+            return true;
+        }
+
+        public bool TryReserveIncoming(
+            ResourceType resourceType,
+            int amount,
+            out IndustrialResourceReservation reservation)
+        {
+            reservation = default;
+            if (!isActiveAndEnabled
+                || resourceType != ResourceType.Wood
+                || amount <= 0
+                || _industrialIncoming.IsValid
+                || AvailableInputCapacity < amount)
+            {
+                return false;
+            }
+
+            _reservedIndustrialIncoming = amount;
+            _industrialIncoming = CreateIndustrialReservation(
+                IndustrialReservationKind.Incoming,
+                resourceType,
+                amount);
+            reservation = _industrialIncoming;
+            return true;
+        }
+
+        public bool IsReservationValid(IndustrialResourceReservation reservation)
+        {
+            if (!isActiveAndEnabled
+                || !ReferenceEquals(reservation.Endpoint, this)
+                || reservation.Token == 0)
+            {
+                return false;
+            }
+
+            IndustrialResourceReservation active =
+                reservation.Kind == IndustrialReservationKind.Incoming
+                    ? _industrialIncoming
+                    : _industrialOutgoing;
+            return active.Token == reservation.Token
+                   && active.ResourceType == reservation.ResourceType
+                   && active.Amount == reservation.Amount;
+        }
+
+        public bool ReleaseReservation(IndustrialResourceReservation reservation)
+        {
+            if (!IsReservationValid(reservation))
+            {
+                return false;
+            }
+
+            ClearIndustrialReservation(reservation.Kind);
+            return true;
+        }
+
+        public void FinalizeReservationForTransfer(
+            IndustrialResourceReservation reservation)
+        {
+            if (!IsReservationValid(reservation))
+            {
+                throw new InvalidOperationException(
+                    "Wood Processor logistics reservation is invalid.");
+            }
+
+            if (reservation.Kind == IndustrialReservationKind.Incoming)
+            {
+                _inputWood += reservation.Amount;
+            }
+            else
+            {
+                _outputPlanks -= reservation.Amount;
+            }
+
+            ClearIndustrialReservation(reservation.Kind);
+        }
+
+        public void PublishTransferCommitted(
+            IndustrialResourceReservation reservation)
+        {
+            NotifyBufferChanged();
+            TryStartProcessing();
+        }
+
+        private IndustrialResourceReservation CreateIndustrialReservation(
+            IndustrialReservationKind kind,
+            ResourceType resourceType,
+            int amount)
+        {
+            _nextIndustrialToken++;
+            if (_nextIndustrialToken == 0)
+            {
+                _nextIndustrialToken = 1;
+            }
+
+            return new IndustrialResourceReservation(
+                this,
+                _nextIndustrialToken,
+                kind,
+                resourceType,
+                amount);
+        }
+
+        private void ClearIndustrialReservation(IndustrialReservationKind kind)
+        {
+            if (kind == IndustrialReservationKind.Incoming)
+            {
+                _reservedIndustrialIncoming = 0;
+                _industrialIncoming = default;
+            }
+            else
+            {
+                _reservedIndustrialOutgoing = 0;
+                _industrialOutgoing = default;
+            }
+        }
+
+        private void InvalidateIndustrialReservations()
+        {
+            _reservedIndustrialIncoming = 0;
+            _reservedIndustrialOutgoing = 0;
+            _industrialIncoming = default;
+            _industrialOutgoing = default;
         }
 
         private IEnumerator ProcessReservedRecipe()

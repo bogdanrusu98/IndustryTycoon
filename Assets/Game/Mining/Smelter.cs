@@ -15,6 +15,7 @@ namespace IndustryTycoon.Mining
         public int OutputBars => OutputCrates;
         public int RecipeInputOre => RecipeInputPlanks;
         public int RecipeOutputBars => RecipeOutputCrates;
+        public override string EndpointId => "iron_smelter";
 
         protected override ResourceType InputResourceType => ResourceType.IronOre;
         protected override ResourceType OutputResourceType => ResourceType.IronBar;

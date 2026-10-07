@@ -132,6 +132,31 @@ namespace IndustryTycoon.Persistence
             public M11MiningSaveData mining;
         }
 
+        [Serializable]
+        private sealed class Version4SaveData
+        {
+            public string schema;
+            public int version;
+            public int walletCash;
+            public int cashPileStoredCash;
+            public M9CarrySaveRecord carry;
+            public M9PurchasePadSaveRecord[] purchasePads;
+            public bool lumberCampCompleted;
+            public int stockpileWood;
+            public int processorInputWood;
+            public int processorOutputPlanks;
+            public int packingInputPlanks;
+            public int packingOutputCrates;
+            public int pendingOfflineCash;
+            public long pendingOfflineAwaySeconds;
+            public bool returnScreenPending;
+            public long lastEvaluationUtcUnixSeconds;
+            public long lastWriteUtcUnixSeconds;
+            public M10ProgressionSaveData progression;
+            public M11MiningSaveData mining;
+            public M12WorkshopSaveData workshop;
+        }
+
         public static M9SaveDecodeResult Decode(
             string json,
             M9SaveValidationSettings validationSettings,
@@ -194,6 +219,11 @@ namespace IndustryTycoon.Persistence
                         fallbackUtcUnixSeconds);
                 case M9SaveSchema.Version4:
                     return DecodeVersion4(
+                        trimmedJson,
+                        validationSettings,
+                        fallbackUtcUnixSeconds);
+                case M9SaveSchema.Version5:
+                    return DecodeVersion5(
                         trimmedJson,
                         validationSettings,
                         fallbackUtcUnixSeconds);
@@ -275,7 +305,7 @@ namespace IndustryTycoon.Persistence
             var migrated = new M9SaveData
             {
                 schema = legacy.schema,
-                version = M9SaveSchema.Version4,
+                version = M9SaveSchema.CurrentVersion,
                 walletCash = legacy.walletCash,
                 cashPileStoredCash = legacy.cashPileStoredCash,
                 carry = SanitizeLegacyCarry(legacy.carry, false),
@@ -293,7 +323,10 @@ namespace IndustryTycoon.Persistence
                 lastWriteUtcUnixSeconds = legacy.lastWriteUtcUnixSeconds,
                 progression = M10ProgressionSaveData.CreateFresh(),
                 mining = M11MiningSaveData.CreateFresh(),
-                workshop = M12WorkshopSaveData.CreateFresh()
+                workshop = M12WorkshopSaveData.CreateFresh(),
+                logistics = M13LogisticsSaveData.CreateFresh(),
+                retention = M13RetentionSaveData.CreateFresh(
+                    legacy.lastWriteUtcUnixSeconds)
             };
 
             if (!M9SaveValidator.TryNormalize(
@@ -365,7 +398,7 @@ namespace IndustryTycoon.Persistence
             var migrated = new M9SaveData
             {
                 schema = legacy.schema,
-                version = M9SaveSchema.Version4,
+                version = M9SaveSchema.CurrentVersion,
                 walletCash = legacy.walletCash,
                 cashPileStoredCash = legacy.cashPileStoredCash,
                 carry = SanitizeLegacyCarry(legacy.carry, false),
@@ -383,7 +416,10 @@ namespace IndustryTycoon.Persistence
                 lastWriteUtcUnixSeconds = legacy.lastWriteUtcUnixSeconds,
                 progression = upgradedProgression,
                 mining = M11MiningSaveData.CreateFresh(),
-                workshop = M12WorkshopSaveData.CreateFresh()
+                workshop = M12WorkshopSaveData.CreateFresh(),
+                logistics = M13LogisticsSaveData.CreateFresh(),
+                retention = M13RetentionSaveData.CreateFresh(
+                    legacy.lastWriteUtcUnixSeconds)
             };
 
             if (!M9SaveValidator.TryNormalize(
@@ -442,7 +478,7 @@ namespace IndustryTycoon.Persistence
             var migrated = new M9SaveData
             {
                 schema = legacy.schema,
-                version = M9SaveSchema.Version4,
+                version = M9SaveSchema.CurrentVersion,
                 walletCash = legacy.walletCash,
                 cashPileStoredCash = legacy.cashPileStoredCash,
                 carry = SanitizeLegacyCarry(legacy.carry, true),
@@ -460,7 +496,10 @@ namespace IndustryTycoon.Persistence
                 lastWriteUtcUnixSeconds = legacy.lastWriteUtcUnixSeconds,
                 progression = upgradedProgression,
                 mining = legacy.mining,
-                workshop = M12WorkshopSaveData.CreateFresh()
+                workshop = M12WorkshopSaveData.CreateFresh(),
+                logistics = M13LogisticsSaveData.CreateFresh(),
+                retention = M13RetentionSaveData.CreateFresh(
+                    legacy.lastWriteUtcUnixSeconds)
             };
 
             if (!M9SaveValidator.TryNormalize(
@@ -479,6 +518,86 @@ namespace IndustryTycoon.Persistence
         }
 
         private static M9SaveDecodeResult DecodeVersion4(
+            string json,
+            M9SaveValidationSettings validationSettings,
+            long fallbackUtcUnixSeconds)
+        {
+            Version4SaveData legacy;
+            try
+            {
+                legacy = JsonUtility.FromJson<Version4SaveData>(json);
+            }
+            catch (Exception exception)
+            {
+                return M9SaveDecodeResult.Failed(
+                    M9SaveDecodeStatus.MalformedJson,
+                    $"Save body could not be decoded: {exception.Message}");
+            }
+
+            if (legacy == null)
+            {
+                return M9SaveDecodeResult.Failed(
+                    M9SaveDecodeStatus.ValidationFailed,
+                    "Version 4 save body is missing.");
+            }
+
+            if (!TryUpgradeLegacyProgression(
+                    legacy.progression,
+                    20,
+                    8,
+                    7,
+                    19,
+                    out M10ProgressionSaveData upgradedProgression,
+                    out string upgradeFailure))
+            {
+                return M9SaveDecodeResult.Failed(
+                    M9SaveDecodeStatus.ValidationFailed,
+                    upgradeFailure);
+            }
+
+            var migrated = new M9SaveData
+            {
+                schema = legacy.schema,
+                version = M9SaveSchema.CurrentVersion,
+                walletCash = legacy.walletCash,
+                cashPileStoredCash = legacy.cashPileStoredCash,
+                carry = SanitizeLegacyCarry(legacy.carry, true),
+                purchasePads = legacy.purchasePads,
+                lumberCampCompleted = legacy.lumberCampCompleted,
+                stockpileWood = legacy.stockpileWood,
+                processorInputWood = legacy.processorInputWood,
+                processorOutputPlanks = legacy.processorOutputPlanks,
+                packingInputPlanks = legacy.packingInputPlanks,
+                packingOutputCrates = legacy.packingOutputCrates,
+                pendingOfflineCash = legacy.pendingOfflineCash,
+                pendingOfflineAwaySeconds = legacy.pendingOfflineAwaySeconds,
+                returnScreenPending = legacy.returnScreenPending,
+                lastEvaluationUtcUnixSeconds = legacy.lastEvaluationUtcUnixSeconds,
+                lastWriteUtcUnixSeconds = legacy.lastWriteUtcUnixSeconds,
+                progression = upgradedProgression,
+                mining = legacy.mining,
+                workshop = legacy.workshop,
+                logistics = M13LogisticsSaveData.CreateFresh(),
+                retention = M13RetentionSaveData.CreateFresh(
+                    legacy.lastWriteUtcUnixSeconds)
+            };
+
+            if (!M9SaveValidator.TryNormalize(
+                    migrated,
+                    validationSettings,
+                    fallbackUtcUnixSeconds,
+                    out M9SaveData normalized,
+                    out string validationFailure))
+            {
+                return M9SaveDecodeResult.Failed(
+                    M9SaveDecodeStatus.ValidationFailed,
+                    validationFailure);
+            }
+
+            return M9SaveDecodeResult.Succeeded(normalized, true);
+        }
+
+        private static M9SaveDecodeResult DecodeVersion5(
             string json,
             M9SaveValidationSettings validationSettings,
             long fallbackUtcUnixSeconds)
@@ -616,11 +735,14 @@ namespace IndustryTycoon.Persistence
             upgraded.activeContractIndex = claimedPrefix;
             if (claimedPrefix >= legacyContractCount)
             {
-                // M12 appends contracts; a save that had completed the old catalog
-                // starts the first new contract with a non-retroactive baseline.
-                upgraded.activeContractBaseline = upgraded.GetMetric(
-                    ProgressMetricId.ToolsProduced);
-                upgraded.activeContractState = ContractProgressState.Active;
+                // Appended contracts always start non-retroactively after migration.
+                LumberCampContractDefinition next =
+                    LumberCampProgressionCatalog.GetContract(claimedPrefix);
+                upgraded.activeContractBaseline = upgraded.GetMetric(next.Metric);
+                upgraded.activeContractState =
+                    M10ProgressionRules.IsContractEligible(upgraded, next)
+                        ? ContractProgressState.Active
+                        : ContractProgressState.Locked;
             }
             else
             {
@@ -671,7 +793,8 @@ namespace IndustryTycoon.Persistence
                 || legacy.resourceType == ResourceType.Crate
                 || (includeMiningResources
                     && (legacy.resourceType == ResourceType.IronOre
-                        || legacy.resourceType == ResourceType.IronBar)))
+                        || legacy.resourceType == ResourceType.IronBar
+                        || legacy.resourceType == ResourceType.Tool)))
             {
                 return new M9CarrySaveRecord
                 {

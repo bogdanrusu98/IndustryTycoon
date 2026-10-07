@@ -53,6 +53,9 @@ namespace IndustryTycoon.Persistence
         [SerializeField] private OreStorage oreStorage;
         [SerializeField] private AutomatedDrill automatedDrill;
         [SerializeField] private ToolWorkshop toolWorkshop;
+        [SerializeField] private CentralWarehouse centralWarehouse;
+        [SerializeField] private IndustrialLogisticsNetwork logisticsNetwork;
+        [SerializeField] private RetentionGoalService retentionGoalService;
 
         [Header("Save Cadence")]
         [SerializeField, Min(0.25f)] private float saveDebounceSeconds = 3f;
@@ -117,6 +120,9 @@ namespace IndustryTycoon.Persistence
         public OreStorage OreStorage => oreStorage;
         public AutomatedDrill AutomatedDrill => automatedDrill;
         public ToolWorkshop ToolWorkshop => toolWorkshop;
+        public CentralWarehouse CentralWarehouse => centralWarehouse;
+        public IndustrialLogisticsNetwork LogisticsNetwork => logisticsNetwork;
+        public RetentionGoalService RetentionGoalService => retentionGoalService;
         public float SaveDebounceSeconds => saveDebounceSeconds;
         public float ReturnScreenThresholdSeconds => returnScreenThresholdSeconds;
         public float MaximumCreditedAwaySeconds => maximumCreditedAwaySeconds;
@@ -431,11 +437,20 @@ namespace IndustryTycoon.Persistence
 
         private void EvaluateAndApply(M9SaveData data, long now)
         {
+            long creditedRouteSeconds = OfflineProgressionCalculator
+                .CalculateCreditedAwaySeconds(
+                    data.lastEvaluationUtcUnixSeconds,
+                    now,
+                    Math.Max(0L, (long)Math.Floor(maximumCreditedAwaySeconds)));
+            M13OfflineLogisticsCalculator.Settle(
+                data,
+                creditedRouteSeconds,
+                offlineEfficiency);
             OfflineProgressionInput input = BuildOfflineInput(data, now);
             OfflineProgressionRules rules = BuildOfflineRules(data);
             LastOfflineResult = OfflineProgressionCalculator.Calculate(input, rules);
             ApplyOfflineResult(data, LastOfflineResult);
-            ApplyStableState(data);
+            ApplyStableState(data, now);
 
             // ApplyStableState restores M10 silently by design. Offline settlement
             // may nevertheless establish an exact canonical completion flag. Resolve
@@ -448,6 +463,11 @@ namespace IndustryTycoon.Persistence
             if (progressionService != null)
             {
                 data.progression = progressionService.CapturePersistentState();
+            }
+
+            if (retentionGoalService != null)
+            {
+                data.retention = retentionGoalService.CapturePersistentState();
             }
 
             if (wallet != null)
@@ -603,7 +623,7 @@ namespace IndustryTycoon.Persistence
             }
         }
 
-        private void ApplyStableState(M9SaveData data)
+        private void ApplyStableState(M9SaveData data, long utcNowUnixSeconds)
         {
             _isApplyingState = true;
             bool workerEnabled = lumberWorker != null && lumberWorker.enabled;
@@ -621,6 +641,9 @@ namespace IndustryTycoon.Persistence
             try
             {
                 progressionService?.RestorePersistentState(data.progression);
+                retentionGoalService?.RestorePersistentState(
+                    data.retention,
+                    utcNowUnixSeconds);
                 resourceCollector?.CancelTransientAttractions();
                 if (cashPileCollector != null)
                 {
@@ -709,6 +732,13 @@ namespace IndustryTycoon.Persistence
                         data.workshop.outputTools);
                 }
 
+                if (data.logistics != null)
+                {
+                    logisticsNetwork?.RestorePersistentState(
+                        data.logistics,
+                        centralWarehouse);
+                }
+
                 lumberWorker?.RestoreIdleState();
                 courier?.RestoreIdleState();
                 ironVein?.ResetTransientState();
@@ -780,7 +810,10 @@ namespace IndustryTycoon.Persistence
                 || automatedDrill == null
                 || toolWorkshopUnlock == null
                 || toolWorkshopUnlock.WorkshopPurchasePad == null
-                || toolWorkshop == null)
+                || toolWorkshop == null
+                || centralWarehouse == null
+                || logisticsNetwork == null
+                || retentionGoalService == null)
             {
                 failure = "Persistence references are incomplete.";
                 return false;
@@ -921,6 +954,9 @@ namespace IndustryTycoon.Persistence
             snapshot.workshop.inputPlanks = (int)stableWorkshopPlanks;
             snapshot.workshop.inputIronBars = (int)stableWorkshopIronBars;
             snapshot.workshop.outputTools = toolWorkshop.OutputTools;
+            snapshot.logistics = logisticsNetwork.CapturePersistentState(
+                centralWarehouse);
+            snapshot.retention = retentionGoalService.CapturePersistentState();
             snapshot.pendingOfflineCash = _state.pendingOfflineCash;
             snapshot.pendingOfflineAwaySeconds = _state.pendingOfflineAwaySeconds;
             snapshot.returnScreenPending = _state.returnScreenPending;
@@ -1040,6 +1076,12 @@ namespace IndustryTycoon.Persistence
             if (smelter != null) smelter.BufferChanged += HandleFourIntsChanged;
             if (oreStorage != null) oreStorage.StateChanged += HandleTwoIntsChanged;
             if (toolWorkshop != null) toolWorkshop.BufferChanged += HandleSixIntsChanged;
+            if (centralWarehouse != null) centralWarehouse.StateChanged += HandleChanged;
+            if (logisticsNetwork != null) logisticsNetwork.StateChanged += HandleChanged;
+            if (retentionGoalService != null)
+            {
+                retentionGoalService.StateChanged += HandleChanged;
+            }
             if (progressionService != null)
             {
                 progressionService.StateChanged += HandleChanged;
@@ -1075,6 +1117,12 @@ namespace IndustryTycoon.Persistence
             if (smelter != null) smelter.BufferChanged -= HandleFourIntsChanged;
             if (oreStorage != null) oreStorage.StateChanged -= HandleTwoIntsChanged;
             if (toolWorkshop != null) toolWorkshop.BufferChanged -= HandleSixIntsChanged;
+            if (centralWarehouse != null) centralWarehouse.StateChanged -= HandleChanged;
+            if (logisticsNetwork != null) logisticsNetwork.StateChanged -= HandleChanged;
+            if (retentionGoalService != null)
+            {
+                retentionGoalService.StateChanged -= HandleChanged;
+            }
             if (progressionService != null)
             {
                 progressionService.StateChanged -= HandleChanged;

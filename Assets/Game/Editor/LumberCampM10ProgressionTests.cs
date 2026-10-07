@@ -68,14 +68,14 @@ namespace IndustryTycoon.Editor
 
         private static void TestCatalog()
         {
-            Require(LumberCampProgressionCatalog.MetricCount == 20,
-                "Metric catalog count changed unexpectedly.");
+            Require(LumberCampProgressionCatalog.MetricCount >= 20,
+                "Metric catalog lost the M10-M12 append-only prefix.");
             Require(LumberCampProgressionCatalog.FlagCount == 8,
                 "Flag catalog count changed unexpectedly.");
             Require(LumberCampProgressionCatalog.ObjectiveCount == 16,
                 "Objective catalog must contain the M10-M12 sequence.");
-            Require(LumberCampProgressionCatalog.ContractCount == 7,
-                "Contract catalog must contain the M10 and M12 sequence.");
+            Require(LumberCampProgressionCatalog.ContractCount >= 7,
+                "Contract catalog lost the M10 and M12 sequence.");
             Require(LumberCampProgressionCatalog.AchievementCount == 19,
                 "Achievement catalog must contain the M10 and M12 set.");
 
@@ -618,11 +618,10 @@ namespace IndustryTycoon.Editor
                 "Sell 15 Tools contract did not complete/reward exactly once.");
 
             Require(!model.HasActiveContract
-                    && model.ActiveContractIndex
-                    == LumberCampProgressionCatalog.ContractCount
-                    && model.ActiveContractState == ContractProgressState.Claimed,
-                "Final claim did not produce a clean no-active-contract state.");
-            for (int i = 0; i < LumberCampProgressionCatalog.ContractCount; i++)
+                    && model.ActiveContractIndex == 7
+                    && model.ActiveContractState == ContractProgressState.Locked,
+                "M10-M12 final claim did not preserve a clean locked extension boundary.");
+            for (int i = 0; i < 7; i++)
             {
                 Require(model.IsContractClaimed(i),
                     $"Contract {i} was not persisted as claimed.");

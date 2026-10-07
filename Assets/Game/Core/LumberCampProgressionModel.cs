@@ -29,11 +29,15 @@ namespace IndustryTycoon.Progression
                                                  >= LumberCampProgressionCatalog
                                                      .ObjectiveCount;
         public int ActiveContractIndex => _state.activeContractIndex;
-        public bool HasActiveContract => ActiveContractIndex >= 0
-                                         && ActiveContractIndex
-                                         < LumberCampProgressionCatalog.ContractCount;
+        private bool HasContractCursor => ActiveContractIndex >= 0
+                                          && ActiveContractIndex
+                                          < LumberCampProgressionCatalog.ContractCount;
+        public bool HasActiveContract => HasContractCursor
+                                         && _state.activeContractState
+                                         != ContractProgressState.Locked;
+        public bool HasPendingContract => HasContractCursor;
         public ContractProgressState ActiveContractState =>
-            HasActiveContract
+            HasContractCursor
                 ? _state.activeContractState
                 : ContractProgressState.Claimed;
         public int EmpireLevel => M10ProgressionRules.ResolveEmpireLevel(_state);
@@ -130,6 +134,11 @@ namespace IndustryTycoon.Progression
             LumberCampContractDefinition contract =
                 LumberCampProgressionCatalog.GetContract(ActiveContractIndex);
             target = contract.Target;
+            if (_state.activeContractState == ContractProgressState.Locked)
+            {
+                return;
+            }
+
             long lifetime = _state.GetMetric(contract.Metric);
             current = Math.Min(
                 target,
@@ -300,6 +309,9 @@ namespace IndustryTycoon.Progression
                 ProgressMetricId.CratesDelivered,
                 crateCount);
             changed |= _state.IncrementMetric(
+                ProgressMetricId.CratesTransported,
+                crateCount);
+            changed |= _state.IncrementMetric(
                 ProgressMetricId.TotalCashEarned,
                 cashValue);
             return FinishAuthoritativeMutation(changed);
@@ -308,6 +320,55 @@ namespace IndustryTycoon.Progression
         public bool RecordFlag(ProgressFlagId flag)
         {
             return FinishAuthoritativeMutation(_state.SetFlag(flag));
+        }
+
+        public bool RecordIndustrialTransport(ResourceType resourceType, int amount)
+        {
+            if (amount <= 0)
+            {
+                return false;
+            }
+
+            ProgressMetricId metric;
+            switch (resourceType)
+            {
+                case ResourceType.Wood:
+                    metric = ProgressMetricId.WoodTransported;
+                    break;
+                case ResourceType.Plank:
+                    metric = ProgressMetricId.PlanksTransported;
+                    break;
+                case ResourceType.Crate:
+                    metric = ProgressMetricId.CratesTransported;
+                    break;
+                case ResourceType.IronOre:
+                    metric = ProgressMetricId.IronOreTransported;
+                    break;
+                case ResourceType.IronBar:
+                    metric = ProgressMetricId.IronBarsTransported;
+                    break;
+                case ResourceType.Tool:
+                    metric = ProgressMetricId.ToolsTransported;
+                    break;
+                default:
+                    return false;
+            }
+
+            bool changed = _state.IncrementMetric(metric, amount);
+            changed |= _state.SetMetricOnce(
+                ProgressMetricId.IndustrialRouteOperational);
+            return FinishAuthoritativeMutation(changed);
+        }
+
+        public bool RecordDailyGoalCompleted()
+        {
+            return RecordSingleMetric(ProgressMetricId.DailyGoalsCompleted, 1);
+        }
+
+        public bool RecordWarehouseUnlocked()
+        {
+            return FinishAuthoritativeMutation(
+                _state.SetMetricOnce(ProgressMetricId.WarehouseUnlocked));
         }
 
         public bool TryClaimActiveContract()
@@ -330,6 +391,14 @@ namespace IndustryTycoon.Progression
                                 && _tryGrantRewardCash(contract.RewardCash);
                 if (rewardGranted)
                 {
+                    if (contract.IsCrossIndustryLogistics)
+                    {
+                        _state.IncrementMetric(
+                            ProgressMetricId
+                                .CrossIndustryLogisticsContractsCompleted,
+                            1L);
+                    }
+
                     _state.claimedContracts[ActiveContractIndex] = true;
                     _state.activeContractIndex++;
                     if (_state.activeContractIndex
@@ -344,7 +413,10 @@ namespace IndustryTycoon.Progression
                             LumberCampProgressionCatalog.GetContract(
                                 _state.activeContractIndex);
                         _state.activeContractBaseline = _state.GetMetric(next.Metric);
-                        _state.activeContractState = ContractProgressState.Active;
+                        _state.activeContractState =
+                            M10ProgressionRules.IsContractEligible(_state, next)
+                                ? ContractProgressState.Active
+                                : ContractProgressState.Locked;
                     }
                 }
             }
@@ -355,10 +427,10 @@ namespace IndustryTycoon.Progression
 
             // Wallet callbacks can synchronously finish a PurchasePad. Drain any
             // resulting flags/objectives/achievements before publishing claim state.
-            bool transitionChanged = _evaluationPending
-                                     || _reentrantMutationChanged
-                ? EvaluateTransitions()
-                : false;
+            // Claiming changes progression ownership directly (including M13's
+            // cross-industry milestone), so always drain derived transitions.
+            // Wallet callbacks may have queued additional mutations as well.
+            bool transitionChanged = EvaluateTransitions();
             if (!rewardGranted)
             {
                 if (transitionChanged)
@@ -430,16 +502,39 @@ namespace IndustryTycoon.Progression
 
                     PublishEmpireLevelAdvancements();
 
-                    if (HasActiveContract)
+                    int empireLevel = M10ProgressionRules.ResolveEmpireLevel(_state);
+                    if (empireLevel == 9
+                        && _state.SetMetricOnce(
+                            ProgressMetricId.IndustrialDistrictReady))
+                    {
+                        changed = true;
+                        PublishEmpireLevelAdvancements();
+                    }
+
+                    if (HasContractCursor)
                     {
                         LumberCampContractDefinition contract =
                             LumberCampProgressionCatalog.GetContract(
                                 ActiveContractIndex);
+                        bool eligible = M10ProgressionRules.IsContractEligible(
+                            _state,
+                            contract);
+                        if (eligible
+                            && _state.activeContractState
+                            == ContractProgressState.Locked)
+                        {
+                            _state.activeContractBaseline =
+                                _state.GetMetric(contract.Metric);
+                            _state.activeContractState = ContractProgressState.Active;
+                            changed = true;
+                        }
+
                         long progress = Math.Max(
                             0L,
                             _state.GetMetric(contract.Metric)
                             - _state.activeContractBaseline);
-                        if (progress >= contract.Target
+                        if (eligible
+                            && progress >= contract.Target
                             && _state.activeContractState
                             == ContractProgressState.Active)
                         {

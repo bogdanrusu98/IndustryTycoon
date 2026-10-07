@@ -11,7 +11,8 @@ namespace IndustryTycoon.Persistence
         public const int Version2 = 2;
         public const int Version3 = 3;
         public const int Version4 = 4;
-        public const int CurrentVersion = Version4;
+        public const int Version5 = 5;
+        public const int CurrentVersion = Version5;
     }
 
     public static class M9PurchasePadIds
@@ -259,6 +260,10 @@ namespace IndustryTycoon.Persistence
         public M11MiningSaveData mining = M11MiningSaveData.CreateFresh();
         public M12WorkshopSaveData workshop =
             M12WorkshopSaveData.CreateFresh();
+        public M13LogisticsSaveData logistics =
+            M13LogisticsSaveData.CreateFresh();
+        public M13RetentionSaveData retention =
+            M13RetentionSaveData.CreateFresh();
 
         public static M9SaveData CreateFresh(long utcNowUnixSeconds)
         {
@@ -271,6 +276,8 @@ namespace IndustryTycoon.Persistence
                 progression = M10ProgressionSaveData.CreateFresh(),
                 mining = M11MiningSaveData.CreateFresh(),
                 workshop = M12WorkshopSaveData.CreateFresh(),
+                logistics = M13LogisticsSaveData.CreateFresh(),
+                retention = M13RetentionSaveData.CreateFresh(safeTimestamp),
                 lastEvaluationUtcUnixSeconds = safeTimestamp,
                 lastWriteUtcUnixSeconds = safeTimestamp
             };
@@ -469,6 +476,19 @@ namespace IndustryTycoon.Persistence
                 return false;
             }
 
+            if (!M13LogisticsSaveValidator.TryNormalize(
+                    source.logistics,
+                    out M13LogisticsSaveData normalizedLogistics,
+                    out failureReason)
+                || !M13RetentionSaveValidator.TryNormalize(
+                    source.retention,
+                    safeFallbackTimestamp,
+                    out M13RetentionSaveData normalizedRetention,
+                    out failureReason))
+            {
+                return false;
+            }
+
             bool hasCanonicalWorkshop = IsWorkshopPadCompleted(normalizedWorkshop);
             if (!hasCanonicalWorkshop
                 && (normalizedProgression.GetMetric(
@@ -550,7 +570,9 @@ namespace IndustryTycoon.Persistence
                 lastWriteUtcUnixSeconds = lastWrite,
                 progression = normalizedProgression,
                 mining = normalizedMining,
-                workshop = normalizedWorkshop
+                workshop = normalizedWorkshop,
+                logistics = normalizedLogistics,
+                retention = normalizedRetention
             };
             return true;
         }

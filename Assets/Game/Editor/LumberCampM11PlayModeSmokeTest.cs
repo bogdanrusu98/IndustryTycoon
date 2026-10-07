@@ -929,7 +929,7 @@ namespace IndustryTycoon.Editor
                     && File.Exists(_persistence.SavePath),
                 "M11 canonical state did not persist before reload.");
             string savedJson = File.ReadAllText(_persistence.SavePath);
-            Require(savedJson.Contains("\"version\":4")
+            Require(savedJson.Contains($"\"version\":{M9SaveSchema.CurrentVersion}")
                     && savedJson.Contains("\"mining\"")
                     && savedJson.Contains("\"workshop\"")
                     && !savedJson.Contains("processingInputOre")
@@ -937,7 +937,7 @@ namespace IndustryTycoon.Editor
                     && !savedJson.Contains("incomingReservations")
                     && !savedJson.Contains("isProcessing")
                     && !savedJson.Contains("isProducing"),
-                "Runtime save omitted v4 Mining/Workshop state or leaked transient ownership.");
+                "Runtime save omitted current Mining/Workshop state or leaked transient ownership.");
 
             AdvanceTo(Stage.WaitForPersistenceReload);
             _runtimeInitialized = false;

@@ -147,14 +147,14 @@ namespace IndustryTycoon.Editor
 
         private static void TestCatalog()
         {
-            Require(M9SaveSchema.CurrentVersion == M9SaveSchema.Version4,
-                "M12 must own schema v4.");
+            Require(M9SaveSchema.CurrentVersion >= M9SaveSchema.Version4,
+                "Current schema must preserve v4 migration support.");
             Require((int)ResourceType.Tool == 5,
                 "Tool must remain append-only after M11 resources.");
-            Require(LumberCampProgressionCatalog.MetricCount == 20
+            Require(LumberCampProgressionCatalog.MetricCount >= 20
                     && LumberCampProgressionCatalog.FlagCount == 8
                     && LumberCampProgressionCatalog.ObjectiveCount == 16
-                    && LumberCampProgressionCatalog.ContractCount == 7
+                    && LumberCampProgressionCatalog.ContractCount >= 7
                     && LumberCampProgressionCatalog.AchievementCount == 19,
                 "M12 progression catalog sizes are not canonical.");
             Require(string.Equals(
@@ -523,8 +523,8 @@ namespace IndustryTycoon.Editor
                 BaselineUtc + 60L);
             Require(migrated.IsSuccess
                     && migrated.WasMigrated
-                    && migrated.Data.version == M9SaveSchema.Version4,
-                "A canonical v3 save did not migrate to v4: "
+                    && migrated.Data.version == M9SaveSchema.CurrentVersion,
+                "A canonical v3 save did not migrate to the current schema: "
                 + migrated.Diagnostic);
 
             M9SaveData data = migrated.Data;

@@ -25,7 +25,18 @@ namespace IndustryTycoon.Progression
         DrillUnlocked = 16,
         ToolsProduced = 17,
         ToolsSold = 18,
-        ToolWorkshopUnlocked = 19
+        ToolWorkshopUnlocked = 19,
+        WoodTransported = 20,
+        PlanksTransported = 21,
+        CratesTransported = 22,
+        IronOreTransported = 23,
+        IronBarsTransported = 24,
+        ToolsTransported = 25,
+        WarehouseUnlocked = 26,
+        IndustrialRouteOperational = 27,
+        DailyGoalsCompleted = 28,
+        CrossIndustryLogisticsContractsCompleted = 29,
+        IndustrialDistrictReady = 30
     }
 
     public enum ProgressFlagId
@@ -68,14 +79,28 @@ namespace IndustryTycoon.Progression
         ProduceTenCrates = 3,
         DeliverTenCrates = 4,
         ProduceTenTools = 5,
-        SellFifteenTools = 6
+        SellFifteenTools = 6,
+        ProduceThirtyWood = 7,
+        MineTwentyFiveIronOre = 8,
+        ProduceFifteenTools = 9,
+        TransportTenIronBars = 10
     }
 
     public enum ContractProgressState
     {
         Active = 0,
         CompletedUnclaimed = 1,
-        Claimed = 2
+        Claimed = 2,
+        Locked = 3
+    }
+
+    public enum ContractUnlockRequirement
+    {
+        None = 0,
+        Mine = 1,
+        ToolWorkshop = 2,
+        IndustrialLogistics = 3,
+        Warehouse = 4
     }
 
     public enum LumberCampAchievementId
@@ -166,7 +191,10 @@ namespace IndustryTycoon.Progression
             string description,
             ProgressMetricId metric,
             long target,
-            int rewardCash)
+            int rewardCash,
+            ContractUnlockRequirement unlockRequirement =
+                ContractUnlockRequirement.None,
+            bool crossIndustryLogistics = false)
         {
             Id = id;
             StableId = stableId;
@@ -174,6 +202,8 @@ namespace IndustryTycoon.Progression
             Metric = metric;
             Target = Math.Max(1L, target);
             RewardCash = Math.Max(1, rewardCash);
+            UnlockRequirement = unlockRequirement;
+            IsCrossIndustryLogistics = crossIndustryLogistics;
         }
 
         public LumberCampContractId Id { get; }
@@ -182,6 +212,8 @@ namespace IndustryTycoon.Progression
         public ProgressMetricId Metric { get; }
         public long Target { get; }
         public int RewardCash { get; }
+        public ContractUnlockRequirement UnlockRequirement { get; }
+        public bool IsCrossIndustryLogistics { get; }
     }
 
     public readonly struct LumberCampAchievementDefinition
@@ -230,7 +262,18 @@ namespace IndustryTycoon.Progression
             "drill_unlocked",
             "tools_produced",
             "tools_sold",
-            "tool_workshop_unlocked"
+            "tool_workshop_unlocked",
+            "wood_transported",
+            "planks_transported",
+            "crates_transported",
+            "iron_ore_transported",
+            "iron_bars_transported",
+            "tools_transported",
+            "warehouse_unlocked",
+            "industrial_route_operational",
+            "daily_goals_completed",
+            "cross_industry_logistics_contracts_completed",
+            "industrial_district_ready"
         };
 
         private static readonly string[] FlagStableIds =
@@ -371,7 +414,40 @@ namespace IndustryTycoon.Progression
                 "SELL 15 TOOLS",
                 ProgressMetricId.ToolsSold,
                 15L,
-                1200)
+                1200),
+            new LumberCampContractDefinition(
+                LumberCampContractId.ProduceThirtyWood,
+                "produce_30_wood",
+                "PRODUCE 30 WOOD",
+                ProgressMetricId.WoodProduced,
+                30L,
+                350,
+                ContractUnlockRequirement.Warehouse),
+            new LumberCampContractDefinition(
+                LumberCampContractId.MineTwentyFiveIronOre,
+                "mine_25_iron_ore",
+                "MINE 25 IRON ORE",
+                ProgressMetricId.IronOreMined,
+                25L,
+                650,
+                ContractUnlockRequirement.Mine),
+            new LumberCampContractDefinition(
+                LumberCampContractId.ProduceFifteenTools,
+                "produce_15_tools_m13",
+                "PRODUCE 15 TOOLS",
+                ProgressMetricId.ToolsProduced,
+                15L,
+                1400,
+                ContractUnlockRequirement.ToolWorkshop),
+            new LumberCampContractDefinition(
+                LumberCampContractId.TransportTenIronBars,
+                "transport_10_iron_bars",
+                "TRANSPORT 10 IRON BARS THROUGH INDUSTRIAL LOGISTICS",
+                ProgressMetricId.IronBarsTransported,
+                10L,
+                1800,
+                ContractUnlockRequirement.IndustrialLogistics,
+                true)
         };
 
         private static readonly LumberCampAchievementDefinition[] Achievements =

@@ -7,14 +7,18 @@ namespace IndustryTycoon.Progression
     {
         [SerializeField] private LumberCampProgressionService progressionService;
         [SerializeField] private GameObject teaseRoot;
+        [SerializeField] private GameObject readyRoot;
 
         private bool _isRevealed;
+        private bool _isReady;
 
         public event Action Revealed;
+        public event Action Ready;
 
         public LumberCampProgressionService ProgressionService => progressionService;
         public GameObject TeaseRoot => teaseRoot;
         public bool IsRevealed => _isRevealed;
+        public bool IsReady => _isReady;
         public int RevealCount { get; private set; }
 
         private void OnEnable()
@@ -41,8 +45,11 @@ namespace IndustryTycoon.Progression
         {
             bool shouldReveal = progressionService != null
                                 && progressionService.EmpireLevel
-                                >= M10ProgressionRules.MaximumEmpireLevel;
-            SetPresentationState(shouldReveal, false);
+                                >= 5;
+            bool shouldBeReady = progressionService != null
+                                 && progressionService.EmpireLevel
+                                 >= M10ProgressionRules.MaximumEmpireLevel;
+            SetPresentationState(shouldReveal, shouldBeReady, false);
         }
 
         private void HandleStateChanged()
@@ -52,26 +59,43 @@ namespace IndustryTycoon.Progression
 
         private void HandleEmpireLevelAdvanced(int empireLevel)
         {
-            if (empireLevel < M10ProgressionRules.MaximumEmpireLevel)
+            if (empireLevel < 5)
             {
                 return;
             }
 
-            SetPresentationState(true, true);
+            SetPresentationState(
+                true,
+                empireLevel >= M10ProgressionRules.MaximumEmpireLevel,
+                true);
         }
 
-        private void SetPresentationState(bool revealed, bool publishTransition)
+        private void SetPresentationState(
+            bool revealed,
+            bool ready,
+            bool publishTransition)
         {
             bool changed = _isRevealed != revealed;
+            bool readyChanged = _isReady != ready;
             _isRevealed = revealed;
+            _isReady = ready;
             teaseRoot?.SetActive(revealed);
-            if (!changed || !revealed || !publishTransition)
+            readyRoot?.SetActive(ready);
+            if (!publishTransition)
             {
                 return;
             }
 
-            RevealCount++;
-            Revealed?.Invoke();
+            if (changed && revealed)
+            {
+                RevealCount++;
+                Revealed?.Invoke();
+            }
+
+            if (readyChanged && ready && publishTransition)
+            {
+                Ready?.Invoke();
+            }
         }
     }
 }

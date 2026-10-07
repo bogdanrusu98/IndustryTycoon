@@ -125,7 +125,7 @@ namespace IndustryTycoon.UI
         private void RefreshContract()
         {
             if (progressionService == null
-                || !progressionService.HasActiveContract)
+                || !progressionService.HasPendingContract)
             {
                 SetText(contractDescriptionText, "ALL CONTRACTS COMPLETE");
                 SetText(contractProgressText, "NO ACTIVE CONTRACT");
@@ -154,7 +154,9 @@ namespace IndustryTycoon.UI
                 contractStateText,
                 state == ContractProgressState.CompletedUnclaimed
                     ? "READY TO CLAIM"
-                    : "ACTIVE");
+                    : state == ContractProgressState.Locked
+                        ? "LOCKED — COMPLETE THE REQUIRED INDUSTRY"
+                        : "ACTIVE");
             if (claimButton != null)
             {
                 bool canClaim = state == ContractProgressState.CompletedUnclaimed;

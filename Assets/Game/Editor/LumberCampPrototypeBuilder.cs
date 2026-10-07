@@ -116,6 +116,23 @@ namespace IndustryTycoon.Editor
             public PurchasePad PurchasePad { get; }
         }
 
+        private readonly struct M13Services
+        {
+            public M13Services(
+                CentralWarehouse warehouse,
+                IndustrialLogisticsNetwork network,
+                IndustrialLogisticsRoute[] routes)
+            {
+                Warehouse = warehouse;
+                Network = network;
+                Routes = routes;
+            }
+
+            public CentralWarehouse Warehouse { get; }
+            public IndustrialLogisticsNetwork Network { get; }
+            public IndustrialLogisticsRoute[] Routes { get; }
+        }
+
         [MenuItem("Industry Tycoon/Prototype/Rebuild Lumber Camp")]
         private static void RebuildFromMenu()
         {
@@ -205,6 +222,46 @@ namespace IndustryTycoon.Editor
 
             Debug.Log(
                 $"Windows Player build passed: {fullBuildPath} "
+                + $"({report.summary.totalSize} bytes, "
+                + $"{report.summary.totalWarnings} warnings).");
+        }
+
+        public static void BuildAndroidPlayerFromCommandLine()
+        {
+            string buildPath = GetCommandLineValue("-customBuildPath");
+            if (string.IsNullOrWhiteSpace(buildPath))
+            {
+                throw new InvalidOperationException(
+                    "BuildAndroidPlayerFromCommandLine requires -customBuildPath <file.apk>.");
+            }
+
+            string fullBuildPath = Path.GetFullPath(buildPath);
+            string buildDirectory = Path.GetDirectoryName(fullBuildPath);
+            if (string.IsNullOrWhiteSpace(buildDirectory))
+            {
+                throw new InvalidOperationException(
+                    $"Invalid Android Player build path: {fullBuildPath}");
+            }
+
+            Directory.CreateDirectory(buildDirectory);
+            var buildOptions = new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = fullBuildPath,
+                target = BuildTarget.Android,
+                options = BuildOptions.None
+            };
+            BuildReport report = BuildPipeline.BuildPlayer(buildOptions);
+            if (report.summary.result != BuildResult.Succeeded)
+            {
+                throw new InvalidOperationException(
+                    $"Android Player build failed: {report.summary.result}, "
+                    + $"{report.summary.totalErrors} errors, "
+                    + $"{report.summary.totalWarnings} warnings.");
+            }
+
+            Debug.Log(
+                $"Android Player build passed: {fullBuildPath} "
                 + $"({report.summary.totalSize} bytes, "
                 + $"{report.summary.totalWarnings} warnings).");
         }
@@ -551,6 +608,20 @@ namespace IndustryTycoon.Editor
                 sawBladeMaterial,
                 feedbackParticleMaterial,
                 feedbackServices.Audio);
+            WoodProcessor m13Processor = processorUnlock.ProcessorRoot
+                .GetComponent<WoodProcessor>();
+            PackingStation m13Packing = packingStationUnlock.PackingStationRoot
+                .GetComponent<PackingStation>();
+            M13Services m13Services = CreateM13Logistics(
+                scene,
+                player.GetComponent<CarryStack>(),
+                playerCollider,
+                m13Processor,
+                m13Packing,
+                m11Services.Smelter,
+                processorMaterial,
+                purchaseCompleteMaterial,
+                plankMaterial);
             LumberCampProgressionService progressionService =
                 CreateM10Progression(
                     scene,
@@ -567,7 +638,13 @@ namespace IndustryTycoon.Editor
                     courier,
                     m8Services.Completion,
                     m11Services,
-                    m12Services);
+                    m12Services,
+                    m13Services);
+            RetentionGoalService retentionGoalService =
+                CreateM13RetentionGoals(
+                    scene,
+                    progressionService,
+                    wallet);
             SetObjectReference(
                 m12Services.WorkshopUnlock,
                 "progressionService",
@@ -595,7 +672,9 @@ namespace IndustryTycoon.Editor
                 m8Services.Completion,
                 progressionService,
                 m11Services,
-                m12Services);
+                m12Services,
+                m13Services,
+                retentionGoalService);
             CreateLighting(scene);
             NextUnlockGuidance nextUnlockGuidance = CreateHud(
                 scene,
@@ -612,6 +691,8 @@ namespace IndustryTycoon.Editor
                 followCamera,
                 progressionService,
                 persistenceService,
+                m13Services,
+                retentionGoalService,
                 playerMovement,
                 player.GetComponent<PlayerDragInput>());
             SetObjectReference(
@@ -697,6 +778,7 @@ namespace IndustryTycoon.Editor
         private static Material CreateOrUpdateMaterial(string path, Color color, float smoothness)
         {
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            bool changed = false;
             if (material == null)
             {
                 Shader shader = Shader.Find("Universal Render Pipeline/Lit");
@@ -707,31 +789,51 @@ namespace IndustryTycoon.Editor
 
                 material = new Material(shader);
                 AssetDatabase.CreateAsset(material, path);
+                changed = true;
             }
 
-            material.color = color;
             if (material.HasProperty("_BaseColor"))
             {
-                material.SetColor("_BaseColor", color);
+                if (material.GetColor("_BaseColor") != color)
+                {
+                    material.SetColor("_BaseColor", color);
+                    changed = true;
+                }
+            }
+            else if (material.color != color)
+            {
+                material.color = color;
+                changed = true;
             }
 
-            if (material.HasProperty("_Smoothness"))
+            if (material.HasProperty("_Smoothness")
+                && !Mathf.Approximately(
+                    material.GetFloat("_Smoothness"),
+                    smoothness))
             {
                 material.SetFloat("_Smoothness", smoothness);
+                changed = true;
             }
 
-            if (material.HasProperty("_Metallic"))
+            if (material.HasProperty("_Metallic")
+                && !Mathf.Approximately(material.GetFloat("_Metallic"), 0f))
             {
                 material.SetFloat("_Metallic", 0f);
+                changed = true;
             }
 
-            EditorUtility.SetDirty(material);
+            if (changed)
+            {
+                EditorUtility.SetDirty(material);
+            }
+
             return material;
         }
 
         private static Material CreateOrUpdateParticleMaterial(string path)
         {
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            bool changed = false;
             if (material == null)
             {
                 Shader shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
@@ -742,16 +844,29 @@ namespace IndustryTycoon.Editor
 
                 material = new Material(shader);
                 AssetDatabase.CreateAsset(material, path);
+                changed = true;
             }
 
             Color color = Color.white;
-            material.color = color;
             if (material.HasProperty("_BaseColor"))
             {
-                material.SetColor("_BaseColor", color);
+                if (material.GetColor("_BaseColor") != color)
+                {
+                    material.SetColor("_BaseColor", color);
+                    changed = true;
+                }
+            }
+            else if (material.color != color)
+            {
+                material.color = color;
+                changed = true;
             }
 
-            EditorUtility.SetDirty(material);
+            if (changed)
+            {
+                EditorUtility.SetDirty(material);
+            }
+
             return material;
         }
 
@@ -3854,6 +3969,177 @@ namespace IndustryTycoon.Editor
             return new M12Services(unlock, workshop, purchasePad);
         }
 
+        private static M13Services CreateM13Logistics(
+            Scene scene,
+            CarryStack carryStack,
+            Collider playerCollider,
+            WoodProcessor processor,
+            PackingStation packingStation,
+            Smelter smelter,
+            Material warehouseMaterial,
+            Material accentMaterial,
+            Material plankMaterial)
+        {
+            Require(carryStack != null
+                    && playerCollider != null
+                    && processor != null
+                    && packingStation != null
+                    && smelter != null,
+                "M13 logistics requires the existing player and production endpoints.");
+
+            GameObject root = new GameObject("Central Warehouse");
+            SceneManager.MoveGameObjectToScene(root, scene);
+            root.transform.position = new Vector3(-12f, 0f, 19f);
+            CentralWarehouse warehouse = root.AddComponent<CentralWarehouse>();
+
+            GameObject floor = CreatePrimitiveChild(
+                "Warehouse Floor",
+                PrimitiveType.Cube,
+                root.transform,
+                warehouseMaterial);
+            floor.transform.localPosition = new Vector3(0f, 0.15f, 0f);
+            floor.transform.localScale = new Vector3(6.5f, 0.3f, 4.2f);
+            for (int i = -2; i <= 2; i++)
+            {
+                GameObject rack = CreatePrimitiveChild(
+                    $"Warehouse Rack {i + 3}",
+                    PrimitiveType.Cube,
+                    root.transform,
+                    i % 2 == 0 ? accentMaterial : plankMaterial);
+                rack.transform.localPosition = new Vector3(i * 1.05f, 0.85f, 0.75f);
+                rack.transform.localScale = new Vector3(0.72f, 1.4f, 0.65f);
+            }
+
+            CreateWorldLabel(
+                "Warehouse Label",
+                root.transform,
+                "CENTRAL WAREHOUSE\nSHARED PHYSICAL STORAGE",
+                new Vector3(0f, 2.05f, -0.2f),
+                Color.white);
+
+            WarehouseTransferZone deposit = CreateWarehouseZone(
+                "Warehouse Deposit",
+                root.transform,
+                new Vector3(-1.8f, 0.35f, -1.55f),
+                new Color(0.15f, 0.75f, 0.34f),
+                warehouseMaterial,
+                warehouse,
+                WarehouseTransferMode.Deposit,
+                ResourceType.Plank);
+            WarehouseTransferZone withdraw = CreateWarehouseZone(
+                "Warehouse Withdraw",
+                root.transform,
+                new Vector3(1.8f, 0.35f, -1.55f),
+                new Color(0.25f, 0.55f, 0.95f),
+                warehouseMaterial,
+                warehouse,
+                WarehouseTransferMode.Withdraw,
+                ResourceType.Plank);
+            Require(deposit != null && withdraw != null,
+                "M13 Warehouse manual transfer zones were not created.");
+
+            GameObject routeRoot = new GameObject("Industrial Logistics Network");
+            SceneManager.MoveGameObjectToScene(routeRoot, scene);
+            IndustrialLogisticsNetwork network =
+                routeRoot.AddComponent<IndustrialLogisticsNetwork>();
+            var routes = new IndustrialLogisticsRoute[3];
+            routes[0] = CreateIndustrialRoute(
+                routeRoot.transform,
+                "Processor To Warehouse Route",
+                "processor_to_warehouse",
+                processor,
+                warehouse,
+                ResourceType.Plank);
+            routes[1] = CreateIndustrialRoute(
+                routeRoot.transform,
+                "Warehouse To Packing Route",
+                "warehouse_to_packing",
+                warehouse,
+                packingStation,
+                ResourceType.Plank);
+            routes[2] = CreateIndustrialRoute(
+                routeRoot.transform,
+                "Smelter To Warehouse Route",
+                "smelter_to_warehouse",
+                smelter,
+                warehouse,
+                ResourceType.IronBar);
+            SetObjectArray(
+                network,
+                "endpoints",
+                new Object[] { processor, packingStation, smelter, warehouse });
+            SetObjectArray(network, "routes", routes);
+            root.SetActive(false);
+            return new M13Services(warehouse, network, routes);
+        }
+
+        private static WarehouseTransferZone CreateWarehouseZone(
+            string name,
+            Transform parent,
+            Vector3 localPosition,
+            Color color,
+            Material material,
+            CentralWarehouse warehouse,
+            WarehouseTransferMode mode,
+            ResourceType resourceType)
+        {
+            GameObject zone = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            zone.name = name;
+            zone.transform.SetParent(parent, false);
+            zone.transform.localPosition = localPosition;
+            zone.transform.localScale = new Vector3(1.5f, 0.12f, 1.1f);
+            zone.GetComponent<MeshRenderer>().sharedMaterial = material;
+            BoxCollider collider = zone.GetComponent<BoxCollider>();
+            collider.isTrigger = true;
+            WarehouseTransferZone transfer = zone.AddComponent<WarehouseTransferZone>();
+            SetObjectReference(transfer, "warehouse", warehouse);
+            SetEnum(transfer, "mode", (int)mode);
+            SetEnum(transfer, "withdrawalResource", (int)resourceType);
+            SetFloat(transfer, "transferInterval", 0.10f);
+            CreateWorldLabel(
+                name + " Label",
+                zone.transform,
+                mode == WarehouseTransferMode.Deposit ? "DEPOSIT" : "WITHDRAW PLANK",
+                new Vector3(0f, 0.25f, 0f),
+                Color.white);
+            return transfer;
+        }
+
+        private static IndustrialLogisticsRoute CreateIndustrialRoute(
+            Transform parent,
+            string name,
+            string routeId,
+            MonoBehaviour source,
+            MonoBehaviour destination,
+            ResourceType resourceType)
+        {
+            GameObject routeObject = new GameObject(name);
+            routeObject.transform.SetParent(parent, false);
+            IndustrialLogisticsRoute route =
+                routeObject.AddComponent<IndustrialLogisticsRoute>();
+            SetString(route, "routeId", routeId);
+            SetObjectReference(route, "sourceEndpoint", source);
+            SetObjectReference(route, "destinationEndpoint", destination);
+            SetEnum(route, "resourceType", (int)resourceType);
+            SetInteger(route, "batchSize", 1);
+            SetFloat(route, "transferInterval", 2f);
+            SetBoolean(route, "routeEnabled", false);
+            return route;
+        }
+
+        private static RetentionGoalService CreateM13RetentionGoals(
+            Scene scene,
+            LumberCampProgressionService progressionService,
+            Wallet wallet)
+        {
+            GameObject root = new GameObject("Retention Goals");
+            SceneManager.MoveGameObjectToScene(root, scene);
+            RetentionGoalService service = root.AddComponent<RetentionGoalService>();
+            SetObjectReference(service, "progressionService", progressionService);
+            SetObjectReference(service, "wallet", wallet);
+            return service;
+        }
+
         private static IndustrialDistrictTease CreateIndustrialDistrictTease(
             Scene scene,
             LumberCampProgressionService progressionService,
@@ -3913,6 +4199,16 @@ namespace IndustryTycoon.Editor
                 new Vector3(0f, 2.45f, 0.08f),
                 new Color(1f, 0.80f, 0.30f));
             teaseLabel.characterSize = 0.047f;
+            GameObject readyRoot = new GameObject("Industrial District Ready State");
+            readyRoot.transform.SetParent(teaseRoot.transform, false);
+            TextMesh readyLabel = CreateWorldLabel(
+                "Industrial District Ready Label",
+                readyRoot.transform,
+                "INDUSTRIAL DISTRICT — READY",
+                new Vector3(0f, 2.10f, 0.08f),
+                new Color(0.30f, 1f, 0.55f));
+            readyLabel.characterSize = 0.052f;
+            readyRoot.SetActive(false);
             teaseRoot.SetActive(false);
 
             GameObject progressionRoot = FindRoot(scene, "Lumber Camp Progression");
@@ -3922,6 +4218,7 @@ namespace IndustryTycoon.Editor
                 progressionRoot.AddComponent<IndustrialDistrictTease>();
             SetObjectReference(tease, "progressionService", progressionService);
             SetObjectReference(tease, "teaseRoot", teaseRoot);
+            SetObjectReference(tease, "readyRoot", readyRoot);
             return tease;
         }
 
@@ -3940,7 +4237,8 @@ namespace IndustryTycoon.Editor
             CrateCourier courier,
             LumberCampCompletion completion,
             M11Services m11Services,
-            M12Services m12Services)
+            M12Services m12Services,
+            M13Services m13Services)
         {
             GameObject root = FindRoot(scene, "Lumber Camp Progression");
             WoodProcessor processor = processorUnlock != null
@@ -3994,6 +4292,8 @@ namespace IndustryTycoon.Editor
             SetObjectReference(service, "automatedDrill", m11Services.Drill);
             SetObjectReference(service, "toolWorkshopUnlock", m12Services.WorkshopUnlock);
             SetObjectReference(service, "toolWorkshop", m12Services.Workshop);
+            SetObjectReference(service, "centralWarehouse", m13Services.Warehouse);
+            SetObjectReference(service, "logisticsNetwork", m13Services.Network);
             return service;
         }
 
@@ -4014,7 +4314,9 @@ namespace IndustryTycoon.Editor
             LumberCampCompletion completion,
             LumberCampProgressionService progressionService,
             M11Services m11Services,
-            M12Services m12Services)
+            M12Services m12Services,
+            M13Services m13Services,
+            RetentionGoalService retentionGoalService)
         {
             LumberWorker worker = workerUnlock != null && workerUnlock.WorkerRoot != null
                 ? workerUnlock.WorkerRoot.GetComponent<LumberWorker>()
@@ -4052,7 +4354,10 @@ namespace IndustryTycoon.Editor
                     && m11Services.Drill != null
                     && m11Services.OreStorage != null
                     && m12Services.WorkshopUnlock != null
-                    && m12Services.Workshop != null,
+                    && m12Services.Workshop != null
+                    && m13Services.Warehouse != null
+                    && m13Services.Network != null
+                    && retentionGoalService != null,
                 "M12 persistence requires the complete authoritative production state graph.");
 
             GameObject root = new GameObject("Local Persistence");
@@ -4093,6 +4398,9 @@ namespace IndustryTycoon.Editor
             SetObjectReference(service, "oreStorage", m11Services.OreStorage);
             SetObjectReference(service, "toolWorkshopUnlock", m12Services.WorkshopUnlock);
             SetObjectReference(service, "toolWorkshop", m12Services.Workshop);
+            SetObjectReference(service, "centralWarehouse", m13Services.Warehouse);
+            SetObjectReference(service, "logisticsNetwork", m13Services.Network);
+            SetObjectReference(service, "retentionGoalService", retentionGoalService);
             SetFloat(service, "saveDebounceSeconds", 3f);
             SetFloat(service, "returnScreenThresholdSeconds", 300f);
             SetFloat(service, "maximumCreditedAwaySeconds", 14400f);
@@ -4130,6 +4438,8 @@ namespace IndustryTycoon.Editor
             SmoothFollowCamera followCamera,
             LumberCampProgressionService progressionService,
             LocalPersistenceService persistenceService,
+            M13Services m13Services,
+            RetentionGoalService retentionGoalService,
             PlayerMovement playerMovement,
             PlayerDragInput playerDragInput)
         {
@@ -4250,6 +4560,11 @@ namespace IndustryTycoon.Editor
                 safeAreaObject,
                 progressionService,
                 feedbackServices);
+            CreateM13OperationsUi(
+                safeAreaObject,
+                progressionService,
+                m13Services,
+                retentionGoalService);
 
             GameObject bannerRoot = new GameObject(
                 "Completion Banner",
@@ -4532,6 +4847,135 @@ namespace IndustryTycoon.Editor
             toastRoot.SetActive(false);
         }
 
+        private static void CreateM13OperationsUi(
+            GameObject safeAreaObject,
+            LumberCampProgressionService progressionService,
+            M13Services m13Services,
+            RetentionGoalService retentionGoalService)
+        {
+            Button toggle = CreateHudButton(
+                "Industry Operations Button",
+                safeAreaObject.transform,
+                "INDUSTRY",
+                new Vector2(0.69f, 0.015f),
+                new Vector2(0.97f, 0.075f),
+                new Color(0.55f, 0.30f, 0.10f, 0.96f),
+                28);
+
+            GameObject panel = new GameObject(
+                "Industrial Operations Panel",
+                typeof(RectTransform),
+                typeof(Image));
+            panel.transform.SetParent(safeAreaObject.transform, false);
+            RectTransform rect = panel.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.04f, 0.10f);
+            rect.anchorMax = new Vector2(0.96f, 0.90f);
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            panel.GetComponent<Image>().color =
+                new Color(0.035f, 0.055f, 0.065f, 0.98f);
+
+            Text empire = CreateHudLine(
+                "Industrial Empire Progress",
+                panel.transform,
+                "EMPIRE 1 / 10",
+                new Vector2(0.03f, 0.91f),
+                new Vector2(0.79f, 0.99f),
+                34);
+            Button close = CreateHudButton(
+                "Close Industrial Operations",
+                panel.transform,
+                "CLOSE",
+                new Vector2(0.80f, 0.92f),
+                new Vector2(0.97f, 0.985f),
+                new Color(0.55f, 0.16f, 0.14f, 1f),
+                24);
+            Text warehouse = CreateHudLine(
+                "Warehouse Overview",
+                panel.transform,
+                "CENTRAL WAREHOUSE",
+                new Vector2(0.03f, 0.58f),
+                new Vector2(0.48f, 0.90f),
+                25);
+            warehouse.alignment = TextAnchor.UpperLeft;
+            Text routes = CreateHudLine(
+                "Route Status",
+                panel.transform,
+                "INDUSTRIAL ROUTES",
+                new Vector2(0.51f, 0.68f),
+                new Vector2(0.97f, 0.90f),
+                22);
+            routes.alignment = TextAnchor.UpperLeft;
+            Button firstRoute = CreateHudButton(
+                "Toggle Processor Warehouse Route",
+                panel.transform,
+                "PROCESSOR → WAREHOUSE",
+                new Vector2(0.52f, 0.60f),
+                new Vector2(0.96f, 0.67f),
+                new Color(0.18f, 0.48f, 0.72f, 1f),
+                20);
+            Button secondRoute = CreateHudButton(
+                "Toggle Warehouse Packing Route",
+                panel.transform,
+                "WAREHOUSE → PACKING",
+                new Vector2(0.52f, 0.52f),
+                new Vector2(0.96f, 0.59f),
+                new Color(0.18f, 0.48f, 0.72f, 1f),
+                20);
+            Button thirdRoute = CreateHudButton(
+                "Toggle Smelter Warehouse Route",
+                panel.transform,
+                "SMELTER → WAREHOUSE",
+                new Vector2(0.52f, 0.44f),
+                new Vector2(0.96f, 0.51f),
+                new Color(0.18f, 0.48f, 0.72f, 1f),
+                20);
+            Text goals = CreateHudLine(
+                "Daily Weekly Goals",
+                panel.transform,
+                "DAILY\n\nWEEKLY",
+                new Vector2(0.03f, 0.13f),
+                new Vector2(0.97f, 0.42f),
+                24);
+            goals.alignment = TextAnchor.UpperLeft;
+            Button dailyClaim = CreateHudButton(
+                "Claim Daily Goal",
+                panel.transform,
+                "CLAIM DAILY",
+                new Vector2(0.03f, 0.035f),
+                new Vector2(0.42f, 0.11f),
+                new Color(0.14f, 0.68f, 0.36f, 1f),
+                24);
+            Button weeklyClaim = CreateHudButton(
+                "Claim Weekly Goal",
+                panel.transform,
+                "CLAIM WEEKLY",
+                new Vector2(0.45f, 0.035f),
+                new Vector2(0.84f, 0.11f),
+                new Color(0.54f, 0.36f, 0.76f, 1f),
+                24);
+
+            IndustrialRetentionView view =
+                safeAreaObject.AddComponent<IndustrialRetentionView>();
+            SetObjectReference(view, "warehouse", m13Services.Warehouse);
+            SetObjectReference(view, "logisticsNetwork", m13Services.Network);
+            SetObjectReference(view, "goalService", retentionGoalService);
+            SetObjectReference(view, "progressionService", progressionService);
+            SetObjectReference(view, "panelRoot", panel);
+            SetObjectReference(view, "toggleButton", toggle);
+            SetObjectReference(view, "closeButton", close);
+            SetObjectReference(view, "warehouseText", warehouse);
+            SetObjectReference(view, "routesText", routes);
+            SetObjectReference(view, "goalsText", goals);
+            SetObjectReference(view, "empireText", empire);
+            SetObjectReference(view, "firstRouteToggleButton", firstRoute);
+            SetObjectReference(view, "secondRouteToggleButton", secondRoute);
+            SetObjectReference(view, "thirdRouteToggleButton", thirdRoute);
+            SetObjectReference(view, "claimDailyButton", dailyClaim);
+            SetObjectReference(view, "claimWeeklyButton", weeklyClaim);
+            panel.SetActive(false);
+        }
+
         private static Button CreateHudButton(
             string name,
             Transform parent,
@@ -4753,6 +5197,25 @@ namespace IndustryTycoon.Editor
             var serializedObject = new SerializedObject(target);
             SerializedProperty property = GetRequiredProperty(serializedObject, target, propertyName);
             property.objectReferenceValue = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void SetObjectArray(
+            Object target,
+            string propertyName,
+            Object[] values)
+        {
+            var serializedObject = new SerializedObject(target);
+            SerializedProperty property = GetRequiredProperty(
+                serializedObject,
+                target,
+                propertyName);
+            property.arraySize = values?.Length ?? 0;
+            for (int i = 0; i < property.arraySize; i++)
+            {
+                property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
+            }
+
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -8004,12 +8467,12 @@ namespace IndustryTycoon.Editor
 
         private static void ValidateM10Logic()
         {
-            Require(M9SaveSchema.CurrentVersion == M9SaveSchema.Version4,
-                "M12 requires local save schema version 4.");
-            Require(LumberCampProgressionCatalog.MetricCount == 20
+            Require(M9SaveSchema.CurrentVersion >= M9SaveSchema.Version4,
+                "The current save schema must preserve the M12 v4 contract.");
+            Require(LumberCampProgressionCatalog.MetricCount >= 20
                     && LumberCampProgressionCatalog.FlagCount == 8
                     && LumberCampProgressionCatalog.ObjectiveCount == 16
-                    && LumberCampProgressionCatalog.ContractCount == 7
+                    && LumberCampProgressionCatalog.ContractCount >= 7
                     && LumberCampProgressionCatalog.AchievementCount == 19,
                 "M12 progression catalog sizes changed unexpectedly.");
 
@@ -8138,9 +8601,11 @@ namespace IndustryTycoon.Editor
             {
                 LumberCampContractDefinition contract =
                     LumberCampProgressionCatalog.GetContract(i);
+                bool preservedLegacyDefinition = i >= contractTargets.Length
+                    || (contract.Target == contractTargets[i]
+                        && contract.RewardCash == contractRewards[i]);
                 Require((int)contract.Id == i
-                        && contract.Target == contractTargets[i]
-                        && contract.RewardCash == contractRewards[i]
+                        && preservedLegacyDefinition
                         && stableIds.Add(contract.StableId),
                     $"M10 Contract {i} definition is invalid or duplicated.");
             }

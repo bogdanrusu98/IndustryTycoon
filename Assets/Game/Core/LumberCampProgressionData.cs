@@ -269,7 +269,7 @@ namespace IndustryTycoon.Progression
     public static class M10ProgressionRules
     {
         public const int MinimumEmpireLevel = 1;
-        public const int MaximumEmpireLevel = 5;
+        public const int MaximumEmpireLevel = 10;
 
         public static int ResolveEmpireLevel(M10ProgressionSaveData data)
         {
@@ -293,9 +293,71 @@ namespace IndustryTycoon.Progression
             }
 
             level = 4;
-            return data.GetMetric(ProgressMetricId.ToolsProduced) >= 1L
+            if (data.GetMetric(ProgressMetricId.ToolsProduced) < 1L)
+            {
+                return level;
+            }
+
+            level = 5;
+            if (data.GetMetric(ProgressMetricId.WarehouseUnlocked) < 1L)
+            {
+                return level;
+            }
+
+            level = 6;
+            if (data.GetMetric(ProgressMetricId.IndustrialRouteOperational) < 1L)
+            {
+                return level;
+            }
+
+            level = 7;
+            if (data.GetMetric(ProgressMetricId.DailyGoalsCompleted) < 1L)
+            {
+                return level;
+            }
+
+            level = 8;
+            if (data.GetMetric(
+                    ProgressMetricId.CrossIndustryLogisticsContractsCompleted) < 1L)
+            {
+                return level;
+            }
+
+            level = 9;
+            return data.GetMetric(ProgressMetricId.IndustrialDistrictReady) >= 1L
                 ? MaximumEmpireLevel
                 : level;
+        }
+
+        public static bool IsContractEligible(
+            M10ProgressionSaveData data,
+            LumberCampContractDefinition definition)
+        {
+            if (data == null)
+            {
+                return false;
+            }
+
+            switch (definition.UnlockRequirement)
+            {
+                case ContractUnlockRequirement.None:
+                    return true;
+                case ContractUnlockRequirement.Mine:
+                    return data.GetMetric(ProgressMetricId.MineUnlocked) >= 1L;
+                case ContractUnlockRequirement.ToolWorkshop:
+                    return data.GetMetric(
+                        ProgressMetricId.ToolWorkshopUnlocked) >= 1L;
+                case ContractUnlockRequirement.IndustrialLogistics:
+                    return data.GetMetric(ProgressMetricId.WarehouseUnlocked) >= 1L
+                           && data.GetMetric(
+                               ProgressMetricId.IndustrialRouteOperational) >= 1L
+                           && data.GetMetric(
+                               ProgressMetricId.ToolWorkshopUnlocked) >= 1L;
+                case ContractUnlockRequirement.Warehouse:
+                    return data.GetMetric(ProgressMetricId.WarehouseUnlocked) >= 1L;
+                default:
+                    return false;
+            }
         }
 
         public static bool IsObjectiveSatisfied(
@@ -435,7 +497,7 @@ namespace IndustryTycoon.Progression
                     break;
                 case LumberCampAchievementId.EmpireLevelFive:
                     current = ResolveEmpireLevel(data);
-                    target = MaximumEmpireLevel;
+                    target = 5L;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(achievementIndex));
@@ -569,10 +631,15 @@ namespace IndustryTycoon.Progression
                     source.activeContractBaseline,
                     0L,
                     currentMetric);
+                bool eligible = M10ProgressionRules.IsContractEligible(
+                    normalized,
+                    contract);
                 long progress = currentMetric - normalized.activeContractBaseline;
-                normalized.activeContractState = progress >= contract.Target
-                    ? ContractProgressState.CompletedUnclaimed
-                    : ContractProgressState.Active;
+                normalized.activeContractState = !eligible
+                    ? ContractProgressState.Locked
+                    : progress >= contract.Target
+                        ? ContractProgressState.CompletedUnclaimed
+                        : ContractProgressState.Active;
             }
 
             if (source.activeContractState != normalized.activeContractState)

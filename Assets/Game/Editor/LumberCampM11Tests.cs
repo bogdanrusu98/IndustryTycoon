@@ -414,12 +414,12 @@ namespace IndustryTycoon.Editor
                     out string failure,
                     prettyPrint: true),
                 "Canonical M11 save could not encode: " + failure);
-            Require(json.Contains("\"version\": 4")
+            Require(json.Contains($"\"version\": {M9SaveSchema.CurrentVersion}")
                     && json.Contains("\"mining\"")
                     && json.Contains("\"smelterInputIronOre\": 23")
                     && json.Contains("\"smelterOutputIronBars\": 11")
                     && json.Contains("\"oreStorageIronOre\": 29"),
-                "Encoded v3 save omitted canonical Mining state.");
+                "Encoded current save omitted canonical Mining state.");
             string[] forbiddenTransientNames =
             {
                 "processingInputOre",

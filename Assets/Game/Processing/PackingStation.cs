@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using IndustryTycoon.Core;
+using IndustryTycoon.Logistics;
 using IndustryTycoon.Player;
 using UnityEngine;
 
@@ -27,7 +28,7 @@ namespace IndustryTycoon.Processing
         internal uint Token => _token;
     }
 
-    public class PackingStation : MonoBehaviour
+    public class PackingStation : MonoBehaviour, IIndustrialResourceEndpoint
     {
         private const int PlanksRequiredPerRecipe = 2;
         private const int CratesProducedPerRecipe = 1;
@@ -54,6 +55,11 @@ namespace IndustryTycoon.Processing
         private bool _isStartingProcessing;
         private bool _isInputTransferInProgress;
         private bool _isOutputTransferInProgress;
+        private int _reservedIndustrialIncoming;
+        private int _reservedIndustrialOutgoing;
+        private uint _nextIndustrialToken;
+        private IndustrialResourceReservation _industrialIncoming;
+        private IndustrialResourceReservation _industrialOutgoing;
 
         public event Action<int, int, int, int> BufferChanged;
         public event Action<int> CourierOutputReservationChanged;
@@ -64,7 +70,8 @@ namespace IndustryTycoon.Processing
         public int ProcessingInputPlanks => _processingInputPlanks;
         public int AvailableInputCapacity => Mathf.Max(
             0,
-            inputCapacity - _inputPlanks - _processingInputPlanks);
+            inputCapacity - _inputPlanks - _processingInputPlanks
+            - _reservedIndustrialIncoming);
         public int OutputCrates => _outputCrates;
         public int ReservedOutputCapacity => _reservedOutputCapacity;
         public int ReservedCourierOutputCrates => _reservedCourierOutputCrates;
@@ -84,6 +91,8 @@ namespace IndustryTycoon.Processing
                                     && _outputCrates + _reservedOutputCapacity
                                     + CratesProducedPerRecipe > outputCapacity;
         public int CompletedRecipeCount => _completedRecipeCount;
+        public virtual string EndpointId => "packing_station";
+        public bool IsEndpointOperational => isActiveAndEnabled;
 
         protected virtual ResourceType InputResourceType => ResourceType.Plank;
         protected virtual ResourceType OutputResourceType => ResourceType.Crate;
@@ -106,6 +115,7 @@ namespace IndustryTycoon.Processing
         {
             bool reservationChanged = _reservedCourierOutputCrates > 0;
             InvalidateCourierOutputReservation();
+            InvalidateIndustrialReservations();
             bool stateChanged = StopProcessingAndResolveOwnership();
             if (reservationChanged)
             {
@@ -164,7 +174,7 @@ namespace IndustryTycoon.Processing
             if (!isActiveAndEnabled
                 || _isOutputTransferInProgress
                 || carryStack == null
-                || _outputCrates <= 0
+                || _outputCrates - _reservedIndustrialOutgoing <= 0
                 || !carryStack.TryReserveCapacity(OutputResourceType, 1))
             {
                 return false;
@@ -235,14 +245,16 @@ namespace IndustryTycoon.Processing
             if (!isActiveAndEnabled
                 || maximumCrates <= 0
                 || _reservedCourierOutputCrates != 0
-                || _outputCrates <= 0)
+                || _outputCrates - _reservedIndustrialOutgoing <= 0)
             {
                 return false;
             }
 
             int reservedCrates = Mathf.Min(
                 MaximumCourierReservation,
-                Mathf.Min(maximumCrates, _outputCrates));
+                Mathf.Min(
+                    maximumCrates,
+                    _outputCrates - _reservedIndustrialOutgoing));
             if (reservedCrates <= 0)
             {
                 return false;
@@ -293,9 +305,175 @@ namespace IndustryTycoon.Processing
             }
 
             InvalidateCourierOutputReservation();
+            InvalidateIndustrialReservations();
             AssertInvariants();
             CourierOutputReservationChanged?.Invoke(0);
             return true;
+        }
+
+        public int GetAvailable(ResourceType resourceType)
+        {
+            return resourceType == OutputResourceType
+                ? Mathf.Max(
+                    0,
+                    _outputCrates - _reservedCourierOutputCrates
+                    - _reservedIndustrialOutgoing)
+                : 0;
+        }
+
+        public int GetAvailableCapacity(ResourceType resourceType)
+        {
+            return resourceType == InputResourceType ? AvailableInputCapacity : 0;
+        }
+
+        public bool TryReserveOutgoing(
+            ResourceType resourceType,
+            int amount,
+            out IndustrialResourceReservation reservation)
+        {
+            reservation = default;
+            if (!isActiveAndEnabled
+                || resourceType != OutputResourceType
+                || amount <= 0
+                || _industrialOutgoing.IsValid
+                || GetAvailable(resourceType) < amount)
+            {
+                return false;
+            }
+
+            _reservedIndustrialOutgoing = amount;
+            _industrialOutgoing = CreateIndustrialReservation(
+                IndustrialReservationKind.Outgoing,
+                resourceType,
+                amount);
+            reservation = _industrialOutgoing;
+            AssertInvariants();
+            return true;
+        }
+
+        public bool TryReserveIncoming(
+            ResourceType resourceType,
+            int amount,
+            out IndustrialResourceReservation reservation)
+        {
+            reservation = default;
+            if (!isActiveAndEnabled
+                || resourceType != InputResourceType
+                || amount <= 0
+                || _industrialIncoming.IsValid
+                || AvailableInputCapacity < amount)
+            {
+                return false;
+            }
+
+            _reservedIndustrialIncoming = amount;
+            _industrialIncoming = CreateIndustrialReservation(
+                IndustrialReservationKind.Incoming,
+                resourceType,
+                amount);
+            reservation = _industrialIncoming;
+            AssertInvariants();
+            return true;
+        }
+
+        public bool IsReservationValid(IndustrialResourceReservation reservation)
+        {
+            if (!isActiveAndEnabled
+                || !ReferenceEquals(reservation.Endpoint, this)
+                || reservation.Token == 0)
+            {
+                return false;
+            }
+
+            IndustrialResourceReservation active =
+                reservation.Kind == IndustrialReservationKind.Incoming
+                    ? _industrialIncoming
+                    : _industrialOutgoing;
+            return active.Token == reservation.Token
+                   && active.ResourceType == reservation.ResourceType
+                   && active.Amount == reservation.Amount;
+        }
+
+        public bool ReleaseReservation(IndustrialResourceReservation reservation)
+        {
+            if (!IsReservationValid(reservation))
+            {
+                return false;
+            }
+
+            ClearIndustrialReservation(reservation.Kind);
+            AssertInvariants();
+            return true;
+        }
+
+        public void FinalizeReservationForTransfer(
+            IndustrialResourceReservation reservation)
+        {
+            if (!IsReservationValid(reservation))
+            {
+                throw new InvalidOperationException(
+                    "Packing Station logistics reservation is invalid.");
+            }
+
+            if (reservation.Kind == IndustrialReservationKind.Incoming)
+            {
+                _inputPlanks += reservation.Amount;
+            }
+            else
+            {
+                _outputCrates -= reservation.Amount;
+            }
+
+            ClearIndustrialReservation(reservation.Kind);
+            AssertInvariants();
+        }
+
+        public void PublishTransferCommitted(
+            IndustrialResourceReservation reservation)
+        {
+            NotifyBufferChanged();
+            TryStartProcessing();
+        }
+
+        private IndustrialResourceReservation CreateIndustrialReservation(
+            IndustrialReservationKind kind,
+            ResourceType resourceType,
+            int amount)
+        {
+            _nextIndustrialToken++;
+            if (_nextIndustrialToken == 0)
+            {
+                _nextIndustrialToken = 1;
+            }
+
+            return new IndustrialResourceReservation(
+                this,
+                _nextIndustrialToken,
+                kind,
+                resourceType,
+                amount);
+        }
+
+        private void ClearIndustrialReservation(IndustrialReservationKind kind)
+        {
+            if (kind == IndustrialReservationKind.Incoming)
+            {
+                _reservedIndustrialIncoming = 0;
+                _industrialIncoming = default;
+            }
+            else
+            {
+                _reservedIndustrialOutgoing = 0;
+                _industrialOutgoing = default;
+            }
+        }
+
+        private void InvalidateIndustrialReservations()
+        {
+            _reservedIndustrialIncoming = 0;
+            _reservedIndustrialOutgoing = 0;
+            _industrialIncoming = default;
+            _industrialOutgoing = default;
         }
 
         internal bool CanCommitCourierOutputReservation(
@@ -532,7 +710,8 @@ namespace IndustryTycoon.Processing
                 || _processingInputPlanks == PlanksRequiredPerRecipe,
                 "Packing Station has invalid in-flight Plank ownership.");
             Debug.Assert(
-                _inputPlanks + _processingInputPlanks <= inputCapacity,
+                _inputPlanks + _processingInputPlanks
+                + _reservedIndustrialIncoming <= inputCapacity,
                 "Packing Station input ownership exceeded capacity.");
             Debug.Assert(_outputCrates >= 0, "Packing Station output became negative.");
             Debug.Assert(
@@ -545,6 +724,11 @@ namespace IndustryTycoon.Processing
                     ? _activeCourierOutputReservationToken != 0
                     : _activeCourierOutputReservationToken == 0,
                 "Packing Station courier reservation token does not match its claim.");
+            Debug.Assert(
+                _reservedIndustrialOutgoing >= 0
+                && _reservedIndustrialOutgoing
+                + _reservedCourierOutputCrates <= _outputCrates,
+                "Packing Station logistics output reservations exceeded stored Crates.");
             Debug.Assert(
                 _reservedOutputCapacity == 0
                 || _reservedOutputCapacity == CratesProducedPerRecipe,
