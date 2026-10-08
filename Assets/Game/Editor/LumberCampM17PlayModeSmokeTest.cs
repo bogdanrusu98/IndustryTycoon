@@ -130,7 +130,7 @@ namespace IndustryTycoon.Editor
                     $"Checkpoint {level} has no primary guidance.");
                 int activeMarkers = 0;
                 WorldGuidanceMarker[] markers = Object.FindObjectsByType<WorldGuidanceMarker>(
-                    FindObjectsInactive.Include, FindObjectsSortMode.None);
+                    FindObjectsInactive.Include);
                 for (int i = 0; i < markers.Length; i++)
                     if (markers[i].gameObject.activeInHierarchy) activeMarkers++;
                 Require(markers.Length == 8 && activeMarkers == 1,

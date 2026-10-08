@@ -8,6 +8,8 @@ namespace IndustryTycoon.Processing
     [RequireComponent(typeof(Collider))]
     public sealed class ProcessorInputZone : MonoBehaviour
     {
+        public event System.Action InteractionAttempted;
+
         [SerializeField] private WoodProcessor processor;
         [SerializeField] private CarryStack carryStack;
         [SerializeField] private Collider playerCollider;
@@ -68,6 +70,7 @@ namespace IndustryTycoon.Processing
             }
 
             _isPlayerInside = true;
+            InteractionAttempted?.Invoke();
             TryStartTransfer();
         }
 

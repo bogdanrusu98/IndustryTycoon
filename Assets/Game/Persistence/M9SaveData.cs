@@ -272,6 +272,7 @@ namespace IndustryTycoon.Persistence
             M14IndustrialSaveData.CreateFresh();
         public M15FactorySaveData factoryScaling = M15FactorySaveData.CreateFresh();
         public M16MarketSaveData market = M16MarketSaveData.CreateFresh(0L);
+        public M18OnboardingSaveData onboarding = M18OnboardingSaveData.CreateFresh();
 
         public static M9SaveData CreateFresh(long utcNowUnixSeconds)
         {
@@ -289,6 +290,7 @@ namespace IndustryTycoon.Persistence
                 industrial = M14IndustrialSaveData.CreateFresh(),
                 factoryScaling = M15FactorySaveData.CreateFresh(),
                 market = M16MarketSaveData.CreateFresh(safeTimestamp),
+                onboarding = M18OnboardingSaveData.CreateFresh(),
                 lastEvaluationUtcUnixSeconds = safeTimestamp,
                 lastWriteUtcUnixSeconds = safeTimestamp
             };
@@ -622,7 +624,8 @@ namespace IndustryTycoon.Persistence
                 retention = normalizedRetention
                 ,industrial = normalizedIndustrial,
                 factoryScaling = normalizedFactoryScaling,
-                market = normalizedMarket
+                market = normalizedMarket,
+                onboarding = M18OnboardingRules.Normalize(source.onboarding)
             };
             return true;
         }

@@ -12,6 +12,8 @@ namespace IndustryTycoon.Player
     /// </summary>
     public sealed class PlayerDragInput : MonoBehaviour
     {
+        public event System.Action DragStarted;
+
         [Header("Virtual Joystick")]
         [SerializeField, Min(1f)] private float joystickRadiusPixels = 180f;
         [SerializeField, Min(0.1f)] private float dragSensitivity = 1f;
@@ -172,6 +174,7 @@ namespace IndustryTycoon.Player
             _hasReleasedDragSample = false;
             _hasReadDuringCurrentPress = false;
             _isPressed = true;
+            DragStarted?.Invoke();
         }
 
         private bool IsPointerOverUi(Vector2 screenPosition)

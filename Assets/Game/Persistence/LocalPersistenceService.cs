@@ -40,6 +40,7 @@ namespace IndustryTycoon.Persistence
         [SerializeField] private SmelterUnlock smelterUnlock;
         [SerializeField] private DrillUnlock drillUnlock;
         [SerializeField] private ToolWorkshopUnlock toolWorkshopUnlock;
+        [SerializeField] private FirstSessionOnboardingService onboardingService;
 
         [Header("Authoritative Production")]
         [SerializeField] private WoodSpawner woodSpawner;
@@ -112,6 +113,7 @@ namespace IndustryTycoon.Persistence
         public SmelterUnlock SmelterUnlock => smelterUnlock;
         public DrillUnlock DrillUnlock => drillUnlock;
         public ToolWorkshopUnlock ToolWorkshopUnlock => toolWorkshopUnlock;
+        public FirstSessionOnboardingService OnboardingService => onboardingService;
         public WoodStockpile Stockpile => stockpile;
         public WoodProcessor Processor => processor;
         public PackingStation PackingStation => packingStation;
@@ -708,6 +710,7 @@ namespace IndustryTycoon.Persistence
             try
             {
                 progressionService?.RestorePersistentState(data.progression);
+                onboardingService?.RestorePersistentState(data.onboarding);
                 industrialDistrictService?.RestorePersistentState(data.industrial);
                 industrialDistrictService?.RestoreFactoryScalingState(data.factoryScaling);
                 marketPlanningService?.RestorePersistentState(data.market);
@@ -1037,6 +1040,11 @@ namespace IndustryTycoon.Persistence
             snapshot.market = marketPlanningService != null
                 ? marketPlanningService.CapturePersistentState()
                 : _state.market;
+            snapshot.onboarding = onboardingService != null
+                ? onboardingService.CapturePersistentState()
+                : _state.onboarding != null
+                    ? _state.onboarding.DeepClone()
+                    : M18OnboardingSaveData.CreateFresh();
             snapshot.pendingOfflineCash = _state.pendingOfflineCash;
             snapshot.pendingOfflineAwaySeconds = _state.pendingOfflineAwaySeconds;
             snapshot.returnScreenPending = _state.returnScreenPending;
@@ -1174,6 +1182,10 @@ namespace IndustryTycoon.Persistence
             {
                 progressionService.StateChanged += HandleChanged;
             }
+            if (onboardingService != null)
+            {
+                onboardingService.StateChanged += RequestCriticalSave;
+            }
             SubscribePurchasePads(true);
             if (lumberCampCompletion != null)
             {
@@ -1222,6 +1234,10 @@ namespace IndustryTycoon.Persistence
             if (progressionService != null)
             {
                 progressionService.StateChanged -= HandleChanged;
+            }
+            if (onboardingService != null)
+            {
+                onboardingService.StateChanged -= RequestCriticalSave;
             }
             SubscribePurchasePads(false);
             if (lumberCampCompletion != null)

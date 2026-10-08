@@ -10,6 +10,7 @@ namespace IndustryTycoon.UI
     public sealed class MajorUnlockToastView : MonoBehaviour
     {
         [SerializeField] private LumberCampProgressionService progression;
+        [SerializeField] private FirstSessionOnboardingService onboarding;
         [SerializeField] private GameObject toastRoot;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private Text toastText;
@@ -36,11 +37,21 @@ namespace IndustryTycoon.UI
         private void OnEnable()
         {
             if (progression != null) progression.EmpireLevelAdvanced += HandleLevelAdvanced;
+            if (onboarding != null)
+            {
+                onboarding.StepCompleted += HandleTutorialStepCompleted;
+                onboarding.ExplanationPresented += HandleExplanationPresented;
+            }
         }
 
         private void OnDisable()
         {
             if (progression != null) progression.EmpireLevelAdvanced -= HandleLevelAdvanced;
+            if (onboarding != null)
+            {
+                onboarding.StepCompleted -= HandleTutorialStepCompleted;
+                onboarding.ExplanationPresented -= HandleExplanationPresented;
+            }
             if (_routine != null) StopCoroutine(_routine);
             _routine = null;
             _messages.Clear();
@@ -66,6 +77,25 @@ namespace IndustryTycoon.UI
         {
             string message = GetMajorUnlockMessage(level);
             if (string.IsNullOrEmpty(message)) return;
+            _messages.Enqueue(message);
+            if (_routine == null && isActiveAndEnabled) _routine = StartCoroutine(Present());
+        }
+
+        private void HandleTutorialStepCompleted(FirstSessionStep step, string message)
+        {
+            Enqueue(message);
+        }
+
+        private void HandleExplanationPresented(
+            FirstTimeExplanation explanation,
+            string message)
+        {
+            Enqueue(message);
+        }
+
+        public void Enqueue(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message)) return;
             _messages.Enqueue(message);
             if (_routine == null && isActiveAndEnabled) _routine = StartCoroutine(Present());
         }

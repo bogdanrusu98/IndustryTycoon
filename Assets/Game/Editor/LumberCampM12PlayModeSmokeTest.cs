@@ -432,10 +432,14 @@ namespace IndustryTycoon.Editor
                     && _lastProducedTools == 1,
                 "Exact Workshop recipe did not commit one Tool once.");
             Require(_progression.GetMetric(ProgressMetricId.ToolsProduced) == 1L
-                    && _progression.EmpireLevel == 5
-                    && _empireEventCount == 2
-                    && _lastEmpireLevel == 5,
-                "First Tool did not commit one metric and Empire Level 5.");
+                    && _progression.EmpireLevel == 6
+                    && _empireEventCount == 3
+                    && _lastEmpireLevel == 6,
+                $"First Tool did not commit one metric and settle at the "
+                + $"M13 Warehouse level "
+                + $"(tools={_progression.GetMetric(ProgressMetricId.ToolsProduced)}, "
+                + $"level={_progression.EmpireLevel}, events={_empireEventCount}, "
+                + $"last={_lastEmpireLevel}).");
             Require(!_workshop.CompleteProcessingImmediatelyForTests()
                     && _recipeEventCount == 1
                     && _progression.GetMetric(ProgressMetricId.ToolsProduced) == 1L,
@@ -545,7 +549,7 @@ namespace IndustryTycoon.Editor
                 "M12 Workshop Play Mode smoke passed: gated $3,200 activation, "
                 + "separate typed inputs, exact 2 + 1 → 1 commit, full-output "
                 + "pause/resume, Tool isolation, $100 sale, authoritative metrics, "
-                + "Empire Level 5, and stable transient-ownership restore.");
+                + "Empire Level 6 after the M13 Warehouse settle, and stable transient-ownership restore.");
         }
 
         private static M10ProgressionSaveData CreateEstablishedM11State()

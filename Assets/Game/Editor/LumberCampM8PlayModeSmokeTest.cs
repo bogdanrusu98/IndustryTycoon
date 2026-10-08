@@ -250,6 +250,18 @@ namespace IndustryTycoon.Editor
             _packingStation =
                 FindSingleExactTypeIncludingInactive<PackingStation>();
             _courier = FindSingleIncludingInactive<CrateCourier>();
+            FirstSessionOnboardingService onboarding =
+                Object.FindAnyObjectByType<FirstSessionOnboardingService>();
+            if (onboarding != null)
+            {
+                M18OnboardingSaveData completedOnboarding =
+                    M18OnboardingSaveData.CreateFresh();
+                completedOnboarding.currentStep = (int)FirstSessionStep.Complete;
+                completedOnboarding.completedStepsMask =
+                    (1 << (int)FirstSessionStep.Complete) - 1;
+                onboarding.RestorePersistentState(completedOnboarding);
+            }
+
             _guidance = Object.FindAnyObjectByType<NextUnlockGuidance>();
             _guidance?.Refresh();
             _completion = Object.FindAnyObjectByType<LumberCampCompletion>();

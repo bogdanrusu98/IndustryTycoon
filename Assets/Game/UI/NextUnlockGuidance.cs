@@ -33,6 +33,7 @@ namespace IndustryTycoon.UI
         [SerializeField] private FirstCourierUnlock courierUnlock;
         [SerializeField] private LumberCampCompletion completion;
         [SerializeField] private LumberCampProgressionService progressionService;
+        [SerializeField] private FirstSessionOnboardingService onboarding;
 
         [Header("Presentation")]
         [SerializeField] private Text guidanceText;
@@ -49,6 +50,7 @@ namespace IndustryTycoon.UI
         public FirstCourierUnlock CourierUnlock => courierUnlock;
         public LumberCampCompletion Completion => completion;
         public LumberCampProgressionService ProgressionService => progressionService;
+        public FirstSessionOnboardingService Onboarding => onboarding;
         public Text GuidanceText => guidanceText;
         public LumberCampProgressStage CurrentStage { get; private set; }
         public int PaidAmount { get; private set; }
@@ -57,6 +59,11 @@ namespace IndustryTycoon.UI
 
         private void OnEnable()
         {
+            if (onboarding != null)
+            {
+                onboarding.GuidanceChanged += HandleProgressionChanged;
+            }
+
             SubscribePurchaseProgress();
 
             if (productionUpgrade != null)
@@ -104,6 +111,11 @@ namespace IndustryTycoon.UI
 
         private void OnDisable()
         {
+            if (onboarding != null)
+            {
+                onboarding.GuidanceChanged -= HandleProgressionChanged;
+            }
+
             UnsubscribePurchaseProgress();
 
             if (productionUpgrade != null)
@@ -149,6 +161,29 @@ namespace IndustryTycoon.UI
 
         public bool Refresh()
         {
+            if (onboarding != null && !string.IsNullOrEmpty(onboarding.GuidanceText))
+            {
+                string tutorialText = onboarding.GuidanceText;
+                bool tutorialChanged = !string.Equals(
+                    _displayText,
+                    tutorialText,
+                    StringComparison.Ordinal);
+                PaidAmount = 0;
+                TotalCost = 0;
+                _displayText = tutorialText;
+                if (guidanceText != null)
+                {
+                    guidanceText.text = _displayText;
+                }
+
+                if (tutorialChanged)
+                {
+                    GuidanceChanged?.Invoke(CurrentStage, 0, 0);
+                }
+
+                return tutorialChanged;
+            }
+
             if (progressionService != null
                 && progressionService.isActiveAndEnabled)
             {

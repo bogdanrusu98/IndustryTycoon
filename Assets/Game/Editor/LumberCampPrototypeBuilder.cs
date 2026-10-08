@@ -707,6 +707,22 @@ namespace IndustryTycoon.Editor
                 industrialAreaMaterial,
                 purchaseMaterial,
                 purchaseCompleteMaterial);
+            FirstSessionOnboardingService onboardingService =
+                CreateM18Onboarding(
+                    scene,
+                    progressionService,
+                    player.GetComponent<PlayerDragInput>(),
+                    woodSpawner,
+                    salePoint,
+                    productionUpgrade,
+                    workerUnlock,
+                    stockpile,
+                    processorUnlock,
+                    autoFeederUnlock,
+                    packingStationUnlock,
+                    courierUnlock,
+                    courier,
+                    purchaseCompleteMaterial);
             LocalPersistenceService persistenceService = CreateM9Persistence(
                 scene,
                 wallet,
@@ -728,7 +744,8 @@ namespace IndustryTycoon.Editor
                 m13Services,
                 retentionGoalService,
                 industrialDistrictService,
-                marketPlanningService);
+                marketPlanningService,
+                onboardingService);
             CreateLighting(scene);
             NextUnlockGuidance nextUnlockGuidance = CreateHud(
                 scene,
@@ -748,7 +765,8 @@ namespace IndustryTycoon.Editor
                 m13Services,
                 retentionGoalService,
                 playerMovement,
-                player.GetComponent<PlayerDragInput>());
+                player.GetComponent<PlayerDragInput>(),
+                onboardingService);
             SetObjectReference(
                 persistenceService,
                 "nextUnlockGuidance",
@@ -4526,6 +4544,118 @@ namespace IndustryTycoon.Editor
             return service;
         }
 
+        private static FirstSessionOnboardingService CreateM18Onboarding(
+            Scene scene,
+            LumberCampProgressionService progression,
+            PlayerDragInput dragInput,
+            WoodSpawner woodSpawner,
+            SalePoint salePoint,
+            WoodProductionUpgrade productionUpgrade,
+            FirstWorkerUnlock workerUnlock,
+            WoodStockpile stockpile,
+            FirstProcessorUnlock processorUnlock,
+            FirstAutoFeederUnlock autoFeederUnlock,
+            FirstPackingStationUnlock packingStationUnlock,
+            FirstCourierUnlock courierUnlock,
+            CrateCourier courier,
+            Material markerMaterial)
+        {
+            Require(progression != null
+                    && dragInput != null
+                    && woodSpawner != null
+                    && salePoint != null
+                    && productionUpgrade?.PurchasePad != null
+                    && workerUnlock?.WorkerPurchasePad != null
+                    && stockpile != null
+                    && processorUnlock?.ProcessorPurchasePad != null
+                    && processorUnlock.ProcessorRoot != null
+                    && autoFeederUnlock?.AutoFeederPurchasePad != null
+                    && packingStationUnlock?.PackingStationPurchasePad != null
+                    && packingStationUnlock.PackingStationRoot != null
+                    && courierUnlock?.CourierPurchasePad != null
+                    && courier != null,
+                "M18 onboarding requires the complete Lumber progression graph.");
+
+            GameObject root = new GameObject("First Session Onboarding");
+            SceneManager.MoveGameObjectToScene(root, scene);
+            FirstSessionOnboardingService service =
+                root.AddComponent<FirstSessionOnboardingService>();
+
+            GameObject marker = CreatePrimitiveChild(
+                "Context Target Marker",
+                PrimitiveType.Cylinder,
+                root.transform,
+                markerMaterial);
+            marker.transform.localScale = new Vector3(1.1f, 0.055f, 1.1f);
+            Object.DestroyImmediate(marker.GetComponent<Collider>());
+            marker.AddComponent<OnboardingTargetMarker>();
+            marker.SetActive(false);
+
+            SetObjectReference(service, "progression", progression);
+            SetObjectReference(service, "dragInput", dragInput);
+            SetObjectReference(service, "stockpile", stockpile);
+            SetObjectReference(service, "targetMarker", marker);
+            SetObjectReference(
+                service,
+                "packingStationTarget",
+                packingStationUnlock.PackingStationRoot.transform);
+            SetObjectArray(service, "stepTargets", new Object[]
+            {
+                woodSpawner.transform,
+                woodSpawner.transform,
+                salePoint.transform,
+                productionUpgrade.PurchasePad.transform,
+                workerUnlock.WorkerPurchasePad.transform,
+                stockpile.transform,
+                processorUnlock.ProcessorPurchasePad.transform,
+                processorUnlock.ProcessorRoot.transform,
+                autoFeederUnlock.AutoFeederPurchasePad.transform,
+                packingStationUnlock.PackingStationPurchasePad.transform,
+                courierUnlock.CourierPurchasePad.transform,
+                courier.transform
+            });
+            SetVector3(service, "markerOffset", new Vector3(0f, 0.16f, 0f));
+
+            WoodProcessor processor =
+                processorUnlock.ProcessorRoot.GetComponent<WoodProcessor>();
+            PackingStation packing =
+                packingStationUnlock.PackingStationRoot.GetComponent<PackingStation>();
+            EarlySessionFeedback earlyFeedback =
+                root.AddComponent<EarlySessionFeedback>();
+            SetObjectReference(earlyFeedback, "onboarding", service);
+            SetObjectReference(earlyFeedback, "carryStack", dragInput.GetComponent<CarryStack>());
+            SetObjectArray(earlyFeedback, "purchasePads", new Object[]
+            {
+                productionUpgrade.PurchasePad,
+                workerUnlock.WorkerPurchasePad,
+                processorUnlock.ProcessorPurchasePad,
+                autoFeederUnlock.AutoFeederPurchasePad,
+                packingStationUnlock.PackingStationPurchasePad,
+                courierUnlock.CourierPurchasePad
+            });
+            SetObjectReference(earlyFeedback, "processor", processor);
+            SetObjectReference(
+                earlyFeedback,
+                "processorInput",
+                processorUnlock.ProcessorRoot.GetComponentInChildren<ProcessorInputZone>(true));
+            SetObjectReference(
+                earlyFeedback,
+                "processorOutput",
+                processorUnlock.ProcessorRoot.GetComponentInChildren<ProcessorOutputZone>(true));
+            SetObjectReference(earlyFeedback, "packingStation", packing);
+            SetObjectReference(
+                earlyFeedback,
+                "packingInput",
+                packingStationUnlock.PackingStationRoot
+                    .GetComponentInChildren<PackingStationInputZone>(true));
+            SetObjectReference(
+                earlyFeedback,
+                "packingOutput",
+                packingStationUnlock.PackingStationRoot
+                    .GetComponentInChildren<PackingStationOutputZone>(true));
+            return service;
+        }
+
         private static LocalPersistenceService CreateM9Persistence(
             Scene scene,
             Wallet wallet,
@@ -4547,7 +4677,8 @@ namespace IndustryTycoon.Editor
             M13Services m13Services,
             RetentionGoalService retentionGoalService,
             IndustrialDistrictService industrialDistrictService,
-            MarketPlanningService marketPlanningService)
+            MarketPlanningService marketPlanningService,
+            FirstSessionOnboardingService onboardingService)
         {
             LumberWorker worker = workerUnlock != null && workerUnlock.WorkerRoot != null
                 ? workerUnlock.WorkerRoot.GetComponent<LumberWorker>()
@@ -4590,8 +4721,9 @@ namespace IndustryTycoon.Editor
                     && m13Services.Network != null
                     && retentionGoalService != null
                     && industrialDistrictService != null
-                    && marketPlanningService != null,
-                "M16 persistence requires the complete authoritative production state graph.");
+                    && marketPlanningService != null
+                    && onboardingService != null,
+                "M18 persistence requires the complete authoritative production state graph.");
 
             GameObject root = new GameObject("Local Persistence");
             SceneManager.MoveGameObjectToScene(root, scene);
@@ -4636,6 +4768,7 @@ namespace IndustryTycoon.Editor
             SetObjectReference(service, "retentionGoalService", retentionGoalService);
             SetObjectReference(service, "industrialDistrictService", industrialDistrictService);
             SetObjectReference(service, "marketPlanningService", marketPlanningService);
+            SetObjectReference(service, "onboardingService", onboardingService);
             SetFloat(service, "saveDebounceSeconds", 3f);
             SetFloat(service, "returnScreenThresholdSeconds", 300f);
             SetFloat(service, "maximumCreditedAwaySeconds", 14400f);
@@ -4825,7 +4958,8 @@ namespace IndustryTycoon.Editor
             M13Services m13Services,
             RetentionGoalService retentionGoalService,
             PlayerMovement playerMovement,
-            PlayerDragInput playerDragInput)
+            PlayerDragInput playerDragInput,
+            FirstSessionOnboardingService onboardingService)
         {
             GameObject canvasObject = new GameObject(
                 "HUD",
@@ -4938,6 +5072,7 @@ namespace IndustryTycoon.Editor
             SetObjectReference(guidance, "courierUnlock", courierUnlock);
             SetObjectReference(guidance, "completion", m8Services.Completion);
             SetObjectReference(guidance, "progressionService", progressionService);
+            SetObjectReference(guidance, "onboarding", onboardingService);
             SetObjectReference(guidance, "guidanceText", guidanceText);
 
             GameObject districtPanel = new GameObject(
@@ -4987,6 +5122,7 @@ namespace IndustryTycoon.Editor
             MajorUnlockToastView unlockToast =
                 safeAreaObject.AddComponent<MajorUnlockToastView>();
             SetObjectReference(unlockToast, "progression", progressionService);
+            SetObjectReference(unlockToast, "onboarding", onboardingService);
             SetObjectReference(unlockToast, "toastRoot", unlockToastRoot);
             SetObjectReference(unlockToast, "canvasGroup", unlockToastRoot.GetComponent<CanvasGroup>());
             SetObjectReference(unlockToast, "toastText", unlockToastText);
@@ -5003,6 +5139,18 @@ namespace IndustryTycoon.Editor
                 progressionService,
                 m13Services,
                 retentionGoalService);
+
+            ProgressiveHudVisibility hudVisibility =
+                safeAreaObject.AddComponent<ProgressiveHudVisibility>();
+            SetObjectReference(hudVisibility, "progression", progressionService);
+            SetObjectReference(
+                hudVisibility,
+                "progressionTabs",
+                safeAreaObject.transform.Find("Progression Tabs")?.gameObject);
+            SetObjectReference(
+                hudVisibility,
+                "industryButton",
+                safeAreaObject.transform.Find("Industry Operations Button")?.gameObject);
 
             GameObject bannerRoot = new GameObject(
                 "Completion Banner",
@@ -6267,6 +6415,7 @@ namespace IndustryTycoon.Editor
             ValidateM11Scene(scene, carryStack, salePoint, playerCollider);
             ValidateM12Scene(scene, carryStack, salePoint, playerCollider);
             ValidateM17Scene(scene);
+            ValidateM18Scene(scene);
             ValidateCoreLoopLogic();
             ValidateM3Logic();
             ValidateM4Logic();
@@ -6335,6 +6484,50 @@ namespace IndustryTycoon.Editor
                         $"M17 critical interaction zones overlap: "
                         + $"{criticalZones[i].name} / {criticalZones[j].name}.");
                 }
+            }
+        }
+
+        private static void ValidateM18Scene(Scene scene)
+        {
+            GameObject onboardingRoot = FindRoot(scene, "First Session Onboarding");
+            GameObject persistenceRoot = FindRoot(scene, "Local Persistence");
+            GameObject hudRoot = FindRoot(scene, "HUD");
+            Require(onboardingRoot != null && persistenceRoot != null && hudRoot != null,
+                "M18 onboarding, persistence, or HUD root is missing.");
+
+            FirstSessionOnboardingService onboarding =
+                onboardingRoot.GetComponent<FirstSessionOnboardingService>();
+            EarlySessionFeedback feedback =
+                onboardingRoot.GetComponent<EarlySessionFeedback>();
+            OnboardingTargetMarker marker =
+                onboardingRoot.GetComponentInChildren<OnboardingTargetMarker>(true);
+            LocalPersistenceService persistence =
+                persistenceRoot.GetComponent<LocalPersistenceService>();
+            NextUnlockGuidance guidance =
+                hudRoot.GetComponentInChildren<NextUnlockGuidance>(true);
+            ProgressiveHudVisibility visibility =
+                hudRoot.GetComponentInChildren<ProgressiveHudVisibility>(true);
+            MajorUnlockToastView toast =
+                hudRoot.GetComponentInChildren<MajorUnlockToastView>(true);
+
+            Require(onboarding != null
+                    && feedback != null
+                    && marker != null
+                    && marker.GetComponent<Collider>() == null
+                    && persistence?.OnboardingService == onboarding
+                    && guidance?.Onboarding == onboarding
+                    && visibility != null
+                    && toast != null,
+                "M18 event-driven onboarding graph is incomplete.");
+            SerializedProperty targets = new SerializedObject(onboarding)
+                .FindProperty("stepTargets");
+            Require(targets != null
+                    && targets.arraySize == M18OnboardingRules.StepCount,
+                "M18 must provide one legitimate target for every tutorial step.");
+            for (int i = 0; i < targets.arraySize; i++)
+            {
+                Require(targets.GetArrayElementAtIndex(i).objectReferenceValue != null,
+                    $"M18 tutorial target {i} is missing.");
             }
         }
 
