@@ -18,6 +18,7 @@ using IndustryTycoon.ResourceSystem;
 using IndustryTycoon.UI;
 using IndustryTycoon.Workers;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -246,6 +247,7 @@ namespace IndustryTycoon.Editor
             }
 
             Directory.CreateDirectory(buildDirectory);
+            ConfigureAndroidReleaseSettings();
             var buildOptions = new BuildPlayerOptions
             {
                 scenes = new[] { ScenePath },
@@ -266,6 +268,33 @@ namespace IndustryTycoon.Editor
                 $"Android Player build passed: {fullBuildPath} "
                 + $"({report.summary.totalSize} bytes, "
                 + $"{report.summary.totalWarnings} warnings).");
+        }
+
+        public static void ConfigureAndroidReleaseSettings()
+        {
+            NamedBuildTarget android = NamedBuildTarget.Android;
+            PlayerSettings.SetScriptingBackend(android, ScriptingImplementation.IL2CPP);
+            PlayerSettings.SetIl2CppCodeGeneration(android, Il2CppCodeGeneration.OptimizeSpeed);
+            PlayerSettings.SetManagedStrippingLevel(android, ManagedStrippingLevel.Medium);
+            PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+            PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
+            PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevel36;
+            PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
+            PlayerSettings.allowedAutorotateToPortrait = true;
+            PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
+            PlayerSettings.allowedAutorotateToLandscapeLeft = false;
+            PlayerSettings.allowedAutorotateToLandscapeRight = false;
+            PlayerSettings.gcIncremental = true;
+            PlayerSettings.stripEngineCode = true;
+            PlayerSettings.usePlayerLog = false;
+            EditorUserBuildSettings.development = false;
+            EditorUserBuildSettings.allowDebugging = false;
+            EditorUserBuildSettings.connectProfiler = false;
+            EditorUserBuildSettings.buildWithDeepProfilingSupport = false;
+            UnityEditor.Android.UserBuildSettings.DebugSymbols.level =
+                Unity.Android.Types.DebugSymbolLevel.SymbolTable;
+            UnityEditor.Android.UserBuildSettings.DebugSymbols.format =
+                Unity.Android.Types.DebugSymbolFormat.Zip;
         }
 
         private static void BuildPrototype()

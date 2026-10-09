@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace IndustryTycoon.Monetization
 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
     /// <summary>Deterministic Editor/test adapter. It is never selected in a non-development build.</summary>
     public sealed class TestRewardedAdService : IRewardedAdService
     {
@@ -86,4 +87,5 @@ namespace IndustryTycoon.Monetization
             PurchaseUpdated?.Invoke(outcome);
         }
     }
+#endif
 }

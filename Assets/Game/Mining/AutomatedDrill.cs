@@ -21,6 +21,7 @@ namespace IndustryTycoon.Mining
         [SerializeField, Min(0.1f)] private float cycleDuration = 1.8f;
 
         private WaitForSeconds _cycleWait;
+        private readonly ProductionWaitCache _cycleWaitCache = new ProductionWaitCache();
         private Coroutine _productionCoroutine;
         private OreStorageReservation _storageReservation;
         private AutomatedDrillState _state = AutomatedDrillState.Disabled;
@@ -162,8 +163,7 @@ namespace IndustryTycoon.Mining
 
         private IEnumerator ProductionCycle()
         {
-            _cycleWait = new WaitForSeconds(
-                ProductionBoostRuntime.ScaleDuration(cycleDuration));
+            _cycleWait = _cycleWaitCache.Get(cycleDuration);
             yield return _cycleWait;
             _productionCoroutine = null;
             CompleteReservedCycle();
@@ -291,7 +291,7 @@ namespace IndustryTycoon.Mining
 
         private void RebuildCycleWait()
         {
-            _cycleWait = new WaitForSeconds(cycleDuration);
+            _cycleWait = _cycleWaitCache.Get(cycleDuration);
         }
 
         private void OnValidate()

@@ -1,6 +1,7 @@
 using IndustryTycoon.Persistence;
 using IndustryTycoon.Player;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
@@ -34,22 +35,32 @@ namespace IndustryTycoon.UI
         private bool _dragWasEnabled;
         private bool _inputCaptured;
         private GameObject _settingsReturnPanel;
+        private UnityAction[] _contentActions;
+        private UnityAction _mainSettingsAction;
+        private UnityAction _pauseSettingsAction;
 
         public bool HasBlockingPanel => FindTopPanel() != null;
 
         private void OnEnable()
         {
             if (contentButtons != null)
+            {
+                if (_contentActions == null || _contentActions.Length != contentButtons.Length)
+                    _contentActions = new UnityAction[contentButtons.Length];
                 for (int i = 0; i < contentButtons.Length; i++)
                 {
                     int index = i;
-                    contentButtons[i]?.onClick.AddListener(() => ToggleContent(index));
+                    _contentActions[i] = () => ToggleContent(index);
+                    contentButtons[i]?.onClick.AddListener(_contentActions[i]);
                 }
+            }
             pauseButton?.onClick.AddListener(OpenPause);
             continueButton?.onClick.AddListener(CloseAll);
             resumeButton?.onClick.AddListener(CloseAll);
-            mainSettingsButton?.onClick.AddListener(() => OpenSettings(mainMenu));
-            pauseSettingsButton?.onClick.AddListener(() => OpenSettings(pauseMenu));
+            _mainSettingsAction = () => OpenSettings(mainMenu);
+            _pauseSettingsAction = () => OpenSettings(pauseMenu);
+            mainSettingsButton?.onClick.AddListener(_mainSettingsAction);
+            pauseSettingsButton?.onClick.AddListener(_pauseSettingsAction);
             helpButton?.onClick.AddListener(OpenHelp);
             newGameButton?.onClick.AddListener(OpenResetConfirmation);
             confirmResetButton?.onClick.AddListener(ConfirmReset);
@@ -64,13 +75,24 @@ namespace IndustryTycoon.UI
 
         private void OnDisable()
         {
+            if (contentButtons != null && _contentActions != null)
+                for (int i = 0; i < contentButtons.Length && i < _contentActions.Length; i++)
+                    if (_contentActions[i] != null)
+                        contentButtons[i]?.onClick.RemoveListener(_contentActions[i]);
             pauseButton?.onClick.RemoveListener(OpenPause);
             continueButton?.onClick.RemoveListener(CloseAll);
             resumeButton?.onClick.RemoveListener(CloseAll);
+            if (_mainSettingsAction != null)
+                mainSettingsButton?.onClick.RemoveListener(_mainSettingsAction);
+            if (_pauseSettingsAction != null)
+                pauseSettingsButton?.onClick.RemoveListener(_pauseSettingsAction);
             helpButton?.onClick.RemoveListener(OpenHelp);
             newGameButton?.onClick.RemoveListener(OpenResetConfirmation);
             confirmResetButton?.onClick.RemoveListener(ConfirmReset);
             cancelResetButton?.onClick.RemoveListener(CancelReset);
+            if (closeButtons != null)
+                for (int i = 0; i < closeButtons.Length; i++)
+                    closeButtons[i]?.onClick.RemoveListener(Back);
             RestoreInput();
         }
 

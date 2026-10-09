@@ -680,7 +680,6 @@ namespace IndustryTycoon.Progression
         private void HandleUnitSold(SaleFeedbackData feedback)
         {
             _model.RecordSale(feedback.ResourceType, 1, feedback.CashValue);
-            InternalAnalytics.Publish("sale_completed", feedback.ResourceType.ToString());
         }
 
         private void HandleProcessorRecipeCompleted(int inputWood, int outputPlanks)

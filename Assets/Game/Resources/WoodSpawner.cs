@@ -26,6 +26,7 @@ namespace IndustryTycoon.ResourceSystem
 
         private ObjectPool<ResourcePickup> _pool;
         private WaitForSeconds _spawnWait;
+        private readonly ProductionWaitCache _spawnWaitCache = new ProductionWaitCache();
         private Coroutine _spawnCoroutine;
         private readonly List<ResourcePickup> _activePickups = new List<ResourcePickup>(32);
         private int _activeCount;
@@ -192,8 +193,7 @@ namespace IndustryTycoon.ResourceSystem
         {
             while (true)
             {
-                _spawnWait = new WaitForSeconds(
-                    ProductionBoostRuntime.ScaleDuration(EffectiveSpawnInterval));
+                _spawnWait = _spawnWaitCache.Get(EffectiveSpawnInterval);
                 yield return _spawnWait;
                 if (_activeCount < maximumActiveCount)
                 {
@@ -204,7 +204,7 @@ namespace IndustryTycoon.ResourceSystem
 
         private void RebuildSpawnWait()
         {
-            _spawnWait = new WaitForSeconds(EffectiveSpawnInterval);
+            _spawnWait = _spawnWaitCache.Get(EffectiveSpawnInterval);
         }
 
         private void PrewarmPool()

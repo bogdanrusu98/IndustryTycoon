@@ -30,6 +30,7 @@ namespace IndustryTycoon.Processing
         private readonly int[] _inputCapacities = new int[2];
         private BufferedRecipeTransaction _recipeTransaction;
         private WaitForSeconds _processingWait;
+        private readonly ProductionWaitCache _processingWaitCache = new ProductionWaitCache();
         private Coroutine _processingCoroutine;
         private int _outputTools;
         private int _completedRecipeCount;
@@ -118,7 +119,7 @@ namespace IndustryTycoon.Processing
                 + M14ProductionUpgradeTuning.GetCapacityBonus(_baseOutputCapacity, _outputUpgradeLevel);
             processingDuration = M15FactoryTuning.CalculateDuration(_baseProcessingDuration,
                 _speedUpgradeLevel, _specialization, ProductionBuildingId, _districtLevel);
-            _processingWait = new WaitForSeconds(processingDuration);
+            _processingWait = _processingWaitCache.Get(processingDuration);
             EnsureRuntimeState();
             NotifyBufferChanged();
             return true;
@@ -367,8 +368,7 @@ namespace IndustryTycoon.Processing
 
         private IEnumerator ProcessReservedRecipe()
         {
-            _processingWait = new WaitForSeconds(
-                ProductionBoostRuntime.ScaleDuration(processingDuration));
+            _processingWait = _processingWaitCache.Get(processingDuration);
             yield return _processingWait;
 
             _processingCoroutine = null;
@@ -486,7 +486,7 @@ namespace IndustryTycoon.Processing
 
             if (_processingWait == null)
             {
-                _processingWait = new WaitForSeconds(processingDuration);
+                _processingWait = _processingWaitCache.Get(processingDuration);
             }
         }
 

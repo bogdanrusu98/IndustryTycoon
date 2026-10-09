@@ -81,7 +81,7 @@ namespace IndustryTycoon.Persistence
         private bool _isSubscribed;
         private bool _isDirty;
         private bool _immediateSaveRequested;
-        private bool _wasPaused;
+        private bool _lifecycleSuspended;
         private bool _suppressSaves;
         private double _saveDueAt;
         private string _lastWriteDiagnostic = string.Empty;
@@ -178,15 +178,52 @@ namespace IndustryTycoon.Persistence
 
             if (pauseStatus)
             {
-                _wasPaused = true;
-                MarkDirty();
-                SaveNow();
+                EnterLifecycleSuspension();
             }
-            else if (_wasPaused)
+            else
             {
-                _wasPaused = false;
-                EvaluateResumeInterval();
+                ExitLifecycleSuspension();
             }
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (!IsInitialized || _suppressSaves)
+            {
+                return;
+            }
+
+            if (hasFocus)
+            {
+                ExitLifecycleSuspension();
+            }
+            else
+            {
+                EnterLifecycleSuspension();
+            }
+        }
+
+        private void EnterLifecycleSuspension()
+        {
+            if (_lifecycleSuspended)
+            {
+                return;
+            }
+
+            _lifecycleSuspended = true;
+            MarkDirty();
+            SaveNow();
+        }
+
+        private void ExitLifecycleSuspension()
+        {
+            if (!_lifecycleSuspended)
+            {
+                return;
+            }
+
+            _lifecycleSuspended = false;
+            EvaluateResumeInterval();
         }
 
         private void OnApplicationQuit()
@@ -314,6 +351,7 @@ namespace IndustryTycoon.Persistence
             return true;
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         [ContextMenu("QA/Simulate 10 Minutes Away")]
         public void SimulateTenMinutesAway()
         {
@@ -379,6 +417,7 @@ namespace IndustryTycoon.Persistence
             ReturnStateChanged?.Invoke();
             return saved;
         }
+#endif
 
         private void Initialize()
         {
@@ -1454,10 +1493,12 @@ namespace IndustryTycoon.Persistence
             snapshot.purchasePad.completed = purchasePad.IsCompleted;
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static bool CanUseDevelopmentUtilities()
         {
             return Application.isEditor || Debug.isDebugBuild;
         }
+#endif
 
         private static MarketUnlockContext BuildMarketUnlockContext(
             M10ProgressionSaveData progression)

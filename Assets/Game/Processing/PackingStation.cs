@@ -44,6 +44,7 @@ namespace IndustryTycoon.Processing
         [SerializeField, Min(0.02f)] private float processingDuration = 1.5f;
 
         private WaitForSeconds _processingWait;
+        private readonly ProductionWaitCache _processingWaitCache = new ProductionWaitCache();
         private Coroutine _processingCoroutine;
         private int _inputPlanks;
         private int _processingInputPlanks;
@@ -641,8 +642,7 @@ namespace IndustryTycoon.Processing
 
         private IEnumerator ProcessReservedRecipe()
         {
-            _processingWait = new WaitForSeconds(
-                ProductionBoostRuntime.ScaleDuration(processingDuration));
+            _processingWait = _processingWaitCache.Get(processingDuration);
             yield return _processingWait;
 
             _processingCoroutine = null;
@@ -798,7 +798,7 @@ namespace IndustryTycoon.Processing
 
         private void RebuildProcessingWait()
         {
-            _processingWait = new WaitForSeconds(processingDuration);
+            _processingWait = _processingWaitCache.Get(processingDuration);
         }
 
         protected virtual void OnValidate()

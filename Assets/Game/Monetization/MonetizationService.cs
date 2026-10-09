@@ -80,6 +80,12 @@ namespace IndustryTycoon.Monetization
             if (paused) EndAnalyticsSession();
             else BeginAnalyticsSession();
         }
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (!_lifecycleStarted) return;
+            if (hasFocus) BeginAnalyticsSession();
+            else EndAnalyticsSession();
+        }
         private void OnApplicationQuit() => EndAnalyticsSession();
         private void OnDestroy()
         {
@@ -339,8 +345,13 @@ namespace IndustryTycoon.Monetization
             TrackPurchaseAvailability();
             StateChanged?.Invoke();
         }
-        private void HandleInternalAnalytics(InternalAnalyticsEvent evt) => Track(evt.Name,
-            string.IsNullOrEmpty(evt.Parameter) ? null : P("value", evt.Parameter));
+        private void HandleInternalAnalytics(InternalAnalyticsEvent evt)
+        {
+            // Avoid payload allocations when consent is absent or no provider exists.
+            if (_analytics?.IsCollectionEnabled != true) return;
+            Track(evt.Name, string.IsNullOrEmpty(evt.Parameter)
+                ? null : P("value", evt.Parameter));
+        }
         private void HandleAchievementUnlocked(int index)
         {
             int amount = index == 4 ? 5 : index == 10 ? 10 : index == 18 ? 20 : 0;

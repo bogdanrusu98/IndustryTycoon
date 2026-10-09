@@ -27,6 +27,7 @@ namespace IndustryTycoon.Processing
         private readonly int[] _capacities = new int[2];
         private BufferedRecipeTransaction _transaction;
         private Coroutine _coroutine;
+        private readonly ProductionWaitCache _processingWaitCache = new ProductionWaitCache();
         private int _output;
         private bool _processing;
         private bool _transferring;
@@ -203,7 +204,7 @@ namespace IndustryTycoon.Processing
 
         private IEnumerator Process()
         {
-            yield return new WaitForSeconds(ProductionBoostRuntime.ScaleDuration(ProcessingDuration));
+            yield return _processingWaitCache.Get(ProcessingDuration);
             _coroutine = null;
             CompleteRecipe();
         }

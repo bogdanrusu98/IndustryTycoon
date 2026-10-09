@@ -2,6 +2,7 @@ using IndustryTycoon.Mining;
 using IndustryTycoon.Processing;
 using IndustryTycoon.Progression;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace IndustryTycoon.UI
@@ -45,17 +46,23 @@ namespace IndustryTycoon.UI
         private float _cycleStartedAt;
         private bool _wasProcessing;
         private float _nextProgressRefresh;
+        private UnityAction[] _buildingTabActions;
 
         public int SelectedBuildingIndex => _selected;
 
         private void OnEnable()
         {
             if (buildingTabs != null)
+            {
+                if (_buildingTabActions == null || _buildingTabActions.Length != buildingTabs.Length)
+                    _buildingTabActions = new UnityAction[buildingTabs.Length];
                 for (int i = 0; i < buildingTabs.Length; i++)
                 {
                     int index = i;
-                    buildingTabs[i]?.onClick.AddListener(() => SelectBuilding(index));
+                    _buildingTabActions[i] = () => SelectBuilding(index);
+                    buildingTabs[i]?.onClick.AddListener(_buildingTabActions[i]);
                 }
+            }
             speedButton?.onClick.AddListener(BuySpeed);
             inputButton?.onClick.AddListener(BuyInput);
             outputButton?.onClick.AddListener(BuyOutput);
@@ -69,6 +76,10 @@ namespace IndustryTycoon.UI
 
         private void OnDisable()
         {
+            if (buildingTabs != null && _buildingTabActions != null)
+                for (int i = 0; i < buildingTabs.Length && i < _buildingTabActions.Length; i++)
+                    if (_buildingTabActions[i] != null)
+                        buildingTabs[i]?.onClick.RemoveListener(_buildingTabActions[i]);
             speedButton?.onClick.RemoveListener(BuySpeed);
             inputButton?.onClick.RemoveListener(BuyInput);
             outputButton?.onClick.RemoveListener(BuyOutput);

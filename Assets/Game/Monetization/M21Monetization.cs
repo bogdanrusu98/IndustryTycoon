@@ -139,6 +139,11 @@ namespace IndustryTycoon.Monetization
         public const int OrderRefreshWindowSeconds = 24 * 60 * 60;
         public const int MaximumOrderRefreshesPerWindow = 3;
         public const int StarterPackCash = 750;
+        public const int MaximumGemLedgerEntries = 4096;
+        public const int MaximumRewardHistoryEntries = 256;
+        public const int MaximumPendingPurchases = 64;
+        public const int MaximumTransactionIdLength = 128;
+        public const int MaximumReasonLength = 64;
 
         public static bool IsBoostActive(M21MonetizationSaveData state, long utcNow) =>
             state != null && utcNow >= state.lastAcceptedUtcUnixSeconds
@@ -187,12 +192,15 @@ namespace IndustryTycoon.Monetization
         public static bool TryRecordRewardCompletion(M21MonetizationSaveData state,
             string transactionId)
         {
-            if (state == null || string.IsNullOrWhiteSpace(transactionId)) return false;
+            if (state == null || string.IsNullOrWhiteSpace(transactionId)
+                || transactionId.Length > MaximumTransactionIdLength) return false;
             string[] existing = state.completedRewardTransactions ?? Array.Empty<string>();
             for (int i = 0; i < existing.Length; i++)
                 if (string.Equals(existing[i], transactionId, StringComparison.Ordinal)) return false;
-            var copy = new string[existing.Length + 1];
-            Array.Copy(existing, copy, existing.Length);
+            int retained = Math.Min(existing.Length, MaximumRewardHistoryEntries - 1);
+            var copy = new string[retained + 1];
+            if (retained > 0)
+                Array.Copy(existing, existing.Length - retained, copy, 0, retained);
             copy[copy.Length - 1] = transactionId;
             state.completedRewardTransactions = copy;
             return true;
@@ -207,71 +215,106 @@ namespace IndustryTycoon.Monetization
             normalized = null;
             failure = null;
             if (source == null) { failure = "M21 monetization state is missing."; return false; }
-            if (source.gemBalance < 0) { failure = "M21 Gem balance cannot be negative."; return false; }
 
             var transactionIds = new HashSet<string>(StringComparer.Ordinal);
             var ledger = source.gemLedger ?? Array.Empty<M21PremiumLedgerRecord>();
             long derivedBalance = 0;
-            var ledgerCopy = new M21PremiumLedgerRecord[ledger.Length];
-            for (int i = 0; i < ledger.Length; i++)
+            var ledgerCopy = new List<M21PremiumLedgerRecord>(Math.Min(
+                ledger.Length, M21MonetizationRules.MaximumGemLedgerEntries));
+            for (int i = 0; i < ledger.Length
+                            && ledgerCopy.Count < M21MonetizationRules.MaximumGemLedgerEntries; i++)
             {
                 M21PremiumLedgerRecord entry = ledger[i];
                 if (entry == null || string.IsNullOrWhiteSpace(entry.transactionId)
-                    || entry.amount <= 0 || !Enum.IsDefined(typeof(PremiumTransactionKind), entry.kind)
+                    || entry.transactionId.Length > M21MonetizationRules.MaximumTransactionIdLength
+                    || entry.amount <= 0
+                    || !Enum.IsDefined(typeof(PremiumTransactionKind), entry.kind)
                     || !transactionIds.Add(entry.transactionId))
-                { failure = "M21 Gem ledger contains an invalid or duplicate transaction."; return false; }
-                derivedBalance += entry.kind == PremiumTransactionKind.Grant ? entry.amount : -entry.amount;
-                if (derivedBalance < 0 || derivedBalance > int.MaxValue)
-                { failure = "M21 Gem ledger balance is invalid."; return false; }
-                ledgerCopy[i] = new M21PremiumLedgerRecord
+                    continue;
+                long nextBalance = derivedBalance
+                                   + (entry.kind == PremiumTransactionKind.Grant
+                                       ? entry.amount : -entry.amount);
+                if (nextBalance < 0 || nextBalance > int.MaxValue)
+                    continue;
+                derivedBalance = nextBalance;
+                string reason = entry.reason ?? string.Empty;
+                if (reason.Length > M21MonetizationRules.MaximumReasonLength)
+                    reason = reason.Substring(0, M21MonetizationRules.MaximumReasonLength);
+                ledgerCopy.Add(new M21PremiumLedgerRecord
                 {
                     transactionId = entry.transactionId,
                     kind = entry.kind,
                     amount = entry.amount,
-                    reason = entry.reason ?? string.Empty,
+                    reason = reason,
                     utcUnixSeconds = Math.Max(0L, entry.utcUnixSeconds)
-                };
+                });
             }
-            if (derivedBalance != source.gemBalance)
-            { failure = "M21 Gem balance contradicts its ledger."; return false; }
 
             var rewardIds = new HashSet<string>(StringComparer.Ordinal);
             string[] rewards = source.completedRewardTransactions ?? Array.Empty<string>();
-            var rewardCopy = new string[rewards.Length];
-            for (int i = 0; i < rewards.Length; i++)
+            var rewardCopy = new List<string>(Math.Min(
+                rewards.Length, M21MonetizationRules.MaximumRewardHistoryEntries));
+            int rewardStart = Math.Max(0,
+                rewards.Length - M21MonetizationRules.MaximumRewardHistoryEntries);
+            for (int i = rewardStart; i < rewards.Length; i++)
             {
-                if (string.IsNullOrWhiteSpace(rewards[i]) || !rewardIds.Add(rewards[i]))
-                { failure = "M21 rewarded transaction list is invalid."; return false; }
-                rewardCopy[i] = rewards[i];
+                string reward = rewards[i];
+                if (string.IsNullOrWhiteSpace(reward)
+                    || reward.Length > M21MonetizationRules.MaximumTransactionIdLength
+                    || !rewardIds.Add(reward))
+                    continue;
+                rewardCopy.Add(reward);
             }
 
             M21PendingPurchaseRecord[] pending = source.pendingPurchases ?? Array.Empty<M21PendingPurchaseRecord>();
             var pendingIds = new HashSet<string>(StringComparer.Ordinal);
-            var pendingCopy = new M21PendingPurchaseRecord[pending.Length];
-            for (int i = 0; i < pending.Length; i++)
+            var pendingCopy = new List<M21PendingPurchaseRecord>(Math.Min(
+                pending.Length, M21MonetizationRules.MaximumPendingPurchases));
+            for (int i = 0; i < pending.Length
+                            && pendingCopy.Count < M21MonetizationRules.MaximumPendingPurchases; i++)
             {
                 M21PendingPurchaseRecord item = pending[i];
                 if (item == null || string.IsNullOrWhiteSpace(item.productKey)
                     || string.IsNullOrWhiteSpace(item.transactionId)
-                    || !pendingIds.Add(item.transactionId))
-                { failure = "M21 pending purchase list is invalid."; return false; }
-                pendingCopy[i] = new M21PendingPurchaseRecord
-                { productKey = item.productKey, transactionId = item.transactionId, granted = item.granted };
+                    || item.transactionId.Length > M21MonetizationRules.MaximumTransactionIdLength
+                    || !M21ProductCatalog.TryGet(item.productKey, out _))
+                    continue;
+                if (!pendingIds.Add(item.transactionId))
+                {
+                    for (int existing = 0; existing < pendingCopy.Count; existing++)
+                        if (string.Equals(pendingCopy[existing].transactionId,
+                                item.transactionId, StringComparison.Ordinal))
+                            pendingCopy[existing].granted |= item.granted;
+                    continue;
+                }
+                pendingCopy.Add(new M21PendingPurchaseRecord
+                    { productKey = item.productKey, transactionId = item.transactionId, granted = item.granted });
             }
 
             long safeNow = M9UnixTime.IsPlausible(fallbackUtc) ? fallbackUtc : 0L;
             long lastAccepted = M9UnixTime.IsPlausible(source.lastAcceptedUtcUnixSeconds)
                 ? source.lastAcceptedUtcUnixSeconds : safeNow;
+            long maximumShortTimer = lastAccepted > long.MaxValue - M21MonetizationRules.BoostDurationSeconds
+                ? long.MaxValue : lastAccepted + M21MonetizationRules.BoostDurationSeconds;
+            long boostExpiry = Math.Max(0L, Math.Min(source.productionBoostExpiresUtcUnixSeconds,
+                maximumShortTimer));
+            long refreshReady = Math.Max(0L, Math.Min(source.orderRefreshReadyUtcUnixSeconds,
+                maximumShortTimer));
+            long refreshWindowStart = Math.Max(0L, Math.Min(
+                source.orderRefreshWindowStartUtcUnixSeconds, lastAccepted));
+            string offlineSession = source.offlineRewardSessionId ?? string.Empty;
+            if (offlineSession.Length > M21MonetizationRules.MaximumTransactionIdLength)
+                offlineSession = string.Empty;
             normalized = new M21MonetizationSaveData
             {
-                gemBalance = source.gemBalance,
-                gemLedger = ledgerCopy,
-                completedRewardTransactions = rewardCopy,
-                pendingPurchases = pendingCopy,
-                offlineRewardSessionId = source.offlineRewardSessionId ?? string.Empty,
-                productionBoostExpiresUtcUnixSeconds = Math.Max(0L, source.productionBoostExpiresUtcUnixSeconds),
-                orderRefreshWindowStartUtcUnixSeconds = Math.Max(0L, source.orderRefreshWindowStartUtcUnixSeconds),
-                orderRefreshReadyUtcUnixSeconds = Math.Max(0L, source.orderRefreshReadyUtcUnixSeconds),
+                gemBalance = (int)derivedBalance,
+                gemLedger = ledgerCopy.ToArray(),
+                completedRewardTransactions = rewardCopy.ToArray(),
+                pendingPurchases = pendingCopy.ToArray(),
+                offlineRewardSessionId = offlineSession,
+                productionBoostExpiresUtcUnixSeconds = boostExpiry,
+                orderRefreshWindowStartUtcUnixSeconds = refreshWindowStart,
+                orderRefreshReadyUtcUnixSeconds = refreshReady,
                 orderRefreshesInWindow = Math.Max(0, Math.Min(M21MonetizationRules.MaximumOrderRefreshesPerWindow,
                     source.orderRefreshesInWindow)),
                 lastAcceptedUtcUnixSeconds = lastAccepted
@@ -302,19 +345,31 @@ namespace IndustryTycoon.Monetization
 
         private bool TryAppend(string id, int amount, string reason, PremiumTransactionKind kind)
         {
-            if (string.IsNullOrWhiteSpace(id) || amount <= 0 || HasTransaction(id)) return false;
+            if (string.IsNullOrWhiteSpace(id)
+                || id.Length > M21MonetizationRules.MaximumTransactionIdLength
+                || amount <= 0 || HasTransaction(id)) return false;
+            if ((_state.gemLedger?.Length ?? 0)
+                >= M21MonetizationRules.MaximumGemLedgerEntries) return false;
             if (kind == PremiumTransactionKind.Spend && _state.gemBalance < amount) return false;
             if (kind == PremiumTransactionKind.Grant && _state.gemBalance > int.MaxValue - amount) return false;
             int newBalance = kind == PremiumTransactionKind.Grant ? _state.gemBalance + amount : _state.gemBalance - amount;
             var list = new List<M21PremiumLedgerRecord>(_state.gemLedger ?? Array.Empty<M21PremiumLedgerRecord>())
             {
                 new M21PremiumLedgerRecord { transactionId = id, kind = kind, amount = amount,
-                    reason = reason ?? string.Empty, utcUnixSeconds = Math.Max(0L, _clock()) }
+                    reason = NormalizeReason(reason), utcUnixSeconds = Math.Max(0L, _clock()) }
             };
             _state.gemLedger = list.ToArray();
             _state.gemBalance = newBalance;
             BalanceChanged?.Invoke(newBalance);
             return true;
+        }
+
+        private static string NormalizeReason(string reason)
+        {
+            reason = reason ?? string.Empty;
+            return reason.Length <= M21MonetizationRules.MaximumReasonLength
+                ? reason
+                : reason.Substring(0, M21MonetizationRules.MaximumReasonLength);
         }
     }
 
@@ -363,6 +418,31 @@ namespace IndustryTycoon.Monetization
         public static void Reset() => _isActive = () => false;
     }
 
+    /// <summary>
+    /// Reuses the two yield instructions required by normal and boosted production.
+    /// Runtime production loops call this at cycle boundaries, so boost changes still
+    /// take effect on the next cycle without allocating a WaitForSeconds every cycle.
+    /// </summary>
+    public sealed class ProductionWaitCache
+    {
+        private float _duration = -1f;
+        private UnityEngine.WaitForSeconds _normal;
+        private UnityEngine.WaitForSeconds _boosted;
+
+        public UnityEngine.WaitForSeconds Get(float duration)
+        {
+            duration = Math.Max(0.02f, duration);
+            if (_normal == null || Math.Abs(_duration - duration) > 0.0001f)
+            {
+                _duration = duration;
+                _normal = new UnityEngine.WaitForSeconds(duration);
+                _boosted = new UnityEngine.WaitForSeconds(duration * 0.5f);
+            }
+
+            return ProductionBoostRuntime.IsActive ? _boosted : _normal;
+        }
+    }
+
     public sealed class UnavailableRewardedAdService : IRewardedAdService
     {
         public ServiceAvailability Availability => ServiceAvailability.Unavailable;
@@ -386,6 +466,11 @@ namespace IndustryTycoon.Monetization
 
     public sealed class SafeAnalyticsService : IAnalyticsService
     {
+        public const int MaximumEventNameLength = 48;
+        public const int MaximumParameters = 8;
+        public const int MaximumParameterKeyLength = 32;
+        public const int MaximumParameterValueLength = 64;
+
         private readonly Action<string, IReadOnlyDictionary<string, string>> _transport;
         private ConsentStatus _consent;
         public SafeAnalyticsService(Action<string, IReadOnlyDictionary<string, string>> transport = null)
@@ -395,9 +480,31 @@ namespace IndustryTycoon.Monetization
         public void SetConsent(ConsentStatus consent) => _consent = consent;
         public void Track(string eventName, IReadOnlyDictionary<string, string> parameters = null)
         {
-            if (!IsCollectionEnabled || string.IsNullOrWhiteSpace(eventName)) return;
-            try { _transport(eventName, parameters); } catch { /* Analytics never affects gameplay. */ }
+            if (!IsCollectionEnabled || string.IsNullOrWhiteSpace(eventName)
+                || eventName.Length > MaximumEventNameLength) return;
+            IReadOnlyDictionary<string, string> safeParameters = Sanitize(parameters);
+            try { _transport(eventName, safeParameters); }
+            catch { /* Analytics never affects gameplay. */ }
         }
         public void Flush() { }
+
+        private static IReadOnlyDictionary<string, string> Sanitize(
+            IReadOnlyDictionary<string, string> parameters)
+        {
+            if (parameters == null || parameters.Count == 0) return null;
+            var safe = new Dictionary<string, string>(
+                Math.Min(parameters.Count, MaximumParameters), StringComparer.Ordinal);
+            foreach (KeyValuePair<string, string> pair in parameters)
+            {
+                if (safe.Count >= MaximumParameters) break;
+                if (string.IsNullOrWhiteSpace(pair.Key)
+                    || pair.Key.Length > MaximumParameterKeyLength) continue;
+                string value = pair.Value ?? string.Empty;
+                if (value.Length > MaximumParameterValueLength)
+                    value = value.Substring(0, MaximumParameterValueLength);
+                safe[pair.Key] = value;
+            }
+            return safe.Count == 0 ? null : safe;
+        }
     }
 }

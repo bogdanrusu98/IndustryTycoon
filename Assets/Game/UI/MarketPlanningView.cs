@@ -2,6 +2,7 @@ using System.Text;
 using IndustryTycoon.Core;
 using IndustryTycoon.Market;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace IndustryTycoon.UI
@@ -14,6 +15,7 @@ namespace IndustryTycoon.UI
         [SerializeField] private Text[] orderTexts;
         [SerializeField] private Button[] orderButtons;
         private readonly StringBuilder _builder = new StringBuilder(384);
+        private UnityAction[] _orderActions;
 
         public GameObject PanelRoot => panelRoot;
 
@@ -21,17 +23,26 @@ namespace IndustryTycoon.UI
         {
             if (market != null) market.StateChanged += Refresh;
             if (orderButtons != null)
+            {
+                if (_orderActions == null || _orderActions.Length != orderButtons.Length)
+                    _orderActions = new UnityAction[orderButtons.Length];
                 for (int i = 0; i < orderButtons.Length; i++)
                 {
                     int index = i;
-                    orderButtons[i]?.onClick.AddListener(() => HandleOrder(index));
+                    _orderActions[i] = () => HandleOrder(index);
+                    orderButtons[i]?.onClick.AddListener(_orderActions[i]);
                 }
+            }
             Refresh();
         }
 
         private void OnDisable()
         {
             if (market != null) market.StateChanged -= Refresh;
+            if (orderButtons != null && _orderActions != null)
+                for (int i = 0; i < orderButtons.Length && i < _orderActions.Length; i++)
+                    if (_orderActions[i] != null)
+                        orderButtons[i]?.onClick.RemoveListener(_orderActions[i]);
         }
 
         public void Refresh()
