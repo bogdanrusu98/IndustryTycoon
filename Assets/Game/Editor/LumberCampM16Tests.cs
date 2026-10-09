@@ -208,12 +208,12 @@ namespace IndustryTycoon.EditorTests
             Array.Resize(ref legacy.progression.metrics, 39); legacy.market = null;
             string json = JsonUtility.ToJson(legacy);
             M9SaveDecodeResult migrated = M9SaveCodec.Decode(json, M9SaveValidationSettings.CreateDefault(), now);
-            Require(migrated.IsSuccess && migrated.WasMigrated && migrated.Data.version == M9SaveSchema.Version8
+            Require(migrated.IsSuccess && migrated.WasMigrated && migrated.Data.version == M9SaveSchema.CurrentVersion
                     && migrated.Data.market != null && migrated.Data.progression.metrics.Length == 47,
-                "v7 -> v8 migration was not complete and canonical.");
-            string v8 = JsonUtility.ToJson(migrated.Data);
-            M9SaveDecodeResult reloaded = M9SaveCodec.Decode(v8, M9SaveValidationSettings.CreateDefault(), now);
-            Require(reloaded.IsSuccess && !reloaded.WasMigrated, "v8 save migrated more than once.");
+                "v7 -> current migration was not complete and canonical.");
+            string current = JsonUtility.ToJson(migrated.Data);
+            M9SaveDecodeResult reloaded = M9SaveCodec.Decode(current, M9SaveValidationSettings.CreateDefault(), now);
+            Require(reloaded.IsSuccess && !reloaded.WasMigrated, "Current save migrated more than once.");
             M9SaveData reset = M9SaveData.CreateFresh(now);
             Require(reset.market.rotationIndex == 0 && reset.market.orderSequence == 0,
                 "Fresh/reset save retained M16 state.");

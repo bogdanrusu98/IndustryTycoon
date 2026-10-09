@@ -4,6 +4,7 @@ using IndustryTycoon.Core;
 using IndustryTycoon.Logistics;
 using IndustryTycoon.Player;
 using UnityEngine;
+using IndustryTycoon.Monetization;
 
 namespace IndustryTycoon.Processing
 {
@@ -202,7 +203,7 @@ namespace IndustryTycoon.Processing
 
         private IEnumerator Process()
         {
-            yield return new WaitForSeconds(ProcessingDuration);
+            yield return new WaitForSeconds(ProductionBoostRuntime.ScaleDuration(ProcessingDuration));
             _coroutine = null;
             CompleteRecipe();
         }

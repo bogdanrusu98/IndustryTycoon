@@ -9,6 +9,7 @@ using IndustryTycoon.Interaction;
 using IndustryTycoon.Logistics;
 using IndustryTycoon.Market;
 using IndustryTycoon.Mining;
+using IndustryTycoon.Monetization;
 using IndustryTycoon.Persistence;
 using IndustryTycoon.Player;
 using IndustryTycoon.Processing;
@@ -723,6 +724,8 @@ namespace IndustryTycoon.Editor
                     courierUnlock,
                     courier,
                     purchaseCompleteMaterial);
+            MonetizationService monetizationService = CreateM21Monetization(
+                scene, marketPlanningService, wallet, progressionService);
             LocalPersistenceService persistenceService = CreateM9Persistence(
                 scene,
                 wallet,
@@ -745,7 +748,9 @@ namespace IndustryTycoon.Editor
                 retentionGoalService,
                 industrialDistrictService,
                 marketPlanningService,
-                onboardingService);
+                onboardingService,
+                monetizationService);
+            SetObjectReference(monetizationService, "persistence", persistenceService);
             CreateLighting(scene);
             NextUnlockGuidance nextUnlockGuidance = CreateHud(
                 scene,
@@ -770,7 +775,8 @@ namespace IndustryTycoon.Editor
                 m12Services,
                 playerMovement,
                 player.GetComponent<PlayerDragInput>(),
-                onboardingService);
+                onboardingService,
+                monetizationService);
             SetObjectReference(
                 persistenceService,
                 "nextUnlockGuidance",
@@ -4677,7 +4683,8 @@ namespace IndustryTycoon.Editor
             RetentionGoalService retentionGoalService,
             IndustrialDistrictService industrialDistrictService,
             MarketPlanningService marketPlanningService,
-            FirstSessionOnboardingService onboardingService)
+            FirstSessionOnboardingService onboardingService,
+            MonetizationService monetizationService)
         {
             LumberWorker worker = workerUnlock != null && workerUnlock.WorkerRoot != null
                 ? workerUnlock.WorkerRoot.GetComponent<LumberWorker>()
@@ -4721,8 +4728,9 @@ namespace IndustryTycoon.Editor
                     && retentionGoalService != null
                     && industrialDistrictService != null
                     && marketPlanningService != null
-                    && onboardingService != null,
-                "M18 persistence requires the complete authoritative production state graph.");
+                    && onboardingService != null
+                    && monetizationService != null,
+                "M21 persistence requires the complete authoritative production and monetization graph.");
 
             GameObject root = new GameObject("Local Persistence");
             SceneManager.MoveGameObjectToScene(root, scene);
@@ -4768,11 +4776,27 @@ namespace IndustryTycoon.Editor
             SetObjectReference(service, "industrialDistrictService", industrialDistrictService);
             SetObjectReference(service, "marketPlanningService", marketPlanningService);
             SetObjectReference(service, "onboardingService", onboardingService);
+            SetObjectReference(service, "monetizationService", monetizationService);
             SetFloat(service, "saveDebounceSeconds", 3f);
             SetFloat(service, "returnScreenThresholdSeconds", 300f);
             SetFloat(service, "maximumCreditedAwaySeconds", 14400f);
             SetFloat(service, "offlineEfficiency", 0.60f);
             SetFloat(service, "workerSecondsPerWood", 6.50f);
+            return service;
+        }
+
+        private static MonetizationService CreateM21Monetization(
+            Scene scene, MarketPlanningService market, Wallet wallet,
+            LumberCampProgressionService progression)
+        {
+            Require(market != null && wallet != null && progression != null,
+                "M21 monetization requires the existing Market and Wallet services.");
+            GameObject root = new GameObject("Monetization M21");
+            SceneManager.MoveGameObjectToScene(root, scene);
+            MonetizationService service = root.AddComponent<MonetizationService>();
+            SetObjectReference(service, "market", market);
+            SetObjectReference(service, "wallet", wallet);
+            SetObjectReference(service, "progression", progression);
             return service;
         }
 
@@ -4962,7 +4986,8 @@ namespace IndustryTycoon.Editor
             M12Services m12Services,
             PlayerMovement playerMovement,
             PlayerDragInput playerDragInput,
-            FirstSessionOnboardingService onboardingService)
+            FirstSessionOnboardingService onboardingService,
+            MonetizationService monetizationService)
         {
             GameObject canvasObject = new GameObject(
                 "HUD",
@@ -5180,7 +5205,8 @@ namespace IndustryTycoon.Editor
                 processorUnlock.ProcessorRoot.GetComponent<WoodProcessor>(),
                 playerMovement,
                 playerDragInput,
-                feedbackServices);
+                feedbackServices,
+                monetizationService);
 
             ProgressiveHudVisibility hudVisibility =
                 safeAreaObject.AddComponent<ProgressiveHudVisibility>();
@@ -5251,6 +5277,7 @@ namespace IndustryTycoon.Editor
                 scene,
                 safeAreaObject,
                 persistenceService,
+                monetizationService,
                 playerMovement,
                 playerDragInput);
             return guidance;
@@ -5617,7 +5644,8 @@ namespace IndustryTycoon.Editor
             WoodProcessor processor,
             PlayerMovement playerMovement,
             PlayerDragInput playerDragInput,
-            FeedbackServices feedback)
+            FeedbackServices feedback,
+            MonetizationService monetization)
         {
             Color charcoal = new Color(0.035f, 0.05f, 0.065f, 0.985f);
             Color card = new Color(0.075f, 0.105f, 0.125f, 1f);
@@ -5634,7 +5662,7 @@ namespace IndustryTycoon.Editor
             navigationRect.sizeDelta = new Vector2(0f, 112f);
             navigation.GetComponent<Image>().color = new Color(0.025f, 0.04f, 0.05f, 0.98f);
 
-            string[] navLabels = { "GOALS", "AWARDS", "ROUTES", "FACTORY", "MARKET" };
+            string[] navLabels = { "GOALS", "AWARDS", "ROUTES", "FACTORY", "MARKET", "SHOP" };
             Button[] navButtons = new Button[navLabels.Length];
             for (int i = 0; i < navButtons.Length; i++)
             {
@@ -5796,6 +5824,49 @@ namespace IndustryTycoon.Editor
             SetObjectArray(marketView, "orderTexts", orderTexts);
             SetObjectArray(marketView, "orderButtons", orderButtons);
 
+            GameObject shopPanel = CreateM20Panel("Shop Panel", safeArea.transform, charcoal);
+            CreateHudLine("Shop Title", shopPanel.transform, "SHOP & CONVENIENCE",
+                new Vector2(0.05f, 0.91f), new Vector2(0.95f, 0.98f), 38);
+            Text gemsText = CreateHudLine("Gems Balance", shopPanel.transform, "GEMS  0",
+                new Vector2(0.06f, 0.84f), new Vector2(0.94f, 0.91f), 31);
+            Button[] productButtons = new Button[4];
+            Text[] productLabels = new Text[4];
+            for (int i = 0; i < productButtons.Length; i++)
+            {
+                float top = 0.82f - i * 0.105f;
+                productButtons[i] = CreateHudButton("Shop Product " + (i + 1), shopPanel.transform,
+                    "LOADING...", new Vector2(0.08f, top - 0.09f), new Vector2(0.92f, top), card, 22);
+                productLabels[i] = productButtons[i].GetComponentInChildren<Text>(true);
+            }
+            Text boostStatus = CreateHudLine("Boost Status", shopPanel.transform, "PRODUCTION BOOST READY",
+                new Vector2(0.08f, 0.31f), new Vector2(0.92f, 0.37f), 24);
+            Button adBoost = CreateHudButton("Rewarded Boost", shopPanel.transform, "WATCH AD: ×2 FOR 5 MIN",
+                new Vector2(0.08f, 0.235f), new Vector2(0.48f, 0.31f), teal, 19);
+            Button gemBoost = CreateHudButton("Gem Boost", shopPanel.transform, "20 GEMS: ×2 FOR 5 MIN",
+                new Vector2(0.52f, 0.235f), new Vector2(0.92f, 0.31f), orange, 19);
+            Button adRefresh = CreateHudButton("Rewarded Refresh", shopPanel.transform, "WATCH AD: REFRESH ORDERS",
+                new Vector2(0.08f, 0.155f), new Vector2(0.48f, 0.23f), teal, 18);
+            Button gemRefresh = CreateHudButton("Gem Refresh", shopPanel.transform, "5 GEMS: REFRESH ORDERS",
+                new Vector2(0.52f, 0.155f), new Vector2(0.92f, 0.23f), orange, 18);
+            Text shopStatus = CreateHudLine("Shop Status", shopPanel.transform, "STORE INITIALIZING",
+                new Vector2(0.08f, 0.105f), new Vector2(0.60f, 0.15f), 19);
+            Button restore = CreateHudButton("Restore Purchases", shopPanel.transform, "RESTORE",
+                new Vector2(0.62f, 0.095f), new Vector2(0.92f, 0.15f), card, 18);
+            Button shopClose = CreateHudButton("Close Shop", shopPanel.transform, "BACK",
+                new Vector2(0.35f, 0.025f), new Vector2(0.65f, 0.085f), card, 24);
+            MonetizationShopView shopView = shopPanel.AddComponent<MonetizationShopView>();
+            SetObjectReference(shopView, "monetization", monetization);
+            SetObjectReference(shopView, "gemsText", gemsText);
+            SetObjectReference(shopView, "statusText", shopStatus);
+            SetObjectReference(shopView, "boostStatusText", boostStatus);
+            SetObjectArray(shopView, "productButtons", productButtons);
+            SetObjectArray(shopView, "productLabels", productLabels);
+            SetObjectReference(shopView, "rewardedBoostButton", adBoost);
+            SetObjectReference(shopView, "gemBoostButton", gemBoost);
+            SetObjectReference(shopView, "rewardedRefreshButton", adRefresh);
+            SetObjectReference(shopView, "gemRefreshButton", gemRefresh);
+            SetObjectReference(shopView, "restoreButton", restore);
+
             GameObject mainMenu = CreateM20Panel("Main Menu", safeArea.transform, charcoal);
             CreateHudLine("Game Title", mainMenu.transform, "INDUSTRY\nTYCOON",
                 new Vector2(0.08f, 0.63f), new Vector2(0.92f, 0.88f), 74);
@@ -5813,13 +5884,20 @@ namespace IndustryTycoon.Editor
 
             GameObject settingsPanel = CreateM20Panel("Settings Panel", safeArea.transform, charcoal);
             CreateHudLine("Settings Title", settingsPanel.transform, "SETTINGS", new Vector2(0.08f, 0.85f), new Vector2(0.92f, 0.96f), 49);
-            Slider master = CreateSettingsSlider(settingsPanel.transform, "Master Volume", "MASTER VOLUME", 0.70f, teal, card);
-            Slider music = CreateSettingsSlider(settingsPanel.transform, "Music Volume", "MUSIC", 0.56f, teal, card);
-            Slider sfx = CreateSettingsSlider(settingsPanel.transform, "SFX Volume", "SFX", 0.42f, teal, card);
-            Toggle haptics = CreateSettingsToggle(settingsPanel.transform, "Haptics", "HAPTICS", 0.31f, teal, card);
-            Button graphics = CreateMenuButton(settingsPanel.transform, "Graphics Preset", "GRAPHICS: BALANCED", 0.18f, card);
+            Slider master = CreateSettingsSlider(settingsPanel.transform, "Master Volume", "MASTER VOLUME", 0.74f, teal, card);
+            Slider music = CreateSettingsSlider(settingsPanel.transform, "Music Volume", "MUSIC", 0.62f, teal, card);
+            Slider sfx = CreateSettingsSlider(settingsPanel.transform, "SFX Volume", "SFX", 0.50f, teal, card);
+            Toggle haptics = CreateSettingsToggle(settingsPanel.transform, "Haptics", "HAPTICS", 0.41f, teal, card);
+            Button graphics = CreateMenuButton(settingsPanel.transform, "Graphics Preset", "GRAPHICS: BALANCED", 0.32f, card);
             Text graphicsLabel = graphics.GetComponentInChildren<Text>(true);
-            Button settingsBack = CreateMenuButton(settingsPanel.transform, "Settings Back", "BACK", 0.06f, teal);
+            Toggle privacyConsent = CreateSettingsToggle(settingsPanel.transform, "Privacy Consent",
+                "OPTIONAL ADS & ANALYTICS", 0.23f, teal, card);
+            Button privacyPolicy = CreateMenuButton(settingsPanel.transform, "Privacy Policy",
+                "PRIVACY POLICY / PROVIDER INFO", 0.14f, card);
+            Text privacyStatus = CreateHudLine("Privacy Status", settingsPanel.transform,
+                "OPTIONAL ADS & ANALYTICS: DISABLED", new Vector2(0.12f, 0.115f),
+                new Vector2(0.88f, 0.14f), 15);
+            Button settingsBack = CreateMenuButton(settingsPanel.transform, "Settings Back", "BACK", 0.025f, teal);
             MobileSettingsService settings = safeArea.AddComponent<MobileSettingsService>();
             SetObjectReference(settings, "masterSlider", master);
             SetObjectReference(settings, "musicSlider", music);
@@ -5829,6 +5907,11 @@ namespace IndustryTycoon.Editor
             SetObjectReference(settings, "graphicsLabel", graphicsLabel);
             SetObjectReference(settings, "audioFeedback", feedback.Audio);
             SetObjectReference(settings, "hapticFeedback", feedback.Haptics);
+            PrivacySettingsView privacy = settingsPanel.AddComponent<PrivacySettingsView>();
+            SetObjectReference(privacy, "monetization", monetization);
+            SetObjectReference(privacy, "consentToggle", privacyConsent);
+            SetObjectReference(privacy, "privacyPolicyButton", privacyPolicy);
+            SetObjectReference(privacy, "statusText", privacyStatus);
 
             GameObject helpPanel = CreateM20Panel("Help Panel", safeArea.transform, charcoal);
             CreateHudLine("Help Title", helpPanel.transform, "HOW TO PLAY", new Vector2(0.08f, 0.84f), new Vector2(0.92f, 0.95f), 48);
@@ -5840,7 +5923,7 @@ namespace IndustryTycoon.Editor
 
             GameObject resetConfirm = CreateM20Dialog("Reset Save Confirmation", mainMenu.transform, charcoal);
             CreateHudLine("Reset Warning", resetConfirm.transform,
-                "RESET ALL GAMEPLAY PROGRESS?\n\nTHIS CANNOT BE UNDONE.\nDEVICE SETTINGS WILL BE KEPT.",
+                "RESET ALL GAMEPLAY PROGRESS?\n\nGEMS AND CONSUMABLES WILL RESET.\nDEVICE SETTINGS STAY. PERMANENT STORE\nENTITLEMENTS CAN BE RESTORED.",
                 new Vector2(0.08f, 0.43f), new Vector2(0.92f, 0.88f), 30);
             Button confirmReset = CreateHudButton("Confirm Reset", resetConfirm.transform, "RESET SAVE",
                 new Vector2(0.08f, 0.12f), new Vector2(0.47f, 0.37f), orange, 25);
@@ -5856,7 +5939,7 @@ namespace IndustryTycoon.Editor
             SetObjectReference(panelNavigation, "helpPanel", helpPanel);
             SetObjectArray(panelNavigation, "contentPanels", new Object[]
             {
-                contractPanel, achievementsPanel, industryPanel, productionPanel, marketPanel
+                contractPanel, achievementsPanel, industryPanel, productionPanel, marketPanel, shopPanel
             });
             SetObjectArray(panelNavigation, "contentButtons", navButtons);
             SetObjectReference(panelNavigation, "pauseButton", pauseButton);
@@ -5870,7 +5953,7 @@ namespace IndustryTycoon.Editor
             SetObjectReference(panelNavigation, "cancelResetButton", cancelReset);
             SetObjectArray(panelNavigation, "closeButtons", new Object[]
             {
-                industryClose, productionClose, marketClose, settingsBack, helpBack
+                industryClose, productionClose, marketClose, shopClose, settingsBack, helpBack
             });
             SetObjectReference(panelNavigation, "persistence", persistence);
             SetObjectReference(panelNavigation, "playerMovement", playerMovement);
@@ -5890,6 +5973,7 @@ namespace IndustryTycoon.Editor
 
             productionPanel.SetActive(false);
             marketPanel.SetActive(false);
+            shopPanel.SetActive(false);
             pauseMenu.SetActive(false);
             settingsPanel.SetActive(false);
             helpPanel.SetActive(false);
@@ -6024,6 +6108,7 @@ namespace IndustryTycoon.Editor
             Scene scene,
             GameObject safeAreaObject,
             LocalPersistenceService persistenceService,
+            MonetizationService monetizationService,
             PlayerMovement playerMovement,
             PlayerDragInput playerDragInput)
         {
@@ -6091,8 +6176,8 @@ namespace IndustryTycoon.Editor
             buttonRect.anchorMin = new Vector2(0.5f, 0f);
             buttonRect.anchorMax = new Vector2(0.5f, 0f);
             buttonRect.pivot = new Vector2(0.5f, 0f);
-            buttonRect.sizeDelta = new Vector2(560f, 142f);
-            buttonRect.anchoredPosition = new Vector2(0f, 54f);
+            buttonRect.sizeDelta = new Vector2(340f, 122f);
+            buttonRect.anchoredPosition = new Vector2(-190f, 54f);
             Image buttonImage = buttonObject.GetComponent<Image>();
             buttonImage.color = new Color(0.16f, 0.78f, 0.42f, 1f);
             Button collectButton = buttonObject.GetComponent<Button>();
@@ -6109,12 +6194,19 @@ namespace IndustryTycoon.Editor
                 Vector2.one,
                 48);
 
+            Button doubleButton = CreateHudButton(
+                "Double Reward Button", card.transform, "WATCH AD\nCOLLECT ×2",
+                new Vector2(0.52f, 0.08f), new Vector2(0.94f, 0.27f),
+                new Color(0.08f, 0.66f, 0.62f, 1f), 29);
+
             WelcomeBackView welcomeBackView = safeAreaObject.AddComponent<WelcomeBackView>();
             SetObjectReference(welcomeBackView, "persistenceService", persistenceService);
             SetObjectReference(welcomeBackView, "overlayRoot", overlayRoot);
             SetObjectReference(welcomeBackView, "awayText", awayText);
             SetObjectReference(welcomeBackView, "earnedText", earnedText);
             SetObjectReference(welcomeBackView, "collectButton", collectButton);
+            SetObjectReference(welcomeBackView, "doubleRewardButton", doubleButton);
+            SetObjectReference(welcomeBackView, "monetizationService", monetizationService);
             SetObjectReference(welcomeBackView, "playerMovement", playerMovement);
             SetObjectReference(welcomeBackView, "playerDragInput", playerDragInput);
             overlayRoot.SetActive(false);
@@ -6837,6 +6929,7 @@ namespace IndustryTycoon.Editor
             ValidateM17Scene(scene);
             ValidateM18Scene(scene);
             ValidateM20Scene(scene);
+            ValidateM21Scene(scene);
             ValidateCoreLoopLogic();
             ValidateM3Logic();
             ValidateM4Logic();
@@ -7014,6 +7107,29 @@ namespace IndustryTycoon.Editor
                         && max.x > min.x && max.y > min.y,
                     $"M20 safe-area anchors failed for {size.x}x{size.y}.");
             }
+        }
+
+        private static void ValidateM21Scene(Scene scene)
+        {
+            GameObject monetizationRoot = FindRoot(scene, "Monetization M21");
+            GameObject persistenceRoot = FindRoot(scene, "Local Persistence");
+            GameObject hud = FindRoot(scene, "HUD");
+            MonetizationService monetization = monetizationRoot?.GetComponent<MonetizationService>();
+            LocalPersistenceService persistence = persistenceRoot?.GetComponent<LocalPersistenceService>();
+            Require(monetization != null && persistence?.MonetizationService == monetization,
+                "M21 provider-independent monetization/persistence graph is incomplete.");
+            MonetizationShopView shop = hud?.GetComponentInChildren<MonetizationShopView>(true);
+            PrivacySettingsView privacy = hud?.GetComponentInChildren<PrivacySettingsView>(true);
+            WelcomeBackView welcome = hud?.GetComponentInChildren<WelcomeBackView>(true);
+            Require(shop != null && privacy != null && welcome != null,
+                "M21 Shop, privacy entry point, or rewarded offline prompt is missing.");
+            Transform safeArea = hud.transform.Find("Safe Area");
+            Require(safeArea != null && safeArea.Find("Shop Panel") != null
+                    && safeArea.Find("Settings Panel/Privacy Consent") != null
+                    && safeArea.Find("Welcome Back Overlay/Welcome Back Card/Double Reward Button") != null,
+                "M21 portrait/safe-area monetization controls are missing.");
+            Require(M9SaveSchema.CurrentVersion == M9SaveSchema.Version9,
+                "M21 must increment gameplay schema exactly once to v9.");
         }
 
         private static void ValidateM9Scene(

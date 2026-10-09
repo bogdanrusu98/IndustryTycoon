@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using IndustryTycoon.Core;
 using UnityEngine;
+using IndustryTycoon.Monetization;
 using UnityEngine.Pool;
 using Object = UnityEngine.Object;
 
@@ -191,6 +192,8 @@ namespace IndustryTycoon.ResourceSystem
         {
             while (true)
             {
+                _spawnWait = new WaitForSeconds(
+                    ProductionBoostRuntime.ScaleDuration(EffectiveSpawnInterval));
                 yield return _spawnWait;
                 if (_activeCount < maximumActiveCount)
                 {

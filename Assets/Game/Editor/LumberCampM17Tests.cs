@@ -145,8 +145,8 @@ namespace IndustryTycoon.EditorTests
                 M9SaveDecodeResult decoded = M9SaveCodec.Decode(
                     json, M9SaveValidationSettings.CreateDefault(), now);
                 Require(decoded.IsSuccess && !decoded.WasMigrated
-                        && decoded.Data.version == M9SaveSchema.Version8,
-                    $"Level {level} checkpoint did not round-trip on schema v8.");
+                        && decoded.Data.version == M9SaveSchema.CurrentVersion,
+                    $"Level {level} checkpoint did not round-trip on the current schema.");
                 var model = new LumberCampProgressionModel(decoded.Data.progression, _ => true);
                 model.UpdateIndustrialContext(decoded.Data.industrial, decoded.Data.factoryScaling, false);
                 Require(model.EmpireLevel == level,

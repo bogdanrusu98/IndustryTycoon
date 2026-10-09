@@ -194,6 +194,7 @@ namespace IndustryTycoon.Progression
                 return false;
             }
             progression?.RecordProductionUpgradePurchased();
+            InternalAnalytics.Publish("production_upgrade_purchased", buildingId + ":" + category);
             SynchronizeProgression(true);
             StateChanged?.Invoke();
             return true;
@@ -212,6 +213,7 @@ namespace IndustryTycoon.Progression
                 return false;
             }
             progression?.RecordLogisticsUpgradePurchased();
+            InternalAnalytics.Publish("logistics_upgrade_purchased", routeId + ":" + (capacity ? "capacity" : "speed"));
             SynchronizeProgression(true);
             StateChanged?.Invoke();
             return true;

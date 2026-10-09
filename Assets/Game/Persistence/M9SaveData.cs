@@ -1,6 +1,7 @@
 using System;
 using IndustryTycoon.Core;
 using IndustryTycoon.Market;
+using IndustryTycoon.Monetization;
 using IndustryTycoon.Progression;
 
 namespace IndustryTycoon.Persistence
@@ -16,7 +17,8 @@ namespace IndustryTycoon.Persistence
         public const int Version6 = 6;
         public const int Version7 = 7;
         public const int Version8 = 8;
-        public const int CurrentVersion = Version8;
+        public const int Version9 = 9;
+        public const int CurrentVersion = Version9;
     }
 
     public static class M9PurchasePadIds
@@ -273,6 +275,8 @@ namespace IndustryTycoon.Persistence
         public M15FactorySaveData factoryScaling = M15FactorySaveData.CreateFresh();
         public M16MarketSaveData market = M16MarketSaveData.CreateFresh(0L);
         public M18OnboardingSaveData onboarding = M18OnboardingSaveData.CreateFresh();
+        public M21MonetizationSaveData monetization =
+            M21MonetizationSaveData.CreateFresh(0L);
 
         public static M9SaveData CreateFresh(long utcNowUnixSeconds)
         {
@@ -291,6 +295,7 @@ namespace IndustryTycoon.Persistence
                 factoryScaling = M15FactorySaveData.CreateFresh(),
                 market = M16MarketSaveData.CreateFresh(safeTimestamp),
                 onboarding = M18OnboardingSaveData.CreateFresh(),
+                monetization = M21MonetizationSaveData.CreateFresh(safeTimestamp),
                 lastEvaluationUtcUnixSeconds = safeTimestamp,
                 lastWriteUtcUnixSeconds = safeTimestamp
             };
@@ -508,6 +513,11 @@ namespace IndustryTycoon.Persistence
                 || !M16MarketSaveValidator.TryNormalize(source.market,
                     safeFallbackTimestamp,
                     out M16MarketSaveData normalizedMarket,
+                    out failureReason)
+                || !M21MonetizationSaveValidator.TryNormalize(
+                    source.monetization ?? M21MonetizationSaveData.CreateFresh(safeFallbackTimestamp),
+                    safeFallbackTimestamp,
+                    out M21MonetizationSaveData normalizedMonetization,
                     out failureReason))
             {
                 return false;
@@ -625,7 +635,8 @@ namespace IndustryTycoon.Persistence
                 ,industrial = normalizedIndustrial,
                 factoryScaling = normalizedFactoryScaling,
                 market = normalizedMarket,
-                onboarding = M18OnboardingRules.Normalize(source.onboarding)
+                onboarding = M18OnboardingRules.Normalize(source.onboarding),
+                monetization = normalizedMonetization
             };
             return true;
         }

@@ -35,6 +35,16 @@ namespace IndustryTycoon.Market
         public int RotationSeconds => rotationSeconds;
         public bool IsMarketUnlocked => progressionService != null
                                         && progressionService.GetMetric(ProgressMetricId.MarketUnlocked) > 0;
+        public bool HasRefreshableOrder
+        {
+            get
+            {
+                if (_state?.orders == null) return false;
+                for (int i = 0; i < _state.orders.Length; i++)
+                    if (_state.orders[i]?.state == ProductionOrderState.Available) return true;
+                return false;
+            }
+        }
         public bool IsFlowBonusActive
         {
             get
@@ -83,7 +93,17 @@ namespace IndustryTycoon.Market
         public bool TryActivateOrder(int index)
         {
             if (!IsMarketUnlocked || !M16MarketRules.TryActivateOrder(_state, index)) return false;
+            InternalAnalytics.Publish("order_activated", GetOrder(index)?.resourceType.ToString());
             StateChanged?.Invoke();
+            return true;
+        }
+
+        public bool TryRefreshAvailableOrders()
+        {
+            if (!IsMarketUnlocked
+                || !M16MarketRules.RefreshAvailableOrders(_state, BuildUnlockContext())) return false;
+            StateChanged?.Invoke();
+            InternalAnalytics.Publish("order_refreshed");
             return true;
         }
 
@@ -98,6 +118,7 @@ namespace IndustryTycoon.Market
                 warehouse.PublishTransferCommitted(reservation);
                 M16MarketRules.TryTransitionOrder(order, ProductionOrderState.Active, ProductionOrderState.Completed);
                 progressionService?.RecordProductionOrderCompleted(order.resourceType == ResourceType.MachinePart);
+                InternalAnalytics.Publish("order_completed", order.resourceType.ToString());
                 StateChanged?.Invoke();
                 return true;
             }
@@ -115,6 +136,7 @@ namespace IndustryTycoon.Market
                 || wallet.Balance > int.MaxValue - order.rewardCash || wallet.Deposit(order.rewardCash) != order.rewardCash) return false;
             M16MarketRules.TryTransitionOrder(order, ProductionOrderState.Completed, ProductionOrderState.Claimed);
             M16MarketRules.RefillOrders(_state, BuildUnlockContext());
+            InternalAnalytics.Publish("order_claimed", order.resourceType.ToString());
             StateChanged?.Invoke();
             return true;
         }

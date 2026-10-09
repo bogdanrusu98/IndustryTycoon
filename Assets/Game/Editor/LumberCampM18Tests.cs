@@ -67,7 +67,7 @@ namespace IndustryTycoon.EditorTests
                     M9SaveValidationSettings.CreateDefault(),
                     Now);
                 Require(decoded.IsSuccess
-                        && decoded.Data.version == M9SaveSchema.Version8
+                        && decoded.Data.version == M9SaveSchema.CurrentVersion
                         && decoded.Data.onboarding.currentStep == completed,
                     $"Onboarding checkpoint {completed} did not resume exactly.");
             }
@@ -169,8 +169,8 @@ namespace IndustryTycoon.EditorTests
                 "Existing v8 save without M18 state failed: " + failure);
             Require(normalized.onboarding != null
                     && normalized.onboarding.currentStep == 0
-                    && json.Contains("\"version\":8"),
-                "Existing v8 save did not receive a safe fresh onboarding state.");
+                    && json.Contains("\"version\":" + M9SaveSchema.CurrentVersion),
+                "Current save did not receive a safe fresh onboarding state.");
         }
 
         private static void Require(bool condition, string message)

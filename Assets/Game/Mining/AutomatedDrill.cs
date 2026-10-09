@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using IndustryTycoon.Monetization;
 
 namespace IndustryTycoon.Mining
 {
@@ -161,6 +162,8 @@ namespace IndustryTycoon.Mining
 
         private IEnumerator ProductionCycle()
         {
+            _cycleWait = new WaitForSeconds(
+                ProductionBoostRuntime.ScaleDuration(cycleDuration));
             yield return _cycleWait;
             _productionCoroutine = null;
             CompleteReservedCycle();

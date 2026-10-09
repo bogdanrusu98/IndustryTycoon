@@ -1,5 +1,6 @@
 using System;
 using IndustryTycoon.Persistence;
+using IndustryTycoon.Monetization;
 using IndustryTycoon.Player;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,6 +14,8 @@ namespace IndustryTycoon.UI
         [SerializeField] private Text awayText;
         [SerializeField] private Text earnedText;
         [SerializeField] private Button collectButton;
+        [SerializeField] private Button doubleRewardButton;
+        [SerializeField] private MonetizationService monetizationService;
         [SerializeField] private PlayerMovement playerMovement;
         [SerializeField] private PlayerDragInput playerDragInput;
 
@@ -34,6 +37,7 @@ namespace IndustryTycoon.UI
             {
                 collectButton.onClick.AddListener(HandleCollectClicked);
             }
+            if (doubleRewardButton != null) doubleRewardButton.onClick.AddListener(HandleDoubleClicked);
 
             SetVisible(false);
         }
@@ -70,6 +74,7 @@ namespace IndustryTycoon.UI
             {
                 collectButton.onClick.RemoveListener(HandleCollectClicked);
             }
+            if (doubleRewardButton != null) doubleRewardButton.onClick.RemoveListener(HandleDoubleClicked);
         }
 
         public void Refresh()
@@ -94,6 +99,12 @@ namespace IndustryTycoon.UI
             {
                 collectButton.interactable = shouldShow && !_collectionInProgress;
             }
+            if (doubleRewardButton != null)
+                doubleRewardButton.interactable = shouldShow && !_collectionInProgress
+                    && monetizationService != null
+                    && monetizationService.CanOfferReward(RewardedPlacement.OfflineDouble);
+            if (doubleRewardButton != null && doubleRewardButton.interactable)
+                monetizationService.TrackRewardedOfferVisible(RewardedPlacement.OfflineDouble);
 
             SetVisible(shouldShow);
         }
@@ -127,6 +138,13 @@ namespace IndustryTycoon.UI
                 _collectionInProgress = false;
             }
 
+            Refresh();
+        }
+
+        private void HandleDoubleClicked()
+        {
+            if (_collectionInProgress || monetizationService == null) return;
+            _collectionInProgress = monetizationService.TryShowRewarded(RewardedPlacement.OfflineDouble);
             Refresh();
         }
 

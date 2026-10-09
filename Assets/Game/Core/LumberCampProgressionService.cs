@@ -222,6 +222,7 @@ namespace IndustryTycoon.Progression
             LumberCampContractDefinition contract =
                 LumberCampProgressionCatalog.GetContract(_model.ActiveContractIndex);
             bool claimed = _model.TryClaimActiveContract();
+            if (claimed) InternalAnalytics.Publish("contract_claimed", contract.Id.ToString());
             if (claimed
                 && contract.IsStrategyContract
                 && contract.StrategyKind
@@ -252,12 +253,16 @@ namespace IndustryTycoon.Progression
 
         public bool RecordIndustrialDistrictEntered()
         {
-            return _model != null && _model.RecordIndustrialDistrictEntered();
+            bool changed = _model != null && _model.RecordIndustrialDistrictEntered();
+            if (changed) InternalAnalytics.Publish("district_unlocked", "industrial");
+            return changed;
         }
 
         public bool RecordAssemblyPlantUnlocked()
         {
-            return _model != null && _model.RecordAssemblyPlantUnlocked();
+            bool changed = _model != null && _model.RecordAssemblyPlantUnlocked();
+            if (changed) InternalAnalytics.Publish("building_unlocked", "assembly_plant");
+            return changed;
         }
 
         public bool RecordMachinePartsProduced(int amount)
@@ -675,6 +680,7 @@ namespace IndustryTycoon.Progression
         private void HandleUnitSold(SaleFeedbackData feedback)
         {
             _model.RecordSale(feedback.ResourceType, 1, feedback.CashValue);
+            InternalAnalytics.Publish("sale_completed", feedback.ResourceType.ToString());
         }
 
         private void HandleProcessorRecipeCompleted(int inputWood, int outputPlanks)
@@ -750,31 +756,37 @@ namespace IndustryTycoon.Progression
         private void HandleProductionUpgradeCompleted()
         {
             _model.RecordFlag(ProgressFlagId.ProductionUpgradeUnlocked);
+            InternalAnalytics.Publish("building_unlocked", "production_upgrade");
         }
 
         private void HandleWorkerCompleted()
         {
             _model.RecordFlag(ProgressFlagId.WorkerUnlocked);
+            InternalAnalytics.Publish("building_unlocked", "worker");
         }
 
         private void HandleProcessorCompleted()
         {
             _model.RecordFlag(ProgressFlagId.ProcessorUnlocked);
+            InternalAnalytics.Publish("building_unlocked", "processor");
         }
 
         private void HandleAutoFeederCompleted()
         {
             _model.RecordFlag(ProgressFlagId.AutoFeederUnlocked);
+            InternalAnalytics.Publish("building_unlocked", "automation");
         }
 
         private void HandlePackingStationCompleted()
         {
             _model.RecordFlag(ProgressFlagId.PackingStationUnlocked);
+            InternalAnalytics.Publish("building_unlocked", "packing_station");
         }
 
         private void HandleCourierCompleted()
         {
             _model.RecordFlag(ProgressFlagId.CourierUnlocked);
+            InternalAnalytics.Publish("building_unlocked", "courier");
         }
 
         private void HandleLumberCampCompleted()
@@ -785,21 +797,25 @@ namespace IndustryTycoon.Progression
         private void HandleMineUnlocked()
         {
             _model.RecordMineUnlocked();
+            InternalAnalytics.Publish("district_unlocked", "mining");
         }
 
         private void HandleSmelterCompleted()
         {
             _model.RecordFlag(ProgressFlagId.SmelterUnlocked);
+            InternalAnalytics.Publish("building_unlocked", "smelter");
         }
 
         private void HandleDrillCompleted()
         {
             _model.RecordDrillUnlocked();
+            InternalAnalytics.Publish("building_unlocked", "drill");
         }
 
         private void HandleToolWorkshopCompleted()
         {
             _model.RecordToolWorkshopUnlocked();
+            InternalAnalytics.Publish("building_unlocked", "tool_workshop");
         }
 
         private void HandleWalletBalanceChanged(int balance)
@@ -849,11 +865,13 @@ namespace IndustryTycoon.Progression
 
         private void HandleAchievementUnlocked(int achievementIndex)
         {
+            InternalAnalytics.Publish("achievement_unlocked", achievementIndex.ToString());
             AchievementUnlocked?.Invoke(achievementIndex);
         }
 
         private void HandleEmpireLevelAdvanced(int empireLevel)
         {
+            InternalAnalytics.Publish("empire_level", empireLevel.ToString());
             EmpireLevelAdvanced?.Invoke(empireLevel);
         }
     }

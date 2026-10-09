@@ -3,6 +3,7 @@ using System.Collections;
 using IndustryTycoon.Core;
 using IndustryTycoon.Player;
 using UnityEngine;
+using IndustryTycoon.Monetization;
 
 namespace IndustryTycoon.Processing
 {
@@ -366,6 +367,8 @@ namespace IndustryTycoon.Processing
 
         private IEnumerator ProcessReservedRecipe()
         {
+            _processingWait = new WaitForSeconds(
+                ProductionBoostRuntime.ScaleDuration(processingDuration));
             yield return _processingWait;
 
             _processingCoroutine = null;

@@ -2,6 +2,7 @@ using System;
 using IndustryTycoon.Core;
 using IndustryTycoon.Processing;
 using UnityEngine;
+using IndustryTycoon.Monetization;
 
 namespace IndustryTycoon.Logistics
 {
@@ -133,7 +134,7 @@ namespace IndustryTycoon.Logistics
 
         private void Update()
         {
-            Tick(Time.deltaTime);
+            Tick(ProductionBoostRuntime.ScaleDelta(Time.deltaTime));
         }
 
         public void Tick(float deltaSeconds)

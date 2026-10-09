@@ -4,6 +4,7 @@ using IndustryTycoon.Economy;
 using IndustryTycoon.Interaction;
 using IndustryTycoon.Logistics;
 using IndustryTycoon.Market;
+using IndustryTycoon.Monetization;
 using IndustryTycoon.Mining;
 using IndustryTycoon.Player;
 using IndustryTycoon.Processing;
@@ -60,6 +61,7 @@ namespace IndustryTycoon.Persistence
         [SerializeField] private RetentionGoalService retentionGoalService;
         [SerializeField] private IndustrialDistrictService industrialDistrictService;
         [SerializeField] private MarketPlanningService marketPlanningService;
+        [SerializeField] private MonetizationService monetizationService;
 
         [Header("Save Cadence")]
         [SerializeField, Min(0.25f)] private float saveDebounceSeconds = 3f;
@@ -130,6 +132,7 @@ namespace IndustryTycoon.Persistence
         public RetentionGoalService RetentionGoalService => retentionGoalService;
         public IndustrialDistrictService IndustrialDistrictService => industrialDistrictService;
         public MarketPlanningService MarketPlanningService => marketPlanningService;
+        public MonetizationService MonetizationService => monetizationService;
         public float SaveDebounceSeconds => saveDebounceSeconds;
         public float ReturnScreenThresholdSeconds => returnScreenThresholdSeconds;
         public float MaximumCreditedAwaySeconds => maximumCreditedAwaySeconds;
@@ -272,6 +275,7 @@ namespace IndustryTycoon.Persistence
             }
 
             ReturnStateChanged?.Invoke();
+            InternalAnalytics.Publish("offline_reward_claimed", multiplier > 1f ? "double" : "base");
             return true;
         }
 
@@ -287,7 +291,7 @@ namespace IndustryTycoon.Persistence
 
         public bool ResetSaveAndReload()
         {
-            if (!CanUseDevelopmentUtilities() || _saveStore == null)
+            if (_saveStore == null)
             {
                 return false;
             }
@@ -491,6 +495,14 @@ namespace IndustryTycoon.Persistence
             // into the state that is persisted. Offline production/delivery remains
             // excluded from the lifetime counters.
             _state = data;
+            monetizationService?.EnsureOfflineSession(
+                data.lastEvaluationUtcUnixSeconds,
+                data.pendingOfflineCash,
+                data.pendingOfflineAwaySeconds);
+            if (monetizationService != null)
+            {
+                data.monetization = monetizationService.CapturePersistentState();
+            }
             progressionService?.EvaluateCurrentState();
             if (progressionService != null)
             {
@@ -714,6 +726,7 @@ namespace IndustryTycoon.Persistence
                 industrialDistrictService?.RestorePersistentState(data.industrial);
                 industrialDistrictService?.RestoreFactoryScalingState(data.factoryScaling);
                 marketPlanningService?.RestorePersistentState(data.market);
+                monetizationService?.RestorePersistentState(data.monetization);
                 retentionGoalService?.RestorePersistentState(
                     data.retention,
                     utcNowUnixSeconds);
@@ -1040,6 +1053,9 @@ namespace IndustryTycoon.Persistence
             snapshot.market = marketPlanningService != null
                 ? marketPlanningService.CapturePersistentState()
                 : _state.market;
+            snapshot.monetization = monetizationService != null
+                ? monetizationService.CapturePersistentState()
+                : _state.monetization;
             snapshot.onboarding = onboardingService != null
                 ? onboardingService.CapturePersistentState()
                 : _state.onboarding != null
@@ -1178,6 +1194,10 @@ namespace IndustryTycoon.Persistence
             {
                 marketPlanningService.StateChanged += HandleChanged;
             }
+            if (monetizationService != null)
+            {
+                monetizationService.StateChanged += RequestCriticalSave;
+            }
             if (progressionService != null)
             {
                 progressionService.StateChanged += HandleChanged;
@@ -1230,6 +1250,10 @@ namespace IndustryTycoon.Persistence
             if (marketPlanningService != null)
             {
                 marketPlanningService.StateChanged -= HandleChanged;
+            }
+            if (monetizationService != null)
+            {
+                monetizationService.StateChanged -= RequestCriticalSave;
             }
             if (progressionService != null)
             {

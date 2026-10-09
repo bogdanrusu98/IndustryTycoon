@@ -186,6 +186,24 @@ namespace IndustryTycoon.Market
             }
         }
 
+        public static bool RefreshAvailableOrders(M16MarketSaveData data,
+            MarketUnlockContext unlocks)
+        {
+            if (data?.orders == null) return false;
+            bool changed = false;
+            for (int i = 0; i < data.orders.Length; i++)
+            {
+                M16ProductionOrderSaveRecord order = data.orders[i];
+                if (order != null && order.state == ProductionOrderState.Available)
+                {
+                    order.state = ProductionOrderState.Claimed;
+                    changed = true;
+                }
+            }
+            if (changed) RefillOrders(data, unlocks);
+            return changed;
+        }
+
         public static DemandTier GetDemand(M16MarketSaveData data, ResourceType type) =>
             data?.demand != null && IsResource(type) && data.demand.Length > (int)type && data.demand[(int)type] != null
                 ? data.demand[(int)type].tier : DemandTier.Normal;
