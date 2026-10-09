@@ -764,6 +764,10 @@ namespace IndustryTycoon.Editor
                 persistenceService,
                 m13Services,
                 retentionGoalService,
+                industrialDistrictService,
+                marketPlanningService,
+                m11Services,
+                m12Services,
                 playerMovement,
                 player.GetComponent<PlayerDragInput>(),
                 onboardingService);
@@ -4460,11 +4464,6 @@ namespace IndustryTycoon.Editor
                 processor, smelter, workshop, plant
             });
 
-            IndustrialDistrictView view =
-                districtRoot.AddComponent<IndustrialDistrictView>();
-            SetObjectReference(view, "district", service);
-            SetObjectReference(view, "progression", progression);
-            SetObjectReference(view, "logistics", m13.Network);
             plantRoot.SetActive(false);
             return service;
         }
@@ -4957,6 +4956,10 @@ namespace IndustryTycoon.Editor
             LocalPersistenceService persistenceService,
             M13Services m13Services,
             RetentionGoalService retentionGoalService,
+            IndustrialDistrictService industrialDistrictService,
+            MarketPlanningService marketPlanningService,
+            M11Services m11Services,
+            M12Services m12Services,
             PlayerMovement playerMovement,
             PlayerDragInput playerDragInput,
             FirstSessionOnboardingService onboardingService)
@@ -4975,7 +4978,7 @@ namespace IndustryTycoon.Editor
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1080f, 1920f);
             scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0.5f;
+            scaler.matchWidthOrHeight = 0f;
 
             GameObject safeAreaObject = new GameObject("Safe Area", typeof(RectTransform));
             safeAreaObject.transform.SetParent(canvasObject.transform, false);
@@ -4989,30 +4992,30 @@ namespace IndustryTycoon.Editor
             panelRect.anchorMin = new Vector2(0.5f, 1f);
             panelRect.anchorMax = new Vector2(0.5f, 1f);
             panelRect.pivot = new Vector2(0.5f, 1f);
-            panelRect.sizeDelta = new Vector2(470f, 184f);
-            panelRect.anchoredPosition = new Vector2(0f, -36f);
+            panelRect.sizeDelta = new Vector2(960f, 132f);
+            panelRect.anchoredPosition = new Vector2(0f, -24f);
             panelObject.GetComponent<Image>().color = new Color(0.07f, 0.09f, 0.07f, 0.82f);
 
             Text woodText = CreateHudLine(
                 "Wood Text",
                 panelObject.transform,
                 "Wood: 0 / 12",
-                new Vector2(0f, 0.5f),
-                Vector2.one,
-                40);
+                new Vector2(0.33f, 0f),
+                new Vector2(0.67f, 1f),
+                32);
             Text cashText = CreateHudLine(
                 "Cash Text",
                 panelObject.transform,
                 "$ 0",
                 Vector2.zero,
-                new Vector2(0.55f, 0.5f),
+                new Vector2(0.33f, 1f),
                 38);
             Text empireLevelText = CreateHudLine(
                 "Empire Level Text",
                 panelObject.transform,
                 "EMPIRE LEVEL 1",
-                new Vector2(0.55f, 0f),
-                new Vector2(1f, 0.5f),
+                new Vector2(0.67f, 0f),
+                Vector2.one,
                 25);
 
             WoodHud woodHud = panelObject.AddComponent<WoodHud>();
@@ -5051,7 +5054,7 @@ namespace IndustryTycoon.Editor
             guidancePanelRect.anchorMax = new Vector2(0.5f, 1f);
             guidancePanelRect.pivot = new Vector2(0.5f, 1f);
             guidancePanelRect.sizeDelta = new Vector2(900f, 104f);
-            guidancePanelRect.anchoredPosition = new Vector2(0f, -238f);
+            guidancePanelRect.anchoredPosition = new Vector2(0f, -170f);
             guidancePanel.GetComponent<Image>().color =
                 new Color(0.07f, 0.09f, 0.07f, 0.78f);
 
@@ -5098,6 +5101,7 @@ namespace IndustryTycoon.Editor
             DistrictStatusView districtStatus = districtPanel.AddComponent<DistrictStatusView>();
             SetObjectReference(districtStatus, "progression", progressionService);
             SetObjectReference(districtStatus, "statusText", districtText);
+            districtPanel.SetActive(false);
 
             GameObject unlockToastRoot = new GameObject(
                 "Major Unlock Banner",
@@ -5139,6 +5143,44 @@ namespace IndustryTycoon.Editor
                 progressionService,
                 m13Services,
                 retentionGoalService);
+
+            GameObject transactionToastRoot = new GameObject(
+                "Transaction Toast", typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
+            transactionToastRoot.transform.SetParent(safeAreaObject.transform, false);
+            RectTransform transactionToastRect = transactionToastRoot.GetComponent<RectTransform>();
+            transactionToastRect.anchorMin = new Vector2(0.5f, 0.18f);
+            transactionToastRect.anchorMax = new Vector2(0.5f, 0.18f);
+            transactionToastRect.pivot = new Vector2(0.5f, 0.5f);
+            transactionToastRect.sizeDelta = new Vector2(760f, 88f);
+            transactionToastRoot.GetComponent<Image>().color = new Color(0.04f, 0.20f, 0.20f, 0.94f);
+            transactionToastRoot.GetComponent<Image>().raycastTarget = false;
+            CanvasGroup transactionGroup = transactionToastRoot.GetComponent<CanvasGroup>();
+            transactionGroup.blocksRaycasts = false;
+            transactionGroup.interactable = false;
+            Text transactionText = CreateHudLine("Transaction Toast Text", transactionToastRoot.transform,
+                string.Empty, Vector2.zero, Vector2.one, 28);
+            TransactionToastView transactionToast = safeAreaObject.AddComponent<TransactionToastView>();
+            SetObjectReference(transactionToast, "carryStack", carryStack);
+            SetObjectReference(transactionToast, "salePoint", FindRoot(scene, "Sale Point")?.GetComponent<SalePoint>());
+            SetObjectReference(transactionToast, "toastRoot", transactionToastRoot);
+            SetObjectReference(transactionToast, "canvasGroup", transactionGroup);
+            SetObjectReference(transactionToast, "messageText", transactionText);
+            transactionToastRoot.SetActive(false);
+
+            CreateM20Ui(
+                scene,
+                safeAreaObject,
+                progressionService,
+                persistenceService,
+                industrialDistrictService,
+                marketPlanningService,
+                m13Services,
+                m11Services,
+                m12Services,
+                processorUnlock.ProcessorRoot.GetComponent<WoodProcessor>(),
+                playerMovement,
+                playerDragInput,
+                feedbackServices);
 
             ProgressiveHudVisibility hudVisibility =
                 safeAreaObject.AddComponent<ProgressiveHudVisibility>();
@@ -5560,6 +5602,384 @@ namespace IndustryTycoon.Editor
             SetObjectReference(view, "claimDailyButton", dailyClaim);
             SetObjectReference(view, "claimWeeklyButton", weeklyClaim);
             panel.SetActive(false);
+        }
+
+        private static void CreateM20Ui(
+            Scene scene,
+            GameObject safeArea,
+            LumberCampProgressionService progression,
+            LocalPersistenceService persistence,
+            IndustrialDistrictService district,
+            MarketPlanningService market,
+            M13Services m13,
+            M11Services m11,
+            M12Services m12,
+            WoodProcessor processor,
+            PlayerMovement playerMovement,
+            PlayerDragInput playerDragInput,
+            FeedbackServices feedback)
+        {
+            Color charcoal = new Color(0.035f, 0.05f, 0.065f, 0.985f);
+            Color card = new Color(0.075f, 0.105f, 0.125f, 1f);
+            Color teal = new Color(0.08f, 0.66f, 0.62f, 1f);
+            Color orange = new Color(0.96f, 0.56f, 0.14f, 1f);
+            Color muted = new Color(0.27f, 0.31f, 0.34f, 1f);
+
+            GameObject navigation = new GameObject("Mobile Navigation", typeof(RectTransform), typeof(Image));
+            navigation.transform.SetParent(safeArea.transform, false);
+            RectTransform navigationRect = navigation.GetComponent<RectTransform>();
+            navigationRect.anchorMin = new Vector2(0f, 0f);
+            navigationRect.anchorMax = new Vector2(1f, 0f);
+            navigationRect.pivot = new Vector2(0.5f, 0f);
+            navigationRect.sizeDelta = new Vector2(0f, 112f);
+            navigation.GetComponent<Image>().color = new Color(0.025f, 0.04f, 0.05f, 0.98f);
+
+            string[] navLabels = { "GOALS", "AWARDS", "ROUTES", "FACTORY", "MARKET" };
+            Button[] navButtons = new Button[navLabels.Length];
+            for (int i = 0; i < navButtons.Length; i++)
+            {
+                float min = i / (float)navButtons.Length;
+                float max = (i + 1) / (float)navButtons.Length;
+                navButtons[i] = CreateHudButton(
+                    navLabels[i] + " Navigation",
+                    navigation.transform,
+                    navLabels[i],
+                    new Vector2(min, 0f),
+                    new Vector2(max, 1f),
+                    i == 3 ? orange : teal,
+                    22);
+            }
+
+            Button pauseButton = CreateHudButton(
+                "Pause Button", safeArea.transform, "Ⅱ",
+                new Vector2(0.885f, 0.91f), new Vector2(0.975f, 0.975f),
+                card, 36);
+
+            GameObject oldTabs = safeArea.transform.Find("Progression Tabs")?.gameObject;
+            oldTabs?.SetActive(false);
+            GameObject oldIndustryButton = safeArea.transform.Find("Industry Operations Button")?.gameObject;
+            oldIndustryButton?.SetActive(false);
+            GameObject contractPanel = safeArea.transform.Find("Contract Panel")?.gameObject;
+            GameObject achievementsPanel = safeArea.transform.Find("Achievements Panel")?.gameObject;
+            GameObject industryPanel = safeArea.transform.Find("Industrial Operations Panel")?.gameObject;
+            Button industryClose = industryPanel != null
+                ? industryPanel.transform.Find("Close Industrial Operations")?.GetComponent<Button>()
+                : null;
+            IndustrialRetentionView retentionView = safeArea.GetComponent<IndustrialRetentionView>();
+            if (retentionView != null)
+            {
+                SetObjectReference(retentionView, "toggleButton", null);
+                SetObjectReference(retentionView, "closeButton", null);
+            }
+
+            GameObject productionPanel = CreateM20Panel("Production Panel", safeArea.transform, charcoal);
+            Text productionTitle = CreateHudLine("Production Title", productionPanel.transform, "PROCESSOR",
+                new Vector2(0.05f, 0.83f), new Vector2(0.95f, 0.91f), 43);
+            Text recipe = CreateHudLine("Production Recipe", productionPanel.transform, "1 WOOD → 1 PLANK",
+                new Vector2(0.05f, 0.76f), new Vector2(0.95f, 0.83f), 29);
+            Text buffers = CreateHudLine("Production Buffers", productionPanel.transform, string.Empty,
+                new Vector2(0.07f, 0.59f), new Vector2(0.93f, 0.75f), 28);
+            buffers.alignment = TextAnchor.MiddleLeft;
+            Text status = CreateHudLine("Production Status", productionPanel.transform, "STATUS: LOCKED",
+                new Vector2(0.07f, 0.52f), new Vector2(0.93f, 0.59f), 28);
+            status.alignment = TextAnchor.MiddleLeft;
+
+            GameObject progressTrack = new GameObject("Cycle Progress", typeof(RectTransform), typeof(Image));
+            progressTrack.transform.SetParent(productionPanel.transform, false);
+            RectTransform progressRect = progressTrack.GetComponent<RectTransform>();
+            progressRect.anchorMin = new Vector2(0.07f, 0.465f);
+            progressRect.anchorMax = new Vector2(0.93f, 0.51f);
+            progressRect.offsetMin = progressRect.offsetMax = Vector2.zero;
+            progressTrack.GetComponent<Image>().color = muted;
+            GameObject progressFillObject = new GameObject("Cycle Fill", typeof(RectTransform), typeof(Image));
+            progressFillObject.transform.SetParent(progressTrack.transform, false);
+            StretchToParent(progressFillObject.GetComponent<RectTransform>());
+            Image progressFill = progressFillObject.GetComponent<Image>();
+            progressFill.color = teal;
+            progressFill.type = Image.Type.Filled;
+            progressFill.fillMethod = Image.FillMethod.Horizontal;
+            progressFill.fillAmount = 0f;
+            Text progressText = CreateHudLine("Cycle Progress Label", progressTrack.transform, "CYCLE IDLE",
+                Vector2.zero, Vector2.one, 22);
+
+            Text upgrades = CreateHudLine("Upgrade Summary", productionPanel.transform, string.Empty,
+                new Vector2(0.05f, 0.38f), new Vector2(0.95f, 0.455f), 23);
+            Button speed = CreateHudButton("Speed Upgrade", productionPanel.transform, "SPEED",
+                new Vector2(0.05f, 0.30f), new Vector2(0.34f, 0.375f), teal, 24);
+            Button input = CreateHudButton("Input Upgrade", productionPanel.transform, "INPUT",
+                new Vector2(0.355f, 0.30f), new Vector2(0.645f, 0.375f), teal, 24);
+            Button output = CreateHudButton("Output Upgrade", productionPanel.transform, "OUTPUT",
+                new Vector2(0.66f, 0.30f), new Vector2(0.95f, 0.375f), teal, 24);
+            Text specialization = CreateHudLine("Specialization Summary", productionPanel.transform, string.Empty,
+                new Vector2(0.05f, 0.22f), new Vector2(0.95f, 0.295f), 23);
+            Button throughput = CreateHudButton("Throughput Specialization", productionPanel.transform, "THROUGHPUT",
+                new Vector2(0.05f, 0.135f), new Vector2(0.49f, 0.215f), orange, 24);
+            Button efficiency = CreateHudButton("Efficiency Specialization", productionPanel.transform, "EFFICIENCY",
+                new Vector2(0.51f, 0.135f), new Vector2(0.95f, 0.215f), orange, 24);
+            Button[] buildingTabs = new Button[4];
+            string[] buildingLabels = { "PROCESS", "SMELT", "TOOLS", "ASSEMBLE" };
+            for (int i = 0; i < buildingTabs.Length; i++)
+            {
+                float min = 0.04f + i * 0.24f;
+                buildingTabs[i] = CreateHudButton(buildingLabels[i] + " Tab", productionPanel.transform,
+                    buildingLabels[i], new Vector2(min, 0.91f), new Vector2(min + 0.22f, 0.985f),
+                    i == 0 ? teal : card, 20);
+            }
+            Button productionClose = CreateHudButton("Close Production", productionPanel.transform, "BACK",
+                new Vector2(0.35f, 0.035f), new Vector2(0.65f, 0.115f), card, 25);
+
+            GameObject specializationConfirm = CreateM20Dialog("Specialization Confirmation", productionPanel.transform, charcoal);
+            Text confirmSpecializationText = CreateHudLine("Specialization Confirmation Text", specializationConfirm.transform,
+                "PERMANENT CHOICE", new Vector2(0.08f, 0.45f), new Vector2(0.92f, 0.88f), 31);
+            Button confirmSpecialization = CreateHudButton("Confirm Specialization", specializationConfirm.transform, "CONFIRM",
+                new Vector2(0.08f, 0.12f), new Vector2(0.47f, 0.38f), orange, 25);
+            Button cancelSpecialization = CreateHudButton("Cancel Specialization", specializationConfirm.transform, "CANCEL",
+                new Vector2(0.53f, 0.12f), new Vector2(0.92f, 0.38f), card, 25);
+            specializationConfirm.SetActive(false);
+
+            ProductionOverviewView productionView = safeArea.AddComponent<ProductionOverviewView>();
+            SetObjectReference(productionView, "panelRoot", productionPanel);
+            SetObjectReference(productionView, "district", district);
+            SetObjectReference(productionView, "progression", progression);
+            SetObjectReference(productionView, "processor", processor);
+            SetObjectReference(productionView, "smelter", m11.Smelter);
+            SetObjectReference(productionView, "workshop", m12.Workshop);
+            SetObjectReference(productionView, "assemblyPlant", district.AssemblyPlant);
+            SetObjectArray(productionView, "buildingTabs", buildingTabs);
+            SetObjectReference(productionView, "titleText", productionTitle);
+            SetObjectReference(productionView, "recipeText", recipe);
+            SetObjectReference(productionView, "bufferText", buffers);
+            SetObjectReference(productionView, "statusText", status);
+            SetObjectReference(productionView, "upgradeText", upgrades);
+            SetObjectReference(productionView, "specializationText", specialization);
+            SetObjectReference(productionView, "progressFill", progressFill);
+            SetObjectReference(productionView, "progressText", progressText);
+            SetObjectReference(productionView, "speedButton", speed);
+            SetObjectReference(productionView, "inputButton", input);
+            SetObjectReference(productionView, "outputButton", output);
+            SetObjectReference(productionView, "throughputButton", throughput);
+            SetObjectReference(productionView, "efficiencyButton", efficiency);
+            SetObjectReference(productionView, "specializationConfirmation", specializationConfirm);
+            SetObjectReference(productionView, "confirmationText", confirmSpecializationText);
+            SetObjectReference(productionView, "confirmSpecializationButton", confirmSpecialization);
+            SetObjectReference(productionView, "cancelSpecializationButton", cancelSpecialization);
+
+            GameObject marketPanel = CreateM20Panel("Market Orders Panel", safeArea.transform, charcoal);
+            CreateHudLine("Market Title", marketPanel.transform, "MARKET & PRODUCTION ORDERS",
+                new Vector2(0.05f, 0.90f), new Vector2(0.95f, 0.98f), 38);
+            Text demand = CreateHudLine("Demand Summary", marketPanel.transform, "MARKET UNLOCKS AT EMPIRE 20",
+                new Vector2(0.06f, 0.70f), new Vector2(0.94f, 0.89f), 25);
+            demand.alignment = TextAnchor.UpperLeft;
+            Text[] orderTexts = new Text[3];
+            Button[] orderButtons = new Button[3];
+            for (int i = 0; i < 3; i++)
+            {
+                float top = 0.68f - i * 0.18f;
+                GameObject orderCard = new GameObject("Order Card " + (i + 1), typeof(RectTransform), typeof(Image));
+                orderCard.transform.SetParent(marketPanel.transform, false);
+                RectTransform orderRect = orderCard.GetComponent<RectTransform>();
+                orderRect.anchorMin = new Vector2(0.06f, top - 0.16f);
+                orderRect.anchorMax = new Vector2(0.94f, top);
+                orderRect.offsetMin = orderRect.offsetMax = Vector2.zero;
+                orderCard.GetComponent<Image>().color = card;
+                orderTexts[i] = CreateHudLine("Order Text " + (i + 1), orderCard.transform, "ORDER LOCKED",
+                    new Vector2(0.02f, 0f), new Vector2(0.70f, 1f), 23);
+                orderTexts[i].alignment = TextAnchor.MiddleLeft;
+                orderButtons[i] = CreateHudButton("Order Action " + (i + 1), orderCard.transform, "LOCKED",
+                    new Vector2(0.71f, 0.18f), new Vector2(0.98f, 0.82f), teal, 21);
+            }
+            Button marketClose = CreateHudButton("Close Market", marketPanel.transform, "BACK",
+                new Vector2(0.35f, 0.035f), new Vector2(0.65f, 0.11f), card, 25);
+            MarketPlanningView marketView = FindRoot(scene, "Market Planning")?.GetComponent<MarketPlanningView>();
+            SetObjectReference(marketView, "panelRoot", marketPanel);
+            SetObjectReference(marketView, "demandText", demand);
+            SetObjectArray(marketView, "orderTexts", orderTexts);
+            SetObjectArray(marketView, "orderButtons", orderButtons);
+
+            GameObject mainMenu = CreateM20Panel("Main Menu", safeArea.transform, charcoal);
+            CreateHudLine("Game Title", mainMenu.transform, "INDUSTRY\nTYCOON",
+                new Vector2(0.08f, 0.63f), new Vector2(0.92f, 0.88f), 74);
+            CreateHudLine("Game Subtitle", mainMenu.transform, "BUILD • AUTOMATE • EXPAND",
+                new Vector2(0.08f, 0.56f), new Vector2(0.92f, 0.64f), 27);
+            Button continueButton = CreateMenuButton(mainMenu.transform, "Continue", "CONTINUE", 0.43f, teal);
+            Button newGameButton = CreateMenuButton(mainMenu.transform, "New Game", "NEW GAME / RESET", 0.31f, orange);
+            Button mainSettings = CreateMenuButton(mainMenu.transform, "Main Settings", "SETTINGS", 0.19f, card);
+
+            GameObject pauseMenu = CreateM20Panel("Pause Menu", safeArea.transform, charcoal);
+            CreateHudLine("Paused Title", pauseMenu.transform, "PAUSED", new Vector2(0.1f, 0.67f), new Vector2(0.9f, 0.82f), 64);
+            Button resumeButton = CreateMenuButton(pauseMenu.transform, "Resume", "RESUME", 0.47f, teal);
+            Button pauseSettings = CreateMenuButton(pauseMenu.transform, "Pause Settings", "SETTINGS", 0.35f, card);
+            Button helpButton = CreateMenuButton(pauseMenu.transform, "Help", "HELP", 0.23f, card);
+
+            GameObject settingsPanel = CreateM20Panel("Settings Panel", safeArea.transform, charcoal);
+            CreateHudLine("Settings Title", settingsPanel.transform, "SETTINGS", new Vector2(0.08f, 0.85f), new Vector2(0.92f, 0.96f), 49);
+            Slider master = CreateSettingsSlider(settingsPanel.transform, "Master Volume", "MASTER VOLUME", 0.70f, teal, card);
+            Slider music = CreateSettingsSlider(settingsPanel.transform, "Music Volume", "MUSIC", 0.56f, teal, card);
+            Slider sfx = CreateSettingsSlider(settingsPanel.transform, "SFX Volume", "SFX", 0.42f, teal, card);
+            Toggle haptics = CreateSettingsToggle(settingsPanel.transform, "Haptics", "HAPTICS", 0.31f, teal, card);
+            Button graphics = CreateMenuButton(settingsPanel.transform, "Graphics Preset", "GRAPHICS: BALANCED", 0.18f, card);
+            Text graphicsLabel = graphics.GetComponentInChildren<Text>(true);
+            Button settingsBack = CreateMenuButton(settingsPanel.transform, "Settings Back", "BACK", 0.06f, teal);
+            MobileSettingsService settings = safeArea.AddComponent<MobileSettingsService>();
+            SetObjectReference(settings, "masterSlider", master);
+            SetObjectReference(settings, "musicSlider", music);
+            SetObjectReference(settings, "sfxSlider", sfx);
+            SetObjectReference(settings, "hapticsToggle", haptics);
+            SetObjectReference(settings, "graphicsButton", graphics);
+            SetObjectReference(settings, "graphicsLabel", graphicsLabel);
+            SetObjectReference(settings, "audioFeedback", feedback.Audio);
+            SetObjectReference(settings, "hapticFeedback", feedback.Haptics);
+
+            GameObject helpPanel = CreateM20Panel("Help Panel", safeArea.transform, charcoal);
+            CreateHudLine("Help Title", helpPanel.transform, "HOW TO PLAY", new Vector2(0.08f, 0.84f), new Vector2(0.92f, 0.95f), 48);
+            Text helpText = CreateHudLine("Help Text", helpPanel.transform,
+                "DRAG ANYWHERE TO MOVE\n\nWALK OVER RESOURCES TO PICK UP\n\nENTER LABELED ZONES TO DROP OR COLLECT\n\nFOLLOW THE OBJECTIVE AT THE TOP\n\nOPEN THE BOTTOM TABS FOR GOALS, ROUTES, FACTORIES AND MARKET\n\nANDROID BACK CLOSES THE CURRENT PANEL, THEN OPENS PAUSE",
+                new Vector2(0.08f, 0.18f), new Vector2(0.92f, 0.82f), 28);
+            helpText.alignment = TextAnchor.UpperLeft;
+            Button helpBack = CreateMenuButton(helpPanel.transform, "Help Back", "BACK", 0.06f, teal);
+
+            GameObject resetConfirm = CreateM20Dialog("Reset Save Confirmation", mainMenu.transform, charcoal);
+            CreateHudLine("Reset Warning", resetConfirm.transform,
+                "RESET ALL GAMEPLAY PROGRESS?\n\nTHIS CANNOT BE UNDONE.\nDEVICE SETTINGS WILL BE KEPT.",
+                new Vector2(0.08f, 0.43f), new Vector2(0.92f, 0.88f), 30);
+            Button confirmReset = CreateHudButton("Confirm Reset", resetConfirm.transform, "RESET SAVE",
+                new Vector2(0.08f, 0.12f), new Vector2(0.47f, 0.37f), orange, 25);
+            Button cancelReset = CreateHudButton("Cancel Reset", resetConfirm.transform, "CANCEL",
+                new Vector2(0.53f, 0.12f), new Vector2(0.92f, 0.37f), card, 25);
+            resetConfirm.SetActive(false);
+
+            MobilePanelNavigation panelNavigation = safeArea.AddComponent<MobilePanelNavigation>();
+            SetObjectReference(panelNavigation, "mainMenu", mainMenu);
+            SetObjectReference(panelNavigation, "pauseMenu", pauseMenu);
+            SetObjectReference(panelNavigation, "settingsPanel", settingsPanel);
+            SetObjectReference(panelNavigation, "resetConfirmation", resetConfirm);
+            SetObjectReference(panelNavigation, "helpPanel", helpPanel);
+            SetObjectArray(panelNavigation, "contentPanels", new Object[]
+            {
+                contractPanel, achievementsPanel, industryPanel, productionPanel, marketPanel
+            });
+            SetObjectArray(panelNavigation, "contentButtons", navButtons);
+            SetObjectReference(panelNavigation, "pauseButton", pauseButton);
+            SetObjectReference(panelNavigation, "continueButton", continueButton);
+            SetObjectReference(panelNavigation, "resumeButton", resumeButton);
+            SetObjectReference(panelNavigation, "mainSettingsButton", mainSettings);
+            SetObjectReference(panelNavigation, "pauseSettingsButton", pauseSettings);
+            SetObjectReference(panelNavigation, "helpButton", helpButton);
+            SetObjectReference(panelNavigation, "newGameButton", newGameButton);
+            SetObjectReference(panelNavigation, "confirmResetButton", confirmReset);
+            SetObjectReference(panelNavigation, "cancelResetButton", cancelReset);
+            SetObjectArray(panelNavigation, "closeButtons", new Object[]
+            {
+                industryClose, productionClose, marketClose, settingsBack, helpBack
+            });
+            SetObjectReference(panelNavigation, "persistence", persistence);
+            SetObjectReference(panelNavigation, "playerMovement", playerMovement);
+            SetObjectReference(panelNavigation, "playerDragInput", playerDragInput);
+
+            AdvancedUiVisibility advancedVisibility = safeArea.AddComponent<AdvancedUiVisibility>();
+            SetObjectReference(advancedVisibility, "progression", progression);
+            SetObjectReference(advancedVisibility, "routesButton", navButtons[2].gameObject);
+            SetObjectReference(advancedVisibility, "productionButton", navButtons[3].gameObject);
+            SetObjectReference(advancedVisibility, "marketButton", navButtons[4].gameObject);
+            ProgressiveHudVisibility legacyVisibility = safeArea.GetComponent<ProgressiveHudVisibility>();
+            if (legacyVisibility != null)
+            {
+                SetObjectReference(legacyVisibility, "progressionTabs", navButtons[0].gameObject);
+                SetObjectReference(legacyVisibility, "industryButton", navButtons[2].gameObject);
+            }
+
+            productionPanel.SetActive(false);
+            marketPanel.SetActive(false);
+            pauseMenu.SetActive(false);
+            settingsPanel.SetActive(false);
+            helpPanel.SetActive(false);
+            mainMenu.SetActive(true);
+        }
+
+        private static GameObject CreateM20Panel(string name, Transform parent, Color color)
+        {
+            GameObject panel = new GameObject(name, typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
+            panel.transform.SetParent(parent, false);
+            RectTransform rect = panel.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.025f, 0.08f);
+            rect.anchorMax = new Vector2(0.975f, 0.985f);
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            panel.GetComponent<Image>().color = color;
+            CanvasGroup group = panel.GetComponent<CanvasGroup>();
+            group.interactable = true;
+            group.blocksRaycasts = true;
+            return panel;
+        }
+
+        private static GameObject CreateM20Dialog(string name, Transform parent, Color color)
+        {
+            GameObject overlay = new GameObject(name, typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
+            overlay.transform.SetParent(parent, false);
+            StretchToParent(overlay.GetComponent<RectTransform>());
+            overlay.GetComponent<Image>().color = color;
+            return overlay;
+        }
+
+        private static Button CreateMenuButton(Transform parent, string name, string label, float bottom, Color color)
+        {
+            return CreateHudButton(name, parent, label,
+                new Vector2(0.16f, bottom), new Vector2(0.84f, bottom + 0.085f), color, 30);
+        }
+
+        private static Slider CreateSettingsSlider(Transform parent, string name, string label, float bottom, Color fillColor, Color backgroundColor)
+        {
+            CreateHudLine(name + " Label", parent, label,
+                new Vector2(0.10f, bottom + 0.065f), new Vector2(0.90f, bottom + 0.13f), 27);
+            GameObject root = new GameObject(name, typeof(RectTransform), typeof(Slider));
+            root.transform.SetParent(parent, false);
+            RectTransform rootRect = root.GetComponent<RectTransform>();
+            rootRect.anchorMin = new Vector2(0.12f, bottom);
+            rootRect.anchorMax = new Vector2(0.88f, bottom + 0.06f);
+            rootRect.offsetMin = rootRect.offsetMax = Vector2.zero;
+            GameObject background = new GameObject("Background", typeof(RectTransform), typeof(Image));
+            background.transform.SetParent(root.transform, false);
+            StretchToParent(background.GetComponent<RectTransform>());
+            background.GetComponent<Image>().color = backgroundColor;
+            GameObject fillArea = new GameObject("Fill Area", typeof(RectTransform));
+            fillArea.transform.SetParent(root.transform, false);
+            StretchToParent(fillArea.GetComponent<RectTransform>());
+            GameObject fill = new GameObject("Fill", typeof(RectTransform), typeof(Image));
+            fill.transform.SetParent(fillArea.transform, false);
+            StretchToParent(fill.GetComponent<RectTransform>());
+            fill.GetComponent<Image>().color = fillColor;
+            Slider slider = root.GetComponent<Slider>();
+            slider.fillRect = fill.GetComponent<RectTransform>();
+            slider.targetGraphic = background.GetComponent<Image>();
+            slider.minValue = 0f;
+            slider.maxValue = 1f;
+            slider.value = 1f;
+            return slider;
+        }
+
+        private static Toggle CreateSettingsToggle(Transform parent, string name, string label, float bottom, Color onColor, Color backgroundColor)
+        {
+            GameObject root = new GameObject(name, typeof(RectTransform), typeof(Toggle), typeof(Image));
+            root.transform.SetParent(parent, false);
+            RectTransform rect = root.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.16f, bottom);
+            rect.anchorMax = new Vector2(0.84f, bottom + 0.075f);
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            root.GetComponent<Image>().color = backgroundColor;
+            GameObject checkmark = new GameObject("Checkmark", typeof(RectTransform), typeof(Image));
+            checkmark.transform.SetParent(root.transform, false);
+            RectTransform checkRect = checkmark.GetComponent<RectTransform>();
+            checkRect.anchorMin = new Vector2(0.78f, 0.18f);
+            checkRect.anchorMax = new Vector2(0.96f, 0.82f);
+            checkRect.offsetMin = checkRect.offsetMax = Vector2.zero;
+            checkmark.GetComponent<Image>().color = onColor;
+            Toggle toggle = root.GetComponent<Toggle>();
+            toggle.targetGraphic = root.GetComponent<Image>();
+            toggle.graphic = checkmark.GetComponent<Image>();
+            toggle.isOn = true;
+            Text text = CreateHudLine(name + " Text", root.transform, label + "  ON / OFF",
+                new Vector2(0.02f, 0f), new Vector2(0.76f, 1f), 27);
+            text.alignment = TextAnchor.MiddleLeft;
+            return toggle;
         }
 
         private static Button CreateHudButton(
@@ -6416,6 +6836,7 @@ namespace IndustryTycoon.Editor
             ValidateM12Scene(scene, carryStack, salePoint, playerCollider);
             ValidateM17Scene(scene);
             ValidateM18Scene(scene);
+            ValidateM20Scene(scene);
             ValidateCoreLoopLogic();
             ValidateM3Logic();
             ValidateM4Logic();
@@ -6528,6 +6949,70 @@ namespace IndustryTycoon.Editor
             {
                 Require(targets.GetArrayElementAtIndex(i).objectReferenceValue != null,
                     $"M18 tutorial target {i} is missing.");
+            }
+        }
+
+        private static void ValidateM20Scene(Scene scene)
+        {
+            GameObject hud = FindRoot(scene, "HUD");
+            Require(hud != null, "M20 HUD is missing.");
+            Canvas[] canvases = hud.GetComponentsInChildren<Canvas>(true);
+            Require(canvases.Length == 1, "M20 requires exactly one player-facing Canvas.");
+            CanvasScaler scaler = hud.GetComponent<CanvasScaler>();
+            Require(scaler != null
+                    && scaler.uiScaleMode == CanvasScaler.ScaleMode.ScaleWithScreenSize
+                    && scaler.referenceResolution == new Vector2(1080f, 1920f)
+                    && Mathf.Approximately(scaler.matchWidthOrHeight, 0f),
+                "M20 portrait Canvas scaling is invalid.");
+
+            SafeAreaFitter safeArea = hud.GetComponentInChildren<SafeAreaFitter>(true);
+            MobilePanelNavigation navigation = hud.GetComponentInChildren<MobilePanelNavigation>(true);
+            MobileSettingsService settings = hud.GetComponentInChildren<MobileSettingsService>(true);
+            ProductionOverviewView production = hud.GetComponentInChildren<ProductionOverviewView>(true);
+            MarketPlanningView market = FindRoot(scene, "Market Planning")
+                ?.GetComponent<MarketPlanningView>();
+            Require(safeArea != null && navigation != null && settings != null
+                    && production != null && market != null,
+                "M20 mobile presentation graph is incomplete.");
+
+            Require(typeof(IndustrialDistrictView).GetMethod("OnGUI",
+                        System.Reflection.BindingFlags.Instance
+                        | System.Reflection.BindingFlags.NonPublic
+                        | System.Reflection.BindingFlags.Public) == null
+                    && typeof(MarketPlanningView).GetMethod("OnGUI",
+                        System.Reflection.BindingFlags.Instance
+                        | System.Reflection.BindingFlags.NonPublic
+                        | System.Reflection.BindingFlags.Public) == null,
+                "M20 normal gameplay still exposes legacy IMGUI.");
+
+            string[] requiredPanels =
+            {
+                "Main Menu", "Pause Menu", "Settings Panel", "Help Panel",
+                "Production Panel", "Market Orders Panel", "Industrial Operations Panel",
+                "Contract Panel", "Achievements Panel"
+            };
+            Transform safeRoot = safeArea.transform;
+            for (int i = 0; i < requiredPanels.Length; i++)
+            {
+                Transform panel = safeRoot.Find(requiredPanels[i]);
+                Require(panel != null && panel.GetComponent<Image>() != null,
+                    $"M20 panel '{requiredPanels[i]}' is missing or cannot block input.");
+            }
+
+            Vector2Int[] sizes =
+            {
+                new Vector2Int(360, 640),
+                new Vector2Int(1080, 1920),
+                new Vector2Int(1440, 3200)
+            };
+            for (int i = 0; i < sizes.Length; i++)
+            {
+                Vector2Int size = sizes[i];
+                Rect simulated = new Rect(0f, size.y * 0.035f, size.x, size.y * 0.93f);
+                SafeAreaFitter.CalculateAnchors(simulated, size, out Vector2 min, out Vector2 max);
+                Require(min.x >= 0f && min.y >= 0f && max.x <= 1f && max.y <= 1f
+                        && max.x > min.x && max.y > min.y,
+                    $"M20 safe-area anchors failed for {size.x}x{size.y}.");
             }
         }
 

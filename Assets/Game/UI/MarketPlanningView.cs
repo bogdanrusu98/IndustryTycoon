@@ -2,49 +2,88 @@ using System.Text;
 using IndustryTycoon.Core;
 using IndustryTycoon.Market;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace IndustryTycoon.UI
 {
     public sealed class MarketPlanningView : MonoBehaviour
     {
         [SerializeField] private MarketPlanningService market;
-        [SerializeField] private bool visible = true;
-        private readonly StringBuilder _text = new StringBuilder(256);
+        [SerializeField] private GameObject panelRoot;
+        [SerializeField] private Text demandText;
+        [SerializeField] private Text[] orderTexts;
+        [SerializeField] private Button[] orderButtons;
+        private readonly StringBuilder _builder = new StringBuilder(384);
 
-        private void OnGUI()
+        public GameObject PanelRoot => panelRoot;
+
+        private void OnEnable()
         {
-            if (!visible || market == null || !market.IsMarketUnlocked) return;
-            GUILayout.BeginArea(new Rect(Screen.width - 330f, 92f, 315f, 440f), GUI.skin.box);
-            GUILayout.Label("MARKET DEMAND & ORDERS");
-            for (int i = 0; i < M16MarketSaveData.ResourceCount; i++)
-            {
-                ResourceType type = (ResourceType)i;
-                DemandTier tier = market.GetDemandTier(type);
-                if (tier == DemandTier.Normal) continue;
-                GUILayout.Label($"{type}: {tier} x{M16MarketRules.GetDemandBasisPoints(tier) / 10000f:0.00}");
-            }
-            GUILayout.Label(market.IsFlowBonusActive ? "Industrial Flow: +5% Machine Part" : "Industrial Flow: inactive");
-            var orders = market.State?.orders;
-            if (orders != null)
-            {
-                for (int i = 0; i < orders.Length; i++)
+            if (market != null) market.StateChanged += Refresh;
+            if (orderButtons != null)
+                for (int i = 0; i < orderButtons.Length; i++)
                 {
-                    var order = orders[i];
-                    if (order == null) continue;
-                    _text.Clear();
-                    _text.Append(order.resourceType).Append(" ").Append(order.quantity)
-                        .Append("  $").Append(order.rewardCash).Append("  ").Append(order.state)
-                        .Append("  Stock ").Append(market.GetAvailableStock(order.resourceType));
-                    GUILayout.Label(_text.ToString());
-                    if (order.state == ProductionOrderState.Available && GUILayout.Button($"Activate order {i + 1}"))
-                        market.TryActivateOrder(i);
-                    else if (order.state == ProductionOrderState.Active && GUILayout.Button("Deliver from Warehouse"))
-                        market.TryDeliverActiveOrder();
-                    else if (order.state == ProductionOrderState.Completed && GUILayout.Button("Claim reward"))
-                        market.TryClaimOrder(i);
+                    int index = i;
+                    orderButtons[i]?.onClick.AddListener(() => HandleOrder(index));
+                }
+            Refresh();
+        }
+
+        private void OnDisable()
+        {
+            if (market != null) market.StateChanged -= Refresh;
+        }
+
+        public void Refresh()
+        {
+            bool unlocked = market != null && market.IsMarketUnlocked;
+            if (demandText != null)
+            {
+                _builder.Clear();
+                if (!unlocked) _builder.Append("MARKET UNLOCKS AT EMPIRE 20");
+                else
+                {
+                    _builder.Append(market.IsFlowBonusActive ? "INDUSTRIAL FLOW  +5% MACHINE PART\n" : "INDUSTRIAL FLOW  INACTIVE\n");
+                    for (int i = 0; i < M16MarketSaveData.ResourceCount; i++)
+                    {
+                        ResourceType type = (ResourceType)i;
+                        DemandTier tier = market.GetDemandTier(type);
+                        if (tier == DemandTier.Normal) continue;
+                        _builder.Append(type.ToString().ToUpperInvariant()).Append("  ")
+                            .Append(tier.ToString().ToUpperInvariant()).Append("  x")
+                            .Append(M16MarketRules.GetDemandBasisPoints(tier) / 10000f).Append("\n");
+                    }
+                }
+                demandText.text = _builder.ToString().TrimEnd();
+            }
+
+            M16ProductionOrderSaveRecord[] orders = market?.State?.orders;
+            int count = orderTexts != null ? orderTexts.Length : 0;
+            for (int i = 0; i < count; i++)
+            {
+                M16ProductionOrderSaveRecord order = orders != null && i < orders.Length ? orders[i] : null;
+                Text text = orderTexts[i];
+                Button button = orderButtons != null && i < orderButtons.Length ? orderButtons[i] : null;
+                if (text != null)
+                    text.text = order == null || !unlocked ? "ORDER LOCKED" : $"{order.resourceType.ToString().ToUpperInvariant()}  {order.quantity}\nWAREHOUSE {market.GetAvailableStock(order.resourceType)}  •  REWARD ${order.rewardCash}\n{order.state.ToString().ToUpperInvariant()}";
+                if (button != null)
+                {
+                    button.interactable = unlocked && order != null && order.state != ProductionOrderState.Claimed;
+                    Text label = button.GetComponentInChildren<Text>(true);
+                    if (label != null) label.text = order == null ? "LOCKED" : order.state == ProductionOrderState.Available ? "ACTIVATE" : order.state == ProductionOrderState.Active ? "DELIVER" : order.state == ProductionOrderState.Completed ? "CLAIM" : "CLAIMED";
                 }
             }
-            GUILayout.EndArea();
+        }
+
+        private void HandleOrder(int index)
+        {
+            M16ProductionOrderSaveRecord[] orders = market?.State?.orders;
+            if (orders == null || index < 0 || index >= orders.Length || orders[index] == null) return;
+            ProductionOrderState state = orders[index].state;
+            if (state == ProductionOrderState.Available) market.TryActivateOrder(index);
+            else if (state == ProductionOrderState.Active) market.TryDeliverActiveOrder();
+            else if (state == ProductionOrderState.Completed) market.TryClaimOrder(index);
+            Refresh();
         }
     }
 }

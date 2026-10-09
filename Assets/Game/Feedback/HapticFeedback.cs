@@ -41,6 +41,13 @@ namespace IndustryTycoon.Feedback
             _lastImportantTime = currentTime;
         }
 
+        public void PlayButton() => PlayLight();
+        public void PlayPurchase() => PlayLight();
+        public void PlaySale() => PlayLight();
+        public void PlayObjective() => PlayImportant();
+        public void PlayUnlock() => PlayImportant();
+        public void PlayWarning() => PlayImportant();
+
         private bool CanPlay(float lastFeedbackTime, float cooldown)
         {
             return hapticsEnabled && Time.unscaledTime - lastFeedbackTime >= cooldown;

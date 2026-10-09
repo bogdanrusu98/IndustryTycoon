@@ -11,8 +11,21 @@ namespace IndustryTycoon.Feedback
         [SerializeField] private AudioClip cashCollectClip;
         [SerializeField] private AudioClip purchaseTickClip;
         [SerializeField] private AudioClip unlockClip;
+        [SerializeField] private AudioClip buttonClip;
+        [SerializeField] private AudioClip objectiveClip;
+        [SerializeField] private AudioClip productionClip;
+        [SerializeField] private AudioClip warningClip;
 
         public AudioSource AudioSource => audioSource;
+
+        public float OutputVolume
+        {
+            get => audioSource != null ? audioSource.volume : 1f;
+            set
+            {
+                if (audioSource != null) audioSource.volume = Mathf.Clamp01(value);
+            }
+        }
 
         public void PlayPickup()
         {
@@ -38,6 +51,11 @@ namespace IndustryTycoon.Feedback
         {
             Play(unlockClip);
         }
+
+        public void PlayButton() => Play(buttonClip);
+        public void PlayObjective() => Play(objectiveClip);
+        public void PlayProduction() => Play(productionClip);
+        public void PlayWarning() => Play(warningClip);
 
         private void Play(AudioClip clip)
         {

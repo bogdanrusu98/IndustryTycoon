@@ -93,7 +93,7 @@ namespace IndustryTycoon.Progression
             try
             {
                 _state = M18OnboardingRules.Normalize(state);
-                ReconcileFromAuthoritativeState(true);
+                ReconcileFromAuthoritativeState(true, true);
                 SeedAlreadyUnlockedExplanations();
                 RefreshPresentation();
             }
@@ -167,19 +167,24 @@ namespace IndustryTycoon.Progression
 
         private void HandleAuthoritativeChanged()
         {
-            ReconcileFromAuthoritativeState(false);
+            // A restored or already-advanced authoritative graph is stronger
+            // evidence than a stale tutorial checkpoint. Catch up presentation
+            // without replaying completion feedback or changing gameplay gates.
+            ReconcileFromAuthoritativeState(false, true);
             EvaluateIntroductions();
             RefreshPresentation();
         }
 
-        private void ReconcileFromAuthoritativeState(bool silent)
+        private void ReconcileFromAuthoritativeState(
+            bool silent,
+            bool allowRestoreCatchUp = false)
         {
             if (progression == null)
             {
                 return;
             }
 
-            while (IsTutorialActive && IsCurrentStepSatisfied(silent))
+            while (IsTutorialActive && IsCurrentStepSatisfied(allowRestoreCatchUp))
             {
                 CompleteCurrentStep(silent);
             }

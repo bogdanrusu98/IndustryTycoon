@@ -119,7 +119,8 @@ namespace IndustryTycoon.Editor
             PurchaseAll(persistence.Wallet, persistence.ProductionUpgrade.PurchasePad);
             Require(completions == 1
                     && onboarding.CurrentStep == FirstSessionStep.UnlockWorker,
-                "Legitimate Production unlock did not advance exactly once.");
+                "Legitimate Production unlock did not advance exactly once. "
+                + $"completions={completions}, step={onboarding.CurrentStep}.");
             persistence.ProgressionService.EvaluateCurrentState();
             Require(completions == 1, "Completed tutorial step replayed after evaluation.");
 

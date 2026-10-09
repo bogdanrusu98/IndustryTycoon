@@ -140,7 +140,9 @@ namespace IndustryTycoon.Editor
             Require(warehouse.gameObject.activeSelf && district.IsGateOpen
                     && progression.EmpireLevel == 25
                     && guidance.DisplayText.Contains("LEVEL 25"),
-                "Completed world did not restore open gates and completion guidance.");
+                "Completed world did not restore open gates and completion guidance. "
+                + $"warehouse={warehouse.gameObject.activeSelf}, gate={district.IsGateOpen}, "
+                + $"level={progression.EmpireLevel}, guidance='{guidance.DisplayText}'.");
         }
 
         private static void BuildCheckpoint(int level, out M10ProgressionSaveData state,
