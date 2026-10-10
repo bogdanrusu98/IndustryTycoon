@@ -32,8 +32,8 @@ namespace IndustryTycoon.EditorTests
         {
             string[] models = AssetDatabase.FindAssets("t:Model", new[] { ProductionRoot });
             string[] textures = AssetDatabase.FindAssets("t:Texture2D", new[] { ProductionRoot });
-            Assert.AreEqual(16, models.Length, "Unexpected production model inventory.");
-            Assert.AreEqual(26, textures.Length, "Unexpected production texture inventory.");
+            Assert.AreEqual(18, models.Length, "Unexpected production model inventory.");
+            Assert.AreEqual(30, textures.Length, "Unexpected production texture inventory.");
 
             foreach (string guid in models)
             {
@@ -87,7 +87,7 @@ namespace IndustryTycoon.EditorTests
                     "Production Visual", StringComparison.Ordinal))
                 .Select(transform => transform.gameObject)
                 .ToArray();
-            Assert.GreaterOrEqual(productionVisuals.Length, 15);
+            Assert.GreaterOrEqual(productionVisuals.Length, 17);
             foreach (GameObject visual in productionVisuals)
             {
                 Assert.Zero(visual.GetComponentsInChildren<Collider>(true).Length,

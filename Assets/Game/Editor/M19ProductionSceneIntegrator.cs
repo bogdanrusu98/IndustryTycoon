@@ -80,6 +80,16 @@ namespace IndustryTycoon.Editor
                 Transform mineArea = FindDescendant(mineTeaser.transform, "Mine Area");
                 AttachModel(mineArea, "Buildings/MineEntrance/MineEntrance", 3.85f,
                     new Vector3(0f, 0f, 7.45f), Vector3.zero, true);
+
+                Transform rearRockLeft = FindDescendant(mineTeaser.transform, "Rear Rock Left");
+                AttachModel(rearRockLeft, "Environment/MineRockA/MineRockA", 3.15f,
+                    Vector3.zero, new Vector3(0f, 28f, 0f), true);
+                DisableOwnRenderer(rearRockLeft);
+
+                Transform rearRockRight = FindDescendant(mineTeaser.transform, "Rear Rock Right");
+                AttachModel(rearRockRight, "Environment/MineRockB/MineRockB", 3.30f,
+                    Vector3.zero, new Vector3(0f, -22f, 0f), true);
+                DisableOwnRenderer(rearRockRight);
             }
 
             GameObject storage = FindDescendantObject(scene, "Ore Storage");
@@ -142,7 +152,8 @@ namespace IndustryTycoon.Editor
                 "IndustrialGate Production Visual", "MineBarrier Production Visual",
                 "MineEntrance Production Visual", "OreHopper Production Visual",
                 "SawBlade Production Visual", "DrillBit Production Visual",
-                "Courier Production Visual"
+                "Courier Production Visual", "MineRockA Production Visual",
+                "MineRockB Production Visual"
             };
             foreach (string name in requiredModels)
             {
@@ -246,7 +257,7 @@ namespace IndustryTycoon.Editor
             }
 
             AttachModel(parent, assetKey, targetSize, localPosition, localEuler, true);
-            DisableNamedRenderers(parent, placeholders);
+            DisableNamedRenderers(root.transform, placeholders);
         }
 
         private static GameObject AttachModel(
@@ -398,7 +409,10 @@ namespace IndustryTycoon.Editor
 
         private static bool IsMetalAsset(string name)
         {
-            return name != "WoodCrate" && name != "IronOre" && name != "MineEntrance";
+            return name != "WoodCrate"
+                   && name != "IronOre"
+                   && name != "MineEntrance"
+                   && !name.StartsWith("MineRock", StringComparison.Ordinal);
         }
 
         private static Bounds CalculateWorldBounds(Renderer[] renderers)

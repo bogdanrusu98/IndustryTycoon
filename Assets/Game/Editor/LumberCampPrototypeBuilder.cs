@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using IndustryTycoon.CameraSystem;
 using IndustryTycoon.Core;
 using IndustryTycoon.Economy;
@@ -43,6 +44,12 @@ namespace IndustryTycoon.Editor
         private const string WoodResourcePrefabPath = PrefabFolder + "/WoodResource.prefab";
         private const string CashVisualPrefabPath = PrefabFolder + "/CashBundleVisual.prefab";
         private const string PlayerPrefabPath = PrefabFolder + "/Player.prefab";
+        private const string UiArtFolder = "Assets/Art/UI";
+        private const string RoundedRectSpritePath = UiArtFolder + "/RoundedRect.png";
+        private const string CircleSpritePath = UiArtFolder + "/Circle.png";
+        private static Sprite _roundedRectSprite;
+        private static Sprite _circleSprite;
+        private static Material _worldLabelBackdropMaterial;
 
         private readonly struct FeedbackServices
         {
@@ -300,6 +307,7 @@ namespace IndustryTycoon.Editor
         private static void BuildPrototype()
         {
             EnsureProjectFolders();
+            EnsureUiSprites();
             MigrateLegacyPrototypeScene();
 
             Material groundMaterial = CreateOrUpdateMaterial(
@@ -440,6 +448,10 @@ namespace IndustryTycoon.Editor
                 0.04f);
             Material feedbackParticleMaterial = CreateOrUpdateParticleMaterial(
                 MaterialFolder + "/Feedback_Particle.mat");
+            _worldLabelBackdropMaterial = CreateOrUpdateMaterial(
+                MaterialFolder + "/World_Label_Backdrop.mat",
+                MobileUiTheme.Charcoal,
+                0f);
 
             GameObject woodVisualPrefab = BuildWoodVisualPrefab(
                 barkMaterial,
@@ -850,6 +862,88 @@ namespace IndustryTycoon.Editor
             EnsureFolder("Assets/Game/Scenes");
             EnsureFolder("Assets/Game/Editor");
             EnsureFolder(MaterialFolder);
+            EnsureFolder(UiArtFolder);
+        }
+
+        private static void EnsureUiSprites()
+        {
+            CreateUiSpriteAsset(RoundedRectSpritePath, false, 13f);
+            CreateUiSpriteAsset(CircleSpritePath, true, 31f);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            _roundedRectSprite = AssetDatabase.LoadAssetAtPath<Sprite>(RoundedRectSpritePath);
+            _circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>(CircleSpritePath);
+            if (_roundedRectSprite == null || _circleSprite == null)
+            {
+                throw new InvalidOperationException("Visual completion UI sprites failed to import.");
+            }
+        }
+
+        private static void CreateUiSpriteAsset(string path, bool circle, float radius)
+        {
+            const int Size = 64;
+            if (!File.Exists(path))
+            {
+                var texture = new Texture2D(Size, Size, TextureFormat.RGBA32, false, true)
+                {
+                    name = Path.GetFileNameWithoutExtension(path),
+                    filterMode = FilterMode.Bilinear,
+                    wrapMode = TextureWrapMode.Clamp
+                };
+                var pixels = new Color32[Size * Size];
+                Vector2 center = new Vector2((Size - 1) * 0.5f, (Size - 1) * 0.5f);
+                Vector2 halfSize = circle
+                    ? new Vector2(radius, radius)
+                    : new Vector2(center.x - radius, center.y - radius);
+                for (int y = 0; y < Size; y++)
+                {
+                    for (int x = 0; x < Size; x++)
+                    {
+                        Vector2 point = new Vector2(x, y) - center;
+                        float distance;
+                        if (circle)
+                        {
+                            distance = point.magnitude - radius;
+                        }
+                        else
+                        {
+                            Vector2 q = new Vector2(Mathf.Abs(point.x), Mathf.Abs(point.y)) - halfSize;
+                            distance = new Vector2(Mathf.Max(q.x, 0f), Mathf.Max(q.y, 0f)).magnitude
+                                       + Mathf.Min(Mathf.Max(q.x, q.y), 0f) - radius;
+                        }
+
+                        byte alpha = (byte)Mathf.RoundToInt(
+                            Mathf.Clamp01(0.5f - distance) * 255f);
+                        pixels[y * Size + x] = new Color32(255, 255, 255, alpha);
+                    }
+                }
+
+                texture.SetPixels32(pixels);
+                texture.Apply(false, false);
+                File.WriteAllBytes(path, texture.EncodeToPNG());
+                UnityEngine.Object.DestroyImmediate(texture);
+            }
+
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null)
+            {
+                throw new InvalidOperationException("UI sprite importer is unavailable: " + path);
+            }
+
+            importer.textureType = TextureImporterType.Sprite;
+            importer.spriteImportMode = SpriteImportMode.Single;
+            importer.spritePixelsPerUnit = 64f;
+            importer.spriteBorder = circle
+                ? Vector4.zero
+                : new Vector4(16f, 16f, 16f, 16f);
+            importer.alphaSource = TextureImporterAlphaSource.FromInput;
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled = false;
+            importer.isReadable = false;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.filterMode = FilterMode.Bilinear;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.SaveAndReimport();
         }
 
         private static void EnsureFolder(string path)
@@ -2719,7 +2813,7 @@ namespace IndustryTycoon.Editor
                 "COURIER\nPICKUP",
                 new Vector3(0f, 1.60f, 0.08f),
                 new Color(1f, 0.82f, 0.34f));
-            courierPickupLabel.characterSize = 0.044f;
+            courierPickupLabel.characterSize = 0.030f;
 
             TextMesh statusText = CreateWorldLabel(
                 "Packing Status",
@@ -3294,13 +3388,37 @@ namespace IndustryTycoon.Editor
             TextMesh label = labelObject.AddComponent<TextMesh>();
             label.text = text;
             label.font = UnityEngine.Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            label.fontSize = 64;
-            label.characterSize = 0.055f;
+            label.fontSize = 52;
+            label.characterSize = 0.030f;
             label.anchor = TextAnchor.MiddleCenter;
             label.alignment = TextAlignment.Center;
             label.color = color;
             label.richText = false;
-            labelObject.GetComponent<MeshRenderer>().sharedMaterial = label.font.material;
+            MeshRenderer textRenderer = labelObject.GetComponent<MeshRenderer>();
+            textRenderer.sharedMaterial = label.font.material;
+            textRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            textRenderer.receiveShadows = false;
+
+            if (_worldLabelBackdropMaterial != null)
+            {
+                string[] lines = (text ?? string.Empty).Split('\n');
+                int longestLine = lines.Length > 0 ? lines.Max(line => line.Length) : 1;
+                GameObject backdrop = CreatePrimitiveChild(
+                    name + " Backdrop",
+                    PrimitiveType.Cube,
+                    labelObject.transform,
+                    _worldLabelBackdropMaterial);
+                UnityEngine.Object.DestroyImmediate(backdrop.GetComponent<Collider>());
+                backdrop.transform.localPosition = new Vector3(0f, 0f, 0.035f);
+                backdrop.transform.localScale = new Vector3(
+                    Mathf.Max(0.72f, longestLine * 0.075f),
+                    Mathf.Max(0.26f, lines.Length * 0.23f),
+                    0.025f);
+                MeshRenderer backdropRenderer = backdrop.GetComponent<MeshRenderer>();
+                backdropRenderer.shadowCastingMode = ShadowCastingMode.Off;
+                backdropRenderer.receiveShadows = false;
+            }
+
             return label;
         }
 
@@ -3384,7 +3502,7 @@ namespace IndustryTycoon.Editor
                 "\u26CF  MINE - LOCKED",
                 new Vector3(0f, 2.30f, 0.10f),
                 new Color(1f, 0.84f, 0.34f));
-            mineLabel.characterSize = 0.050f;
+            mineLabel.characterSize = 0.034f;
             mineRoot.SetActive(false);
 
             GameObject m8Root = new GameObject("Lumber Camp Progression");
@@ -3515,7 +3633,7 @@ namespace IndustryTycoon.Editor
                 "STAND IN RADIUS TO MINE",
                 new Vector3(0f, 1.34f, -0.12f),
                 new Color(1f, 0.78f, 0.42f));
-            miningStatusText.characterSize = 0.036f;
+            miningStatusText.characterSize = 0.028f;
             GameObject miningProgressTrack = CreatePrimitiveChild(
                 "Mining Progress Track",
                 PrimitiveType.Cube,
@@ -3604,7 +3722,7 @@ namespace IndustryTycoon.Editor
                 "WAITING FOR 2 ORE",
                 new Vector3(0f, 2.54f, 0.24f),
                 new Color(1f, 0.65f, 0.26f));
-            smelterStatusText.characterSize = 0.038f;
+            smelterStatusText.characterSize = 0.028f;
 
             Smelter smelter = smelterRoot.AddComponent<Smelter>();
             SetInteger(smelter, "inputCapacity", 24);
@@ -3774,7 +3892,7 @@ namespace IndustryTycoon.Editor
                 "LOCKED",
                 new Vector3(0f, 2.92f, 0.08f),
                 new Color(1f, 0.76f, 0.24f));
-            drillStatusText.characterSize = 0.038f;
+            drillStatusText.characterSize = 0.028f;
             ParticleSystem drillParticles = CreateFeedbackParticleSystem(
                 "Drill Ore Chips",
                 drillRoot.transform,
@@ -3962,7 +4080,7 @@ namespace IndustryTycoon.Editor
                 "WAITING FOR INPUTS",
                 new Vector3(0f, 2.30f, 0.40f),
                 new Color(0.62f, 0.88f, 1f));
-            statusText.characterSize = 0.038f;
+            statusText.characterSize = 0.028f;
 
             ToolWorkshop workshop = workshopRoot.AddComponent<ToolWorkshop>();
             SetInteger(workshop, "plankInputCapacity", 24);
@@ -4334,7 +4452,7 @@ namespace IndustryTycoon.Editor
                 "INDUSTRIAL DISTRICT — LOCKED",
                 new Vector3(0f, 2.45f, 0.08f),
                 new Color(1f, 0.80f, 0.30f));
-            teaseLabel.characterSize = 0.047f;
+            teaseLabel.characterSize = 0.034f;
             GameObject readyRoot = new GameObject("Industrial District Ready State");
             readyRoot.transform.SetParent(teaseRoot.transform, false);
             TextMesh readyLabel = CreateWorldLabel(
@@ -4343,7 +4461,7 @@ namespace IndustryTycoon.Editor
                 "INDUSTRIAL DISTRICT — READY",
                 new Vector3(0f, 2.10f, 0.08f),
                 new Color(0.30f, 1f, 0.55f));
-            readyLabel.characterSize = 0.052f;
+            readyLabel.characterSize = 0.036f;
             readyRoot.SetActive(false);
             teaseRoot.SetActive(false);
 
@@ -4957,7 +5075,7 @@ namespace IndustryTycoon.Editor
                 WorldProgressionPresentation.GetDistrictName(district) + " — LOCKED",
                 entrance + new Vector3(0f, 2.0f, 0f),
                 new Color(1f, 0.72f, 0.24f));
-            label.characterSize = 0.044f;
+            label.characterSize = 0.032f;
 
             GameObject locked = CreatePrimitiveChild(
                 name + " Locked Marker", PrimitiveType.Cube, area.transform, lockedMaterial);
@@ -5061,7 +5179,7 @@ namespace IndustryTycoon.Editor
             panelRect.pivot = new Vector2(0.5f, 1f);
             panelRect.sizeDelta = new Vector2(960f, 132f);
             panelRect.anchoredPosition = new Vector2(0f, -24f);
-            panelObject.GetComponent<Image>().color = new Color(0.07f, 0.09f, 0.07f, 0.82f);
+            StyleSurface(panelObject, MobileUiTheme.Elevated);
 
             Text woodText = CreateHudLine(
                 "Wood Text",
@@ -5122,8 +5240,7 @@ namespace IndustryTycoon.Editor
             guidancePanelRect.pivot = new Vector2(0.5f, 1f);
             guidancePanelRect.sizeDelta = new Vector2(900f, 104f);
             guidancePanelRect.anchoredPosition = new Vector2(0f, -170f);
-            guidancePanel.GetComponent<Image>().color =
-                new Color(0.07f, 0.09f, 0.07f, 0.78f);
+            StyleSurface(guidancePanel, MobileUiTheme.DarkNavy);
 
             Text guidanceText = CreateHudLine(
                 "Main Objective Text",
@@ -5156,8 +5273,7 @@ namespace IndustryTycoon.Editor
             districtRect.pivot = new Vector2(0.5f, 1f);
             districtRect.sizeDelta = new Vector2(900f, 62f);
             districtRect.anchoredPosition = new Vector2(0f, -350f);
-            districtPanel.GetComponent<Image>().color =
-                new Color(0.07f, 0.09f, 0.07f, 0.72f);
+            StyleSurface(districtPanel, MobileUiTheme.DarkNavy);
             Text districtText = CreateHudLine(
                 "District Status Text",
                 districtPanel.transform,
@@ -5181,8 +5297,7 @@ namespace IndustryTycoon.Editor
             unlockToastRect.anchorMax = new Vector2(0.5f, 0.72f);
             unlockToastRect.pivot = new Vector2(0.5f, 0.5f);
             unlockToastRect.sizeDelta = new Vector2(820f, 112f);
-            unlockToastRoot.GetComponent<Image>().color =
-                new Color(0.10f, 0.32f, 0.42f, 0.94f);
+            StyleSurface(unlockToastRoot, MobileUiTheme.TealDark, false);
             Text unlockToastText = CreateHudLine(
                 "Major Unlock Text",
                 unlockToastRoot.transform,
@@ -5219,8 +5334,7 @@ namespace IndustryTycoon.Editor
             transactionToastRect.anchorMax = new Vector2(0.5f, 0.18f);
             transactionToastRect.pivot = new Vector2(0.5f, 0.5f);
             transactionToastRect.sizeDelta = new Vector2(760f, 88f);
-            transactionToastRoot.GetComponent<Image>().color = new Color(0.04f, 0.20f, 0.20f, 0.94f);
-            transactionToastRoot.GetComponent<Image>().raycastTarget = false;
+            StyleSurface(transactionToastRoot, MobileUiTheme.TealDark, false);
             CanvasGroup transactionGroup = transactionToastRoot.GetComponent<CanvasGroup>();
             transactionGroup.blocksRaycasts = false;
             transactionGroup.interactable = false;
@@ -5274,8 +5388,7 @@ namespace IndustryTycoon.Editor
             bannerRect.pivot = new Vector2(0.5f, 0.5f);
             bannerRect.sizeDelta = new Vector2(880f, 196f);
             bannerRect.anchoredPosition = Vector2.zero;
-            bannerRoot.GetComponent<Image>().color =
-                new Color(0.05f, 0.28f, 0.16f, 0.94f);
+            StyleSurface(bannerRoot, MobileUiTheme.TealDark, false);
 
             CreateHudLine(
                 "Completion Text",
@@ -5370,8 +5483,7 @@ namespace IndustryTycoon.Editor
             contractRect.pivot = new Vector2(0.5f, 1f);
             contractRect.sizeDelta = new Vector2(900f, 300f);
             contractRect.anchoredPosition = new Vector2(0f, -454f);
-            contractPanel.GetComponent<Image>().color =
-                new Color(0.04f, 0.08f, 0.055f, 0.93f);
+            StyleSurface(contractPanel, MobileUiTheme.DarkNavy);
 
             Text contractDescription = CreateHudLine(
                 "Contract Description",
@@ -5424,8 +5536,7 @@ namespace IndustryTycoon.Editor
             achievementsRect.pivot = new Vector2(0.5f, 1f);
             achievementsRect.sizeDelta = new Vector2(920f, 1050f);
             achievementsRect.anchoredPosition = new Vector2(0f, -454f);
-            achievementsPanel.GetComponent<Image>().color =
-                new Color(0.035f, 0.055f, 0.10f, 0.96f);
+            StyleSurface(achievementsPanel, MobileUiTheme.DarkNavy);
 
             Text achievementsTitle = CreateHudLine(
                 "Achievements Title",
@@ -5447,8 +5558,7 @@ namespace IndustryTycoon.Editor
             viewportRect.anchorMax = new Vector2(0.96f, 0.89f);
             viewportRect.offsetMin = Vector2.zero;
             viewportRect.offsetMax = Vector2.zero;
-            viewport.GetComponent<Image>().color =
-                new Color(0.02f, 0.03f, 0.055f, 0.78f);
+            StyleSurface(viewport, MobileUiTheme.Charcoal);
             viewport.GetComponent<Mask>().showMaskGraphic = true;
 
             GameObject content = new GameObject(
@@ -5469,7 +5579,7 @@ namespace IndustryTycoon.Editor
             achievementsText.fontSize = 27;
             achievementsText.fontStyle = FontStyle.Normal;
             achievementsText.alignment = TextAnchor.UpperLeft;
-            achievementsText.color = Color.white;
+            achievementsText.color = MobileUiTheme.TextPrimary;
             achievementsText.raycastTarget = false;
             achievementsText.horizontalOverflow = HorizontalWrapMode.Wrap;
             achievementsText.verticalOverflow = VerticalWrapMode.Overflow;
@@ -5515,9 +5625,7 @@ namespace IndustryTycoon.Editor
             toastRect.pivot = new Vector2(0.5f, 0.5f);
             toastRect.sizeDelta = new Vector2(860f, 150f);
             toastRect.anchoredPosition = Vector2.zero;
-            toastRoot.GetComponent<Image>().color =
-                new Color(0.10f, 0.34f, 0.20f, 0.96f);
-            toastRoot.GetComponent<Image>().raycastTarget = false;
+            StyleSurface(toastRoot, MobileUiTheme.TealDark, false);
             CanvasGroup toastCanvasGroup = toastRoot.GetComponent<CanvasGroup>();
             toastCanvasGroup.blocksRaycasts = false;
             toastCanvasGroup.interactable = false;
@@ -5569,8 +5677,7 @@ namespace IndustryTycoon.Editor
             rect.anchorMax = new Vector2(0.96f, 0.90f);
             rect.offsetMin = Vector2.zero;
             rect.offsetMax = Vector2.zero;
-            panel.GetComponent<Image>().color =
-                new Color(0.035f, 0.055f, 0.065f, 0.98f);
+            StyleSurface(panel, MobileUiTheme.DarkNavy);
 
             Text empire = CreateHudLine(
                 "Industrial Empire Progress",
@@ -5689,11 +5796,11 @@ namespace IndustryTycoon.Editor
             FeedbackServices feedback,
             MonetizationService monetization)
         {
-            Color charcoal = new Color(0.035f, 0.05f, 0.065f, 0.985f);
-            Color card = new Color(0.075f, 0.105f, 0.125f, 1f);
-            Color teal = new Color(0.08f, 0.66f, 0.62f, 1f);
-            Color orange = new Color(0.96f, 0.56f, 0.14f, 1f);
-            Color muted = new Color(0.27f, 0.31f, 0.34f, 1f);
+            Color charcoal = MobileUiTheme.Charcoal;
+            Color card = MobileUiTheme.Card;
+            Color teal = MobileUiTheme.Teal;
+            Color orange = MobileUiTheme.Orange;
+            Color muted = MobileUiTheme.Track;
 
             GameObject navigation = new GameObject("Mobile Navigation", typeof(RectTransform), typeof(Image));
             navigation.transform.SetParent(safeArea.transform, false);
@@ -5702,28 +5809,34 @@ namespace IndustryTycoon.Editor
             navigationRect.anchorMax = new Vector2(1f, 0f);
             navigationRect.pivot = new Vector2(0.5f, 0f);
             navigationRect.sizeDelta = new Vector2(0f, 112f);
-            navigation.GetComponent<Image>().color = new Color(0.025f, 0.04f, 0.05f, 0.98f);
+            StyleSurface(navigation, MobileUiTheme.Navigation);
 
-            string[] navLabels = { "GOALS", "AWARDS", "ROUTES", "FACTORY", "MARKET", "SHOP" };
+            string[] navLabels =
+            {
+                "●\nGOALS", "★\nAWARDS", "↔\nROUTES",
+                "⚙\nFACTORY", "▤\nMARKET", "◆\nSHOP"
+            };
+            string[] navNames = { "GOALS", "AWARDS", "ROUTES", "FACTORY", "MARKET", "SHOP" };
             Button[] navButtons = new Button[navLabels.Length];
             for (int i = 0; i < navButtons.Length; i++)
             {
                 float min = i / (float)navButtons.Length;
                 float max = (i + 1) / (float)navButtons.Length;
                 navButtons[i] = CreateHudButton(
-                    navLabels[i] + " Navigation",
+                    navNames[i] + " Navigation",
                     navigation.transform,
                     navLabels[i],
                     new Vector2(min, 0f),
                     new Vector2(max, 1f),
                     i == 3 ? orange : teal,
-                    22);
+                    20);
             }
 
             Button pauseButton = CreateHudButton(
                 "Pause Button", safeArea.transform, "Ⅱ",
                 new Vector2(0.885f, 0.91f), new Vector2(0.975f, 0.975f),
                 card, 36);
+            MobileUiTheme.ApplyButton(pauseButton, _circleSprite, card);
 
             GameObject oldTabs = safeArea.transform.Find("Progression Tabs")?.gameObject;
             oldTabs?.SetActive(false);
@@ -5760,12 +5873,12 @@ namespace IndustryTycoon.Editor
             progressRect.anchorMin = new Vector2(0.07f, 0.465f);
             progressRect.anchorMax = new Vector2(0.93f, 0.51f);
             progressRect.offsetMin = progressRect.offsetMax = Vector2.zero;
-            progressTrack.GetComponent<Image>().color = muted;
+            StyleSurface(progressTrack, muted, false);
             GameObject progressFillObject = new GameObject("Cycle Fill", typeof(RectTransform), typeof(Image));
             progressFillObject.transform.SetParent(progressTrack.transform, false);
             StretchToParent(progressFillObject.GetComponent<RectTransform>());
             Image progressFill = progressFillObject.GetComponent<Image>();
-            progressFill.color = teal;
+            MobileUiTheme.ApplySurface(progressFill, _roundedRectSprite, teal, false);
             progressFill.type = Image.Type.Filled;
             progressFill.fillMethod = Image.FillMethod.Horizontal;
             progressFill.fillAmount = 0f;
@@ -5851,7 +5964,7 @@ namespace IndustryTycoon.Editor
                 orderRect.anchorMin = new Vector2(0.06f, top - 0.16f);
                 orderRect.anchorMax = new Vector2(0.94f, top);
                 orderRect.offsetMin = orderRect.offsetMax = Vector2.zero;
-                orderCard.GetComponent<Image>().color = card;
+                StyleSurface(orderCard, card);
                 orderTexts[i] = CreateHudLine("Order Text " + (i + 1), orderCard.transform, "ORDER LOCKED",
                     new Vector2(0.02f, 0f), new Vector2(0.70f, 1f), 23);
                 orderTexts[i].alignment = TextAnchor.MiddleLeft;
@@ -6030,7 +6143,7 @@ namespace IndustryTycoon.Editor
             rect.anchorMin = new Vector2(0.025f, 0.08f);
             rect.anchorMax = new Vector2(0.975f, 0.985f);
             rect.offsetMin = rect.offsetMax = Vector2.zero;
-            panel.GetComponent<Image>().color = color;
+            StyleSurface(panel, color);
             CanvasGroup group = panel.GetComponent<CanvasGroup>();
             group.interactable = true;
             group.blocksRaycasts = true;
@@ -6042,7 +6155,7 @@ namespace IndustryTycoon.Editor
             GameObject overlay = new GameObject(name, typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
             overlay.transform.SetParent(parent, false);
             StretchToParent(overlay.GetComponent<RectTransform>());
-            overlay.GetComponent<Image>().color = color;
+            StyleSurface(overlay, color);
             return overlay;
         }
 
@@ -6065,14 +6178,15 @@ namespace IndustryTycoon.Editor
             GameObject background = new GameObject("Background", typeof(RectTransform), typeof(Image));
             background.transform.SetParent(root.transform, false);
             StretchToParent(background.GetComponent<RectTransform>());
-            background.GetComponent<Image>().color = backgroundColor;
+            StyleSurface(background, backgroundColor, false);
             GameObject fillArea = new GameObject("Fill Area", typeof(RectTransform));
             fillArea.transform.SetParent(root.transform, false);
             StretchToParent(fillArea.GetComponent<RectTransform>());
             GameObject fill = new GameObject("Fill", typeof(RectTransform), typeof(Image));
             fill.transform.SetParent(fillArea.transform, false);
             StretchToParent(fill.GetComponent<RectTransform>());
-            fill.GetComponent<Image>().color = fillColor;
+            MobileUiTheme.ApplySurface(
+                fill.GetComponent<Image>(), _roundedRectSprite, fillColor, false);
             Slider slider = root.GetComponent<Slider>();
             slider.fillRect = fill.GetComponent<RectTransform>();
             slider.targetGraphic = background.GetComponent<Image>();
@@ -6090,14 +6204,15 @@ namespace IndustryTycoon.Editor
             rect.anchorMin = new Vector2(0.16f, bottom);
             rect.anchorMax = new Vector2(0.84f, bottom + 0.075f);
             rect.offsetMin = rect.offsetMax = Vector2.zero;
-            root.GetComponent<Image>().color = backgroundColor;
+            StyleSurface(root, backgroundColor);
             GameObject checkmark = new GameObject("Checkmark", typeof(RectTransform), typeof(Image));
             checkmark.transform.SetParent(root.transform, false);
             RectTransform checkRect = checkmark.GetComponent<RectTransform>();
             checkRect.anchorMin = new Vector2(0.78f, 0.18f);
             checkRect.anchorMax = new Vector2(0.96f, 0.82f);
             checkRect.offsetMin = checkRect.offsetMax = Vector2.zero;
-            checkmark.GetComponent<Image>().color = onColor;
+            MobileUiTheme.ApplySurface(
+                checkmark.GetComponent<Image>(), _circleSprite, onColor, false);
             Toggle toggle = root.GetComponent<Toggle>();
             toggle.targetGraphic = root.GetComponent<Image>();
             toggle.graphic = checkmark.GetComponent<Image>();
@@ -6128,21 +6243,19 @@ namespace IndustryTycoon.Editor
             rect.anchorMax = anchorMax;
             rect.offsetMin = new Vector2(4f, 4f);
             rect.offsetMax = new Vector2(-4f, -4f);
-            Image image = buttonObject.GetComponent<Image>();
-            image.color = color;
             Button button = buttonObject.GetComponent<Button>();
-            ColorBlock colors = button.colors;
-            colors.highlightedColor = Color.Lerp(color, Color.white, 0.15f);
-            colors.pressedColor = Color.Lerp(color, Color.black, 0.18f);
-            colors.selectedColor = colors.highlightedColor;
-            button.colors = colors;
-            CreateHudLine(
+            MobileUiTheme.ApplyButton(button, _roundedRectSprite, color);
+            Text labelText = CreateHudLine(
                 name + " Text",
                 buttonObject.transform,
                 label,
                 Vector2.zero,
                 Vector2.one,
                 fontSize);
+            float luminance = color.r * 0.2126f + color.g * 0.7152f + color.b * 0.0722f;
+            labelText.color = luminance > 0.46f
+                ? MobileUiTheme.TextDark
+                : MobileUiTheme.TextPrimary;
             return button;
         }
 
@@ -6168,7 +6281,7 @@ namespace IndustryTycoon.Editor
                 typeof(Image));
             overlayRoot.transform.SetParent(safeAreaObject.transform, false);
             StretchToParent(overlayRoot.GetComponent<RectTransform>());
-            overlayRoot.GetComponent<Image>().color = new Color(0.015f, 0.025f, 0.02f, 0.82f);
+            StyleSurface(overlayRoot, MobileUiTheme.Scrim);
             CanvasGroup overlayCanvasGroup = overlayRoot.GetComponent<CanvasGroup>();
             overlayCanvasGroup.interactable = true;
             overlayCanvasGroup.blocksRaycasts = true;
@@ -6184,7 +6297,7 @@ namespace IndustryTycoon.Editor
             cardRect.pivot = new Vector2(0.5f, 0.5f);
             cardRect.sizeDelta = new Vector2(820f, 650f);
             cardRect.anchoredPosition = Vector2.zero;
-            card.GetComponent<Image>().color = new Color(0.055f, 0.14f, 0.095f, 0.98f);
+            StyleSurface(card, MobileUiTheme.DarkNavy);
 
             CreateHudLine(
                 "Welcome Back Title",
@@ -6220,21 +6333,16 @@ namespace IndustryTycoon.Editor
             buttonRect.pivot = new Vector2(0.5f, 0f);
             buttonRect.sizeDelta = new Vector2(340f, 122f);
             buttonRect.anchoredPosition = new Vector2(-190f, 54f);
-            Image buttonImage = buttonObject.GetComponent<Image>();
-            buttonImage.color = new Color(0.16f, 0.78f, 0.42f, 1f);
             Button collectButton = buttonObject.GetComponent<Button>();
-            ColorBlock colors = collectButton.colors;
-            colors.highlightedColor = new Color(0.23f, 0.92f, 0.52f, 1f);
-            colors.pressedColor = new Color(0.10f, 0.60f, 0.31f, 1f);
-            colors.selectedColor = colors.highlightedColor;
-            collectButton.colors = colors;
-            CreateHudLine(
+            MobileUiTheme.ApplyButton(collectButton, _roundedRectSprite, MobileUiTheme.Orange);
+            Text collectText = CreateHudLine(
                 "Collect Text",
                 buttonObject.transform,
                 "COLLECT",
                 Vector2.zero,
                 Vector2.one,
                 48);
+            collectText.color = MobileUiTheme.TextDark;
 
             Button doubleButton = CreateHudButton(
                 "Double Reward Button", card.transform, "WATCH AD\nCOLLECT ×2",
@@ -6276,9 +6384,29 @@ namespace IndustryTycoon.Editor
             text.fontSize = fontSize;
             text.fontStyle = FontStyle.Bold;
             text.alignment = TextAnchor.MiddleCenter;
-            text.color = Color.white;
-            text.raycastTarget = false;
+            MobileUiTheme.ApplyText(text);
+            if (name.IndexOf("Title", StringComparison.Ordinal) >= 0)
+            {
+                text.color = MobileUiTheme.Yellow;
+            }
+            else if (name.IndexOf("Subtitle", StringComparison.Ordinal) >= 0)
+            {
+                text.color = MobileUiTheme.TextSecondary;
+                text.fontStyle = FontStyle.Normal;
+            }
             return text;
+        }
+
+        private static void StyleSurface(
+            GameObject target,
+            Color color,
+            bool raycastTarget = true)
+        {
+            MobileUiTheme.ApplySurface(
+                target != null ? target.GetComponent<Image>() : null,
+                _roundedRectSprite,
+                color,
+                raycastTarget);
         }
 
         private static void StretchToParent(RectTransform rectTransform)

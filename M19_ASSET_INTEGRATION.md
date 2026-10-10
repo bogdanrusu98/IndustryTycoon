@@ -25,6 +25,8 @@ All source color/normal textures are 2048×2048. Unity limits building, machine 
 | `Meshy Import/Meshy_AI_assets_20261010_143217/01a1115d-3906-7746-8f0b-1bbb0ce44658/Meshy_AI_model.fbx` | `Assets/Art/Production/Vehicles/CourierWheel/CourierWheel.fbx` | Courier wheels ×4 | 1,234 | 936 | Base + Normal, 1024 | No wheel physics | All four rotate only while courier moves |
 | `Meshy Import/Meshy_AI_assets_20261010_143217/01a11bd7-a654-7123-bd85-09ebd0943271/Meshy_AI_model.fbx` | `Assets/Art/Production/Buildings/MineBarrier/MineBarrier.fbx` | Mine barrier | 1,982 | 1,427 | Base + Normal, 1024 | No production collider | Locked-state visual only |
 | `Meshy Import/Meshy_AI_assets_20261010_143217/a0cc80d2-d40d-4bf7-9a72-61668b0e70ba/Meshy_AI_model.fbx` | `Assets/Art/Production/Buildings/MineEntrance/MineEntrance.fbx` | Mine entrance | 11,046 | 5,660 | Base, 1024 | No production collider | Static landmark |
+| `Meshy Import/Meshy_AI_assets_20261010_143203/01a11bdd-bc4a-7206-b3e2-728b72cdaef2/Meshy_AI_model.fbx` | `Assets/Art/Production/Environment/MineRockA/MineRockA.fbx` | Mine rear rock left | 1,331 | 1,155 | Base + Normal, 1024 | Existing environment root only | Static, grounded visual |
+| `Meshy Import/Meshy_AI_assets_20261010_143203/01a11f79-b8d8-70ce-94a8-c42dacde2a16/Meshy_AI_model.fbx` | `Assets/Art/Production/Environment/MineRockB/MineRockB.fbx` | Mine rear rock right | 1,481 | 1,347 | Base + Normal, 1024 | Existing environment root only | Static, grounded visual |
 | `Meshy Import/Meshy_AI_iron_ingot_mobile_pro_1010143038_texture_fbx/Meshy_AI_iron_ingot_mobile_pro_1010143038_texture_fbx/Meshy_AI_iron_ingot_mobile_pro_1010143038_texture.fbx` | `Assets/Art/Production/Resources/IronBar/IronBar.fbx` | Iron Bar | 1,029 | 568 | Base, 512 | Carry visual has no collider | Single-renderer pooled variant |
 | `Meshy Import/Meshy_AI_Mobile_Lowpoly_Wooden_1010143009_texture_fbx/Meshy_AI_Mobile_Lowpoly_Wooden_1010143009_texture.fbx` | `Assets/Art/Production/Resources/WoodCrate/WoodCrate.fbx` | Crate | 2,131 | 1,150 | Base, 512 | Carry visual has no collider | Single-renderer pooled variant |
 | `Meshy Import/Meshy_AI_Mobile_Stylized_Toolb_1010143046_texture_fbx/Meshy_AI_Mobile_Stylized_Toolb_1010143046_texture_fbx/Meshy_AI_Mobile_Stylized_Toolb_1010143046_texture.fbx` | `Assets/Art/Production/Resources/Tool/Tool.fbx` | Tool | 2,952 | 1,621 | Base, 512 | Carry visual has no collider | Single-renderer pooled variant |
@@ -37,7 +39,7 @@ All source color/normal textures are 2048×2048. Unity limits building, machine 
 - Player and Lumber Worker: no character/rig export was present; accepted capsule visuals, controllers and colliders remain.
 - Wood, Plank and Cash: no matching production export was present; readable portrait placeholders remain.
 - Stockpile, Auto Feeder, Packing Station, Smelter and Market kiosk: no valid matching model was present. The visually inspected ambiguous exports were a saw blade and a courier wheel, so they were mapped correctly rather than forced onto unrelated entities.
-- Four rock-cluster exports were deferred. Two are redundant and two source FBX files are 23–31 MB with 22–30 MB texture maps; the existing mine rocks remain substantially cheaper for Android.
+- Two low-cost rock-cluster exports are now integrated at the mine. Two redundant high-cost exports (23–31 MB source FBX) remain deferred because they add no gameplay coverage and are materially heavier for Android.
 - Industrial Props Pack remains deferred as allowed by the milestone.
 
 ## Material and import optimization
@@ -72,6 +74,8 @@ All source color/normal textures are 2048×2048. Unity limits building, machine 
 | 600-frame maximum | 29.93 ms | 29.29 ms | -0.64 ms |
 | Peak GC allocated in one sampled frame | 39,530 B | 113,850 B | +74,320 B |
 | Managed memory growth across sample | 0 B | 0 B | unchanged |
+
+Final visual-completion measurement: 83,470 vertices, 59,664 triangles, 6,539 active triangles at fresh start, 26,655,024 B referenced texture memory, 16.34 ms average / 28.82 ms maximum over 600 Editor PlayMode frames, and 0 B managed growth. Compared with the M19 integrated checkpoint, the two production rocks add only 120 active triangles while referenced texture memory is 4,256,208 B lower after the final import audit.
 
 The GC peak is a single Editor/TestRunner sample and not a sustained per-frame allocation; the production animation paths allocate no managed objects in `Update`. Physical-device profiling remains required for definitive Android GPU/texture-memory figures.
 
