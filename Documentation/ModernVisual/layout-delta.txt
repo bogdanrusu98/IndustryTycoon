@@ -1,0 +1,8 @@
+Ground|(1.50, -0.15, 7.50) -> (0.00, -0.15, 15.00)|translation=7.65m|straight-line travel-change bound at 5.5m/s=1.39s
+Main Camera|(0.00, 14.00, -10.60) -> (0.00, 21.00, -16.00)|translation=8.84m|straight-line travel-change bound at 5.5m/s=1.61s
+Mine Teaser|(7.20, 0.00, 17.30) -> (13.20, 0.00, 23.30)|translation=8.49m|straight-line travel-change bound at 5.5m/s=1.54s
+Central Warehouse|(-12.00, 0.00, 19.00) -> (-20.00, 0.00, 21.00)|translation=8.25m|straight-line travel-change bound at 5.5m/s=1.50s
+Industrial District Tease|(-5.50, 0.00, 23.50) -> (-7.50, 0.00, 37.50)|translation=14.14m|straight-line travel-change bound at 5.5m/s=2.57s
+Industrial District M14|(-5.50, 0.00, 21.00) -> (-7.50, 0.00, 35.00)|translation=14.14m|straight-line travel-change bound at 5.5m/s=2.57s
+Assembly Plant Purchase|(-7.80, 0.00, 22.30) -> (-9.80, 0.00, 36.30)|translation=14.14m|straight-line travel-change bound at 5.5m/s=2.57s
+Assembly Plant|(-4.00, 0.00, 24.30) -> (-6.00, 0.00, 38.30)|translation=14.14m|straight-line travel-change bound at 5.5m/s=2.57s

@@ -106,8 +106,12 @@ namespace IndustryTycoon.EditorTests
             GameObject gateVisual = Find(scene, "IndustrialGate Production Visual");
             Assert.NotNull(gate);
             Assert.NotNull(gateVisual);
-            Assert.AreEqual(gate.transform, gateVisual.transform.parent,
+            Assert.IsTrue(gateVisual.transform.IsChildOf(gate.transform),
                 "Gate art would remain after the authoritative blocker unlocks.");
+            Assert.That(gateVisual.transform.parent.name, Is.EqualTo("Model Facing"));
+            Assert.That(gateVisual.transform.parent.parent.name, Is.EqualTo("IndustrialGate VisualRoot"));
+            Assert.That(gateVisual.GetComponentInChildren<Renderer>().bounds.min.y, Is.EqualTo(0f).Within(.01f),
+                "Gate art must be grounded independently of the elevated blocker pivot.");
         }
 
         [Test]

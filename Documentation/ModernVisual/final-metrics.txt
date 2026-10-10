@@ -1,0 +1,9 @@
+Static authored scene, same editor/platform; not device FPS
+objects=867
+renderers=435
+active-renderers=139
+active-vertices=29192
+active-triangles=29849
+materials=56
+textures=28
+texture-memory-bytes=185435192

@@ -75,7 +75,7 @@ namespace IndustryTycoon.UI
                     ? progressionService.EmpireLevel
                     : 1;
                 empireText.text = level >= 10
-                    ? "EMPIRE 10 — INDUSTRIAL DISTRICT READY"
+                    ? "CENTRAL LOGISTICS"
                     : $"EMPIRE {level} / 10";
             }
         }
@@ -111,7 +111,7 @@ namespace IndustryTycoon.UI
             }
 
             var builder = new StringBuilder(256);
-            builder.Append("INDUSTRIAL ROUTES");
+            builder.Append("DELIVERY ROUTES");
             IndustrialLogisticsRoute[] routes = logisticsNetwork?.Routes;
             if (routes != null)
             {
@@ -123,15 +123,8 @@ namespace IndustryTycoon.UI
                         continue;
                     }
 
-                    builder.Append('\n')
-                        .Append(route.SourceEndpointId)
-                        .Append(" → ")
-                        .Append(route.ResourceType)
-                        .Append(" → ")
-                        .Append(route.DestinationEndpointId)
-                        .Append(" [")
-                        .Append(route.State)
-                        .Append(']');
+                    builder.Append('\n').Append(i + 1).Append(". ")
+                        .Append(route.ResourceType).Append(" · ").Append(route.State);
                 }
             }
 

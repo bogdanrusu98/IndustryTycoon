@@ -1,0 +1,24 @@
+Runtime visual audit; schema=9
+missing-scripts=0
+SawBlade Production Visual|enabled=True|active=False|bounds=Center: (-8.20, 1.35, 5.06), Extents: (0.81, 0.81, 0.06)|rotation=(286.43, 270.00, 270.00)|scale=(130.00, 130.00, 130.00)
+Processor Production Visual|enabled=True|active=False|bounds=Center: (-8.20, 1.15, 5.48), Extents: (1.68, 1.15, 1.31)|rotation=(270.00, 180.00, 0.00)|scale=(176.16, 176.16, 176.16)
+Recovered Packing Production Visual|enabled=True|active=False|bounds=Center: (-8.20, 1.20, 11.70), Extents: (1.75, 1.20, 1.37)|rotation=(270.00, 180.00, 0.00)|scale=(184.04, 184.04, 184.04)
+Packing Parcel Production Visual|enabled=True|active=False|bounds=Center: (-7.50, 1.25, 11.50), Extents: (0.35, 0.35, 0.35)|rotation=(270.00, 0.00, 0.00)|scale=(36.91, 36.91, 36.91)
+CourierWheel Production Visual|enabled=True|active=False|bounds=Center: (-0.27, 0.34, -3.08), Extents: (0.27, 0.38, 0.40)|rotation=(335.35, 156.11, 270.00)|scale=(58.00, 58.00, 58.00)
+CourierWheel Production Visual|enabled=True|active=False|bounds=Center: (1.05, 0.34, -2.49), Extents: (0.27, 0.38, 0.40)|rotation=(335.35, 156.11, 270.00)|scale=(58.00, 58.00, 58.00)
+CourierWheel Production Visual|enabled=True|active=False|bounds=Center: (-0.75, 0.34, -1.98), Extents: (0.27, 0.38, 0.40)|rotation=(335.35, 156.11, 270.00)|scale=(58.00, 58.00, 58.00)
+CourierWheel Production Visual|enabled=True|active=False|bounds=Center: (0.56, 0.34, -1.40), Extents: (0.27, 0.38, 0.40)|rotation=(335.35, 156.11, 270.00)|scale=(58.00, 58.00, 58.00)
+Courier Production Visual|enabled=True|active=False|bounds=Center: (0.16, 0.50, -2.26), Extents: (0.89, 0.50, 1.10)|rotation=(270.00, 66.11, 0.00)|scale=(191.99, 191.99, 191.99)
+MineBarrier Production Visual|enabled=True|active=False|bounds=Center: (13.20, 0.58, 22.68), Extents: (1.43, 0.58, 0.36)|rotation=(270.00, 0.00, 0.00)|scale=(298.85, 298.85, 298.85)
+MineRockA Production Visual|enabled=True|active=False|bounds=Center: (11.05, 0.31, 30.45), Extents: (1.58, 0.31, 1.17)|rotation=(270.00, 28.00, 0.00)|scale=(315.01, 315.01, 315.01)
+MineRockB Production Visual|enabled=True|active=False|bounds=Center: (15.35, 0.68, 30.35), Extents: (1.65, 0.68, 1.59)|rotation=(270.00, 338.00, 0.00)|scale=(270.62, 270.62, 270.62)
+Recovered Smelter Production Visual|enabled=True|active=False|bounds=Center: (8.20, 1.13, 28.20), Extents: (1.85, 1.13, 1.83)|rotation=(270.00, 180.00, 0.00)|scale=(385.42, 385.42, 385.42)
+OreHopper Production Visual|enabled=True|active=False|bounds=Center: (17.90, 0.85, 25.25), Extents: (1.18, 0.85, 0.90)|rotation=(270.00, 0.00, 0.00)|scale=(246.17, 246.17, 246.17)
+DrillBit Production Visual|enabled=True|active=False|bounds=Center: (17.85, 1.10, 26.87), Extents: (0.51, 0.50, 0.74)|rotation=(342.56, 270.00, 270.00)|scale=(154.72, 154.72, 154.72)
+MineEntrance Production Visual|enabled=True|active=False|bounds=Center: (13.20, 1.00, 30.75), Extents: (1.93, 1.00, 0.64)|rotation=(270.00, 0.00, 0.00)|scale=(203.36, 203.36, 203.36)
+ToolWorkshop Production Visual|enabled=True|active=False|bounds=Center: (-0.80, 1.24, 12.68), Extents: (2.03, 1.24, 2.01)|rotation=(270.00, 0.00, 0.00)|scale=(421.88, 421.88, 421.88)
+Warehouse Production Visual|enabled=True|active=False|bounds=Center: (-20.00, 1.01, 21.30), Extents: (2.55, 1.01, 1.52)|rotation=(270.00, 180.00, 0.00)|scale=(533.97, 533.97, 533.97)
+IndustrialGate Production Visual|enabled=True|active=True|bounds=Center: (-7.50, 0.83, 34.25), Extents: (2.23, 0.83, 0.47)|rotation=(270.00, 0.00, 0.00)|scale=(466.15, 466.15, 466.15)
+AssemblyPlant Production Visual|enabled=True|active=False|bounds=Center: (-6.00, 1.10, 38.78), Extents: (2.03, 1.10, 1.04)|rotation=(270.00, 180.00, 0.00)|scale=(422.95, 422.95, 422.95)
+broken-materials=0
+renderer-count=1015

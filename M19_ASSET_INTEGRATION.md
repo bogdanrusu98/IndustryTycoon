@@ -1,5 +1,7 @@
 # M19 Production Asset Integration
 
+> Historical milestone report. Current recovery, orientation and placeholder conclusions are superseded by [the full source reaudit](VISUAL_COMPLETION_ASSET_COVERAGE.md) and [modern rebuild validation](MODERN_VISUAL_REBUILD.md).
+
 ## Integration rules
 
 - Source staging remains untouched under `Meshy Import/` and is intentionally untracked.
@@ -40,7 +42,7 @@ All source color/normal textures are 2048×2048. Unity limits building, machine 
 - Wood, Plank and Cash: no matching production export was present; readable portrait placeholders remain.
 - Stockpile, Auto Feeder, Packing Station, Smelter and Market kiosk: no valid matching model was present. The visually inspected ambiguous exports were a saw blade and a courier wheel, so they were mapped correctly rather than forced onto unrelated entities.
 - Two low-cost rock-cluster exports are now integrated at the mine. Two redundant high-cost exports (23–31 MB source FBX) remain deferred because they add no gameplay coverage and are materially heavier for Android.
-- Industrial Props Pack remains deferred as allowed by the milestone.
+- The previously claimed Industrial Props Pack was not present in the complete source reaudit; see the current coverage report.
 
 ## Material and import optimization
 

@@ -1,0 +1,12 @@
+Unity 6000.5.9f1; schema v9
+Baseline commit: 8b1fc144ad3a277ca0f0a33d69507e0cd978c47b
+70/70 existing tests PASS; M19 and M17 PlayMode smoke PASS
+600-frame Editor soak: average 16.52ms, maximum 26.06ms, managed growth 0B
+Final scene generator, legacy visual audit and 23-screen PlayMode capture PASS
+Runtime: 0 missing scripts, 0 broken materials; 7 CharacterController paths PASS
+Settings slider GraphicRaycaster tests PASS; button bounds and label containment PASS
+21 staging FBXs and 86 PNG textures reinspected; 18 production models retained
+Android release PASS, 0 build warnings; ARM64 IL2CPP, API26/36, portrait, non-debuggable
+APK bytes: 41911315
+APK SHA-256: 07c1813bf3675100baac7711a5b9ff289638c417f0b068d0bcf3bb6760d99e6f
+No adb device connected; physical device profiling not performed.

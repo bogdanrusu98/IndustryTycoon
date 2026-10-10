@@ -81,7 +81,7 @@ namespace IndustryTycoon.UI
                 {
                     button.interactable = unlocked && order != null && order.state != ProductionOrderState.Claimed;
                     Text label = button.GetComponentInChildren<Text>(true);
-                    if (label != null) label.text = order == null ? "LOCKED" : order.state == ProductionOrderState.Available ? "ACTIVATE" : order.state == ProductionOrderState.Active ? "DELIVER" : order.state == ProductionOrderState.Completed ? "CLAIM" : "CLAIMED";
+                    if (label != null) label.text = !unlocked || order == null ? "LOCKED" : order.state == ProductionOrderState.Available ? "ACTIVATE" : order.state == ProductionOrderState.Active ? "DELIVER" : order.state == ProductionOrderState.Completed ? "CLAIM" : "CLAIMED";
                 }
             }
         }

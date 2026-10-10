@@ -33,7 +33,7 @@ namespace IndustryTycoon.UI
         public static readonly Color DarkNavy = new Color(0.035f, 0.065f, 0.090f, 0.985f);
         public static readonly Color Elevated = new Color(0.055f, 0.095f, 0.125f, 1f);
         public static readonly Color Card = new Color(0.075f, 0.125f, 0.155f, 1f);
-        public static readonly Color Navigation = new Color(0.020f, 0.047f, 0.065f, 0.995f);
+        public static readonly Color Navigation = new Color(0.10f, 0.19f, 0.23f, 1f);
         public static readonly Color Track = new Color(0.16f, 0.205f, 0.235f, 1f);
         public static readonly Color Scrim = new Color(0.010f, 0.020f, 0.032f, 0.92f);
 

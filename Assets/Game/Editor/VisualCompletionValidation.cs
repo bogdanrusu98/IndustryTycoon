@@ -35,8 +35,8 @@ namespace IndustryTycoon.Editor
 
         private static readonly CoverageEntry[] Coverage =
         {
-            Entry("Player", "Capsule character", "No rigged character export", "Fallback retained", "No production character/rig source"),
-            Entry("Lumber Worker", "Capsule character", "No rigged character export", "Fallback retained", "No production character/rig source"),
+            Entry("Player", "Crafted uniform and hardhat", "Full 21-FBX reaudit: no character", "Authored character", "No production character/rig source"),
+            Entry("Lumber Worker", "Crafted uniform and hardhat", "Full 21-FBX reaudit: no character", "Authored character", "No production character/rig source"),
             Entry("Loose Wood", "Low-poly log", "No matching export", "Fallback retained", "No production Wood source"),
             Entry("Plank", "Readable plank", "No matching export", "Fallback retained", "No production Plank source"),
             Entry("Cash", "Cash bundle", "No matching export", "Fallback retained", "No production Cash source"),
@@ -60,8 +60,8 @@ namespace IndustryTycoon.Editor
             Entry("Courier Wheels", "CourierWheel Production Visual ×4", "Dedicated wheel export", "Assets/Art/Production/Vehicles/CourierWheel", string.Empty),
             Entry("Wood Stockpile", "Curated primitive staging", "No matching export", "Fallback retained", "No production Stockpile source"),
             Entry("Auto Feeder", "Curated primitive machine", "No matching export", "Fallback retained", "No production Auto Feeder source"),
-            Entry("Packing Station", "Curated primitive machine", "No matching export", "Fallback retained", "No production Packing Station source"),
-            Entry("Smelter", "Curated primitive furnace", "Saw blade export was ambiguous", "Fallback retained", "No valid Smelter source"),
+            Entry("Packing Station", "Recovered Packing Production Visual", "Saw station conveyor shell reused without blade", "Assets/Art/Production/Machines/Processor", string.Empty),
+            Entry("Smelter", "Recovered Smelter Production Visual", "Ironforge furnace shell reused", "Assets/Art/Production/Buildings/ToolWorkshop", string.Empty),
             Entry("Market Kiosk", "Curated primitive kiosk", "Courier wheel export was ambiguous", "Fallback retained", "No valid Market kiosk source")
         };
 

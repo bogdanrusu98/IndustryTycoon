@@ -30,6 +30,8 @@ namespace IndustryTycoon.UI
         [SerializeField] private LocalPersistenceService persistence;
         [SerializeField] private PlayerMovement playerMovement;
         [SerializeField] private PlayerDragInput playerDragInput;
+        [SerializeField] private GameObject[] explorationHud;
+        [SerializeField] private GameObject navigationRoot;
 
         private bool _movementWasEnabled;
         private bool _dragWasEnabled;
@@ -182,6 +184,18 @@ namespace IndustryTycoon.UI
                     SetActive(contentPanels[i], contentPanels[i] == target);
             if (resetConfirmation != null && target != mainMenu)
                 resetConfirmation.SetActive(false);
+
+            bool menu = target == mainMenu || target == pauseMenu || target == settingsPanel || target == helpPanel;
+            if (explorationHud != null)
+                foreach (GameObject item in explorationHud) SetActive(item, !menu);
+            SetActive(navigationRoot, !menu);
+            if (contentButtons != null && contentPanels != null)
+                for (int i = 0; i < contentButtons.Length && i < contentPanels.Length; i++)
+                {
+                    Image surface = contentButtons[i] != null ? contentButtons[i].GetComponent<Image>() : null;
+                    if (surface != null) surface.color = target == contentPanels[i]
+                        ? MobileUiTheme.TealDark : MobileUiTheme.Navigation;
+                }
 
             if (target != null) CaptureInput();
             else RestoreInput();

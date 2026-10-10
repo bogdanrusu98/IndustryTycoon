@@ -824,6 +824,8 @@ namespace IndustryTycoon.Editor
                 nextUnlockGuidance);
 
             M19ProductionSceneIntegrator.IntegrateScene(scene);
+            ModernWorldComposition.Apply(scene);
+            ModernPresentationBuilder.Apply(scene);
 
             ConfigurePortraitSettings();
             UpdateBuildSettings();
@@ -6623,9 +6625,9 @@ namespace IndustryTycoon.Editor
             Require(walkableBounds.GetComponentsInChildren<BoxCollider>(true).Length == 4,
                 "Walkable bounds require four boundary colliders.");
             Require(ground != null
-                    && ground.transform.position == new Vector3(1.5f, -0.15f, 7.5f)
-                    && ground.transform.localScale == new Vector3(31f, 0.3f, 39f),
-                "M11 world expansion must preserve Lumber Camp and extend the ground north/east.");
+                    && ground.transform.position == ModernWorldComposition.GroundPosition
+                    && ground.transform.localScale == ModernWorldComposition.GroundSize,
+                "Modern district layout requires its expanded walkable ground.");
 
             UnityEngine.Camera mainCamera = cameraObject != null
                 ? cameraObject.GetComponent<UnityEngine.Camera>()
@@ -6637,9 +6639,9 @@ namespace IndustryTycoon.Editor
             Require(Mathf.Approximately(mainCamera.fieldOfView, 43f)
                     && Vector3.Distance(
                         followCamera.Offset,
-                        new Vector3(0f, 14f, -10.6f)) < 0.001f
+                        ModernWorldComposition.CameraOffset) < 0.001f
                     && followCamera.LookAtOffset == new Vector3(0f, 1f, 0f),
-                "M11 camera must preserve FOV 43 and use the expanded portrait offset (0, 14, -10.6).");
+                "Portrait camera must preserve FOV 43 and the screenshot-reviewed modern composition offset.");
             Require(Mathf.Approximately(followCamera.ImpulseAmplitude, 0.06f)
                     && Mathf.Approximately(followCamera.ImpulseDuration, 0.18f),
                 "Camera impulse tuning must remain subtle at 0.06 / 0.18 seconds.");
@@ -7598,7 +7600,7 @@ namespace IndustryTycoon.Editor
                     && drillUnlock != null
                     && completion != null,
                 "M11 mining runtime components or presentations are incomplete.");
-            Require(mineRoot.transform.position == new Vector3(7.2f, 0f, 17.3f)
+            Require(mineRoot.transform.position == new Vector3(7.2f, 0f, 17.3f) + ModernWorldComposition.MineShift
                     && !mineRoot.activeSelf
                     && !mineArea.gameObject.activeSelf,
                 "M11 must preserve the M8 mine gateway and start it locked.");
@@ -7901,7 +7903,7 @@ namespace IndustryTycoon.Editor
                         teaseLabel.text,
                         "INDUSTRIAL DISTRICT — LOCKED",
                         StringComparison.Ordinal)
-                    && teaseRoot.transform.position == new Vector3(-5.5f, 0f, 23.5f)
+                    && teaseRoot.transform.position == new Vector3(-5.5f, 0f, 23.5f) + ModernWorldComposition.IndustryShift
                     && !teaseRoot.activeSelf
                     && teaseRoot.GetComponentsInChildren<Collider>(true).Length == 0
                     && teaseRoot.GetComponentsInChildren<Rigidbody>(true).Length == 0,
@@ -8766,7 +8768,7 @@ namespace IndustryTycoon.Editor
                 "M10 objective copy must replace the old Next Unlock HUD.");
             RectTransform guidanceRect = guidance.GetComponent<RectTransform>();
             Require(guidanceRect != null
-                    && guidanceRect.sizeDelta.x <= 920f
+                    && guidanceRect.sizeDelta.x <= 1016f
                     && guidanceRect.sizeDelta.y <= 110f,
                 "Main Objective HUD must remain one compact portrait line.");
 

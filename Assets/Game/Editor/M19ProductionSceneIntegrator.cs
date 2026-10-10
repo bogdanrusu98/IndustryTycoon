@@ -65,7 +65,7 @@ namespace IndustryTycoon.Editor
                 ? FindDescendant(district.transform, "Industrial District Progression Gate")
                 : null;
             AttachModel(progressionGate, "Buildings/IndustrialGate/IndustrialGate", 4.45f,
-                Vector3.zero, Vector3.zero, true);
+                FloorOffset(progressionGate), Vector3.zero, true);
             DisableOwnRenderer(progressionGate);
 
             GameObject mineTeaser = FindRoot(scene, "Mine Teaser");
@@ -83,12 +83,12 @@ namespace IndustryTycoon.Editor
 
                 Transform rearRockLeft = FindDescendant(mineTeaser.transform, "Rear Rock Left");
                 AttachModel(rearRockLeft, "Environment/MineRockA/MineRockA", 3.15f,
-                    Vector3.zero, new Vector3(0f, 28f, 0f), true);
+                    FloorOffset(rearRockLeft), new Vector3(0f, 28f, 0f), true);
                 DisableOwnRenderer(rearRockLeft);
 
                 Transform rearRockRight = FindDescendant(mineTeaser.transform, "Rear Rock Right");
                 AttachModel(rearRockRight, "Environment/MineRockB/MineRockB", 3.30f,
-                    Vector3.zero, new Vector3(0f, -22f, 0f), true);
+                    FloorOffset(rearRockRight), new Vector3(0f, -22f, 0f), true);
                 DisableOwnRenderer(rearRockRight);
             }
 
@@ -107,7 +107,7 @@ namespace IndustryTycoon.Editor
             if (blade != null)
             {
                 AttachModel(blade, "Machines/SawBlade/SawBlade", 1.30f,
-                    Vector3.zero, new Vector3(90f, 0f, 0f), false);
+                    Vector3.zero, new Vector3(90f, 0f, 0f), false, true);
                 DisableOwnRenderer(blade);
             }
 
@@ -118,7 +118,7 @@ namespace IndustryTycoon.Editor
             if (drillBit != null)
             {
                 AttachModel(drillBit, "Machines/DrillBit/DrillBit", 1.48f,
-                    Vector3.zero, new Vector3(90f, 0f, 0f), false);
+                    Vector3.zero, new Vector3(90f, 0f, 0f), false, true);
                 DisableOwnRenderer(drillBit);
             }
 
@@ -231,7 +231,7 @@ namespace IndustryTycoon.Editor
                 sourceFilter.sharedMesh.bounds.size.y,
                 sourceFilter.sharedMesh.bounds.size.z);
             root.localPosition = localPosition;
-            root.localRotation = Quaternion.Euler(localEuler);
+            root.localRotation = Quaternion.Euler(localEuler) * sourceFilter.transform.rotation;
             root.localScale = Vector3.one * (targetSize / Mathf.Max(0.0001f, largest));
         }
 
@@ -260,13 +260,14 @@ namespace IndustryTycoon.Editor
             DisableNamedRenderers(root.transform, placeholders);
         }
 
-        private static GameObject AttachModel(
+        internal static GameObject AttachModel(
             Transform parent,
             string assetKey,
             float targetSize,
             Vector3 localPosition,
             Vector3 localEuler,
-            bool castShadows)
+            bool castShadows,
+            bool centerPivot = false)
         {
             if (parent == null)
             {
@@ -282,15 +283,22 @@ namespace IndustryTycoon.Editor
 
             GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(source);
             instance.name = Path.GetFileName(assetKey) + " Production Visual";
-            instance.transform.SetParent(parent, false);
-            instance.transform.localPosition = Vector3.zero;
-            instance.transform.localRotation = Quaternion.Euler(localEuler);
+            // The FBX root contains the source-to-Unity axis correction (often -90 X).
+            // Preserve it. Scene facing and normalization belong to a separate art-only root.
+            GameObject visualRoot = new GameObject(Path.GetFileName(assetKey) + " VisualRoot");
+            visualRoot.transform.SetParent(parent, false);
+            // Cancel scale BEFORE rotation. Combining these in one transform shears meshes
+            // under the thin, nonuniform legacy blade/wheel/rock presentation anchors.
+            var facing = new GameObject("Model Facing");
+            facing.transform.SetParent(visualRoot.transform, false);
+            facing.transform.localRotation = Quaternion.Euler(localEuler);
+            instance.transform.SetParent(facing.transform, false);
             Vector3 parentScale = parent.lossyScale;
             Vector3 inverseParentScale = new Vector3(
                 1f / Mathf.Max(0.0001f, Mathf.Abs(parentScale.x)),
                 1f / Mathf.Max(0.0001f, Mathf.Abs(parentScale.y)),
                 1f / Mathf.Max(0.0001f, Mathf.Abs(parentScale.z)));
-            instance.transform.localScale = inverseParentScale;
+            visualRoot.transform.localScale = inverseParentScale;
 
             Material material = CreateOrUpdateMaterial(assetKey);
             Renderer[] renderers = instance.GetComponentsInChildren<Renderer>(true);
@@ -325,12 +333,19 @@ namespace IndustryTycoon.Editor
             }
 
             float scale = targetSize / largest;
-            instance.transform.localScale = inverseParentScale * scale;
+            visualRoot.transform.localScale = inverseParentScale * scale;
             bounds = CalculateWorldBounds(renderers);
             Vector3 targetWorld = parent.TransformPoint(localPosition);
-            Vector3 groundedCenter = new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
-            instance.transform.position += targetWorld - groundedCenter;
+            Vector3 groundedCenter = centerPivot ? bounds.center
+                : new Vector3(bounds.center.x, bounds.min.y, bounds.center.z);
+            visualRoot.transform.position += targetWorld - groundedCenter;
             return instance;
+        }
+
+        private static Vector3 FloorOffset(Transform parent)
+        {
+            Vector3 floor = parent.position; floor.y = 0f;
+            return parent.InverseTransformPoint(floor);
         }
 
         private static void AttachCourierWheels(Transform courierVisual)
@@ -347,8 +362,11 @@ namespace IndustryTycoon.Editor
                     throw new InvalidOperationException($"M19 courier wheel anchor is missing: {wheelName}");
                 }
 
+                // This is the art-only wheel animation pivot, not a vehicle gameplay root.
+                // The M20 feedback rotates local X, so the axle must also be local X.
+                wheel.localRotation = Quaternion.identity;
                 AttachModel(wheel, "Vehicles/CourierWheel/CourierWheel", 0.58f,
-                    Vector3.zero, new Vector3(0f, 90f, 0f), false);
+                    Vector3.zero, new Vector3(0f, 90f, 0f), false, true);
                 DisableOwnRenderer(wheel);
             }
         }

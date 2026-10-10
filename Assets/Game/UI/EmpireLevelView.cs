@@ -14,6 +14,7 @@ namespace IndustryTycoon.UI
         [SerializeField] private Text levelText;
         [SerializeField] private AudioFeedback audioFeedback;
         [SerializeField] private HapticFeedback hapticFeedback;
+        [SerializeField] private bool compactLabel;
 
         private int _displayedLevel = M10ProgressionRules.MinimumEmpireLevel;
         private string _displayText = string.Empty;
@@ -99,7 +100,7 @@ namespace IndustryTycoon.UI
             _displayText = BuildDisplayText(_displayedLevel);
             if (levelText != null)
             {
-                levelText.text = _displayText;
+                levelText.text = compactLabel ? $"Lv {_displayedLevel}" : _displayText;
             }
         }
     }

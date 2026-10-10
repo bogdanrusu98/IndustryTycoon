@@ -120,10 +120,10 @@ namespace IndustryTycoon.UI
             {
                 statusText.text = "STATUS: " + StatusLabel(status);
                 statusText.color = status == ProductionStatus.Running
-                    ? new Color(0.25f, 0.9f, 0.76f)
+                    ? new Color(0.10f, 0.39f, 0.29f)
                     : status == ProductionStatus.LockedInactive
-                        ? new Color(0.62f, 0.66f, 0.7f)
-                        : new Color(1f, 0.67f, 0.23f);
+                        ? new Color(0.32f, 0.38f, 0.40f)
+                        : new Color(0.54f, 0.32f, 0.08f);
             }
 
             int speed = Level(ProductionUpgradeCategory.Speed);
@@ -134,6 +134,15 @@ namespace IndustryTycoon.UI
             SetUpgradeButton(speedButton, ProductionUpgradeCategory.Speed, unlocked);
             SetUpgradeButton(inputButton, ProductionUpgradeCategory.InputCapacity, unlocked);
             SetUpgradeButton(outputButton, ProductionUpgradeCategory.OutputCapacity, unlocked);
+            if (buildingTabs != null)
+                for (int i = 0; i < buildingTabs.Length; i++)
+                {
+                    if (buildingTabs[i] == null) continue;
+                    buildingTabs[i].GetComponent<Image>().color = i == _selected
+                        ? new Color(.12f,.39f,.32f) : new Color(.86f,.90f,.86f);
+                    Text tabLabel = buildingTabs[i].GetComponentInChildren<Text>();
+                    if (tabLabel != null) tabLabel.color = i == _selected ? Color.white : MobileUiTheme.TextDark;
+                }
 
             FactorySpecialization specialization = Specialization();
             if (specializationText != null)
