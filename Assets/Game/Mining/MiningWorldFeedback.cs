@@ -27,6 +27,11 @@ namespace IndustryTycoon.Mining
         [SerializeField] private GameObject storedOreVisual;
         [SerializeField] private AutomatedDrill drill;
         [SerializeField] private TextMesh drillStatusText;
+        [SerializeField] private Transform drillBit;
+        [SerializeField, Min(1f)] private float drillBitRotationSpeed = 360f;
+
+        public Transform DrillBit => drillBit;
+        public float DrillBitRotationSpeed => drillBitRotationSpeed;
 
         private void OnEnable()
         {
@@ -77,6 +82,19 @@ namespace IndustryTycoon.Mining
             if (drill != null)
             {
                 drill.StateChanged -= HandleDrillStateChanged;
+            }
+        }
+
+        private void Update()
+        {
+            if (drill != null
+                && drill.State == AutomatedDrillState.Producing
+                && drillBit != null)
+            {
+                drillBit.Rotate(
+                    Vector3.up,
+                    drillBitRotationSpeed * Time.deltaTime,
+                    Space.Self);
             }
         }
 
@@ -230,6 +248,7 @@ namespace IndustryTycoon.Mining
         private void OnValidate()
         {
             miningProgressWidth = Mathf.Max(0.1f, miningProgressWidth);
+            drillBitRotationSpeed = Mathf.Max(1f, drillBitRotationSpeed);
         }
     }
 }

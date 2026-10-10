@@ -811,6 +811,8 @@ namespace IndustryTycoon.Editor
                 "nextUnlockGuidance",
                 nextUnlockGuidance);
 
+            M19ProductionSceneIntegrator.IntegrateScene(scene);
+
             ConfigurePortraitSettings();
             UpdateBuildSettings();
 
@@ -1059,6 +1061,7 @@ namespace IndustryTycoon.Editor
                 SetObjectReference(resourceVisual, "ironBarRoot", ironBarVisual);
                 SetObjectReference(resourceVisual, "toolRoot", toolVisual);
                 SetObjectReference(resourceVisual, "machinePartRoot", machinePartVisual);
+                M19ProductionSceneIntegrator.ReplaceResourceVisuals(root);
                 root.transform.localScale = Vector3.one * 0.7f;
                 return SavePrefabAndReload(root, WoodVisualPrefabPath);
             }
@@ -2978,12 +2981,12 @@ namespace IndustryTycoon.Editor
                 courierVisual.transform,
                 new Vector3(0.72f, 0.34f, -0.58f),
                 courierAccentMaterial);
-            CreateCourierWheel(
+            GameObject rearLeftWheel = CreateCourierWheel(
                 "Rear Left Wheel",
                 courierVisual.transform,
                 new Vector3(-0.72f, 0.34f, 0.62f),
                 courierAccentMaterial);
-            CreateCourierWheel(
+            GameObject rearRightWheel = CreateCourierWheel(
                 "Rear Right Wheel",
                 courierVisual.transform,
                 new Vector3(0.72f, 0.34f, 0.62f),
@@ -3075,6 +3078,14 @@ namespace IndustryTycoon.Editor
                 courierFeedback,
                 "rightWheel",
                 frontRightWheel.transform);
+            SetObjectReference(
+                courierFeedback,
+                "rearLeftWheel",
+                rearLeftWheel.transform);
+            SetObjectReference(
+                courierFeedback,
+                "rearRightWheel",
+                rearRightWheel.transform);
             SetObjectReference(courierFeedback, "pickupParticles", pickupParticles);
             SetObjectReference(courierFeedback, "deliveryParticles", deliveryParticles);
             SetInteger(courierFeedback, "cargoVisualPoolSize", 2);
@@ -3829,6 +3840,8 @@ namespace IndustryTycoon.Editor
             SetObjectReference(miningFeedback, "storedOreVisual", storedOreVisual);
             SetObjectReference(miningFeedback, "drill", drill);
             SetObjectReference(miningFeedback, "drillStatusText", drillStatusText);
+            SetObjectReference(miningFeedback, "drillBit", drillBit.transform);
+            SetFloat(miningFeedback, "drillBitRotationSpeed", 360f);
 
             mineAreaRoot.SetActive(false);
             smelterRoot.SetActive(false);

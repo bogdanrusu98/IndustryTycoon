@@ -19,6 +19,8 @@ namespace IndustryTycoon.Feedback
         [SerializeField] private Material deliveryMaterial;
         [SerializeField] private Transform leftWheel;
         [SerializeField] private Transform rightWheel;
+        [SerializeField] private Transform rearLeftWheel;
+        [SerializeField] private Transform rearRightWheel;
         [SerializeField] private ParticleSystem pickupParticles;
         [SerializeField] private ParticleSystem deliveryParticles;
 
@@ -86,6 +88,8 @@ namespace IndustryTycoon.Feedback
             float rotation = wheelRotationSpeed * Time.deltaTime;
             leftWheel?.Rotate(Vector3.right, rotation, Space.Self);
             rightWheel?.Rotate(Vector3.right, rotation, Space.Self);
+            rearLeftWheel?.Rotate(Vector3.right, rotation, Space.Self);
+            rearRightWheel?.Rotate(Vector3.right, rotation, Space.Self);
         }
 
         private void HandleStateChanged(CrateCourierState state)
