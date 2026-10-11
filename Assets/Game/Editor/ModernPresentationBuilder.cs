@@ -89,86 +89,7 @@ namespace IndustryTycoon.Editor
             round = Find("Production Panel").GetComponent<Image>().sprite;
         }
 
-        private static void Hud()
-        {
-            Transform counter=Find("Wood Counter");
-            RectTransform r=(RectTransform)counter;
-            r.anchorMin=r.anchorMax=new Vector2(.5f,1); r.pivot=new Vector2(.5f,1);
-            r.sizeDelta=new Vector2(1016,112); r.anchoredPosition=new Vector2(0,-20);
-            counter.GetComponent<Image>().enabled=false;
-            var empire=new SerializedObject(counter.GetComponent<EmpireLevelView>());
-            empire.FindProperty("compactLabel").boolValue=true;empire.ApplyModifiedPropertiesWithoutUndo();
-            string[] fields={"Cash Text","Wood Text","Empire Level Text"};
-            string[] labels={"CASH","CARRY EMPTY","EMPIRE"};
-            TycoonGlyph[] icons={TycoonGlyph.Coin,TycoonGlyph.Crate,TycoonGlyph.Star};
-            float[] x={0,300,628};
-            float[] widths={284,312,220};
-            Transform[] chips=new Transform[3];
-            TycoonIcon[] glyphViews=new TycoonIcon[3];
-            Text[] labelViews=new Text[3];
-            for(int i=0;i<3;i++)
-            {
-                Transform chip=Card((i==0?"CASH":i==1?"CARRY":"EMPIRE")+" Chip",counter,MobileUiTheme.Cream);
-                chips[i]=chip;
-                Place(chip,x[i],0,widths[i],108);
-                Style(chip,i==0?MobileUiComponent.CurrencyChip:i==1?MobileUiComponent.ResourceChip:MobileUiComponent.EmpireChip);
-                AddHighlight(chip);
-                Transform badge=Card("Icon Badge",chip,i==0?MobileUiTheme.ProgressGold:MobileUiTheme.DeepTeal);
-                Place(badge,14,24,60,60);Style(badge,i==0?MobileUiComponent.Badge:MobileUiComponent.Toast,false);
-                Transform glyph=Icon(badge,icons[i],10,10,40,i==0?MobileUiTheme.RewardOrange:MobileUiTheme.Cream);
-                glyphViews[i]=glyph.GetComponent<TycoonIcon>();
-                Label(chip,labels[i],86,66,widths[i]-96,28,MobileUiTheme.TypeCaption,MobileUiTheme.PrimaryTealPressed);
-                labelViews[i]=chip.GetComponentsInChildren<Text>(true).First(t=>t.name==labels[i]);
-                Transform text=Find(fields[i]); text.SetParent(chip,false);
-                Place(text,86,12,widths[i]-98,52);
-                Text tx=text.GetComponent<Text>(); tx.fontSize=i==0?MobileUiTheme.TypeNumeric:34; tx.resizeTextMaxSize=tx.fontSize;
-                tx.resizeTextMinSize=24; tx.color=MobileUiTheme.IndustrialInk;
-                tx.alignment=TextAnchor.MiddleLeft;
-            }
-
-            CanvasGroup carryGroup=chips[1].gameObject.AddComponent<CanvasGroup>();
-            var wood=new SerializedObject(counter.GetComponent<WoodHud>());
-            wood.FindProperty("resourceLabelText").objectReferenceValue=labelViews[1];
-            wood.FindProperty("resourceIcon").objectReferenceValue=glyphViews[1];
-            wood.FindProperty("chipCanvasGroup").objectReferenceValue=carryGroup;
-            wood.ApplyModifiedPropertiesWithoutUndo();
-
-            MobileProgressBar empireProgress=ProgressBar("Empire Progress",chips[2],86,10,120,10,null);
-            empireProgress.SetProgress(0,24,false);
-            empire=new SerializedObject(counter.GetComponent<EmpireLevelView>());
-            empire.FindProperty("progressBar").objectReferenceValue=empireProgress;
-            empire.ApplyModifiedPropertiesWithoutUndo();
-
-            Transform pause=Find("Pause Button");
-            var pr=(RectTransform)pause; pr.anchorMin=pr.anchorMax=new Vector2(1,1); pr.pivot=new Vector2(1,1);
-            pr.sizeDelta=new Vector2(128,128); pr.anchoredPosition=new Vector2(-20,-20);
-            Text pauseText=pause.GetComponentInChildren<Text>(true);if(pauseText!=null)pauseText.text=string.Empty;
-            Style(pause,MobileUiComponent.Toast);
-            Icon(pause,TycoonGlyph.Pause,38,38,52,MobileUiTheme.Cream);
-
-            Transform objective=Find("Main Objective");
-            var or=(RectTransform)objective; or.anchorMin=or.anchorMax=new Vector2(.5f,1); or.pivot=new Vector2(.5f,1);
-            or.sizeDelta=new Vector2(1016,116); or.anchoredPosition=new Vector2(0,-148);
-            Style(objective,MobileUiComponent.ObjectiveCard);AddHighlight(objective);
-            Transform objectiveBadge=Card("Objective Badge",objective,MobileUiTheme.DeepTeal);
-            Place(objectiveBadge,14,20,76,76);Style(objectiveBadge,MobileUiComponent.Toast,false);
-            Icon(objectiveBadge,TycoonGlyph.Flag,17,17,42,MobileUiTheme.ProgressGold);
-            Label(objective,"PRIMARY OBJECTIVE",104,70,650,28,MobileUiTheme.TypeCaption,MobileUiTheme.RewardOrange);
-            Text category=objective.GetComponentsInChildren<Text>(true).First(t=>t.name=="PRIMARY OBJECTIVE");
-            Place(Find("Main Objective Text"),104,16,650,54);
-            Text textObjective=Find("Main Objective Text").GetComponent<Text>();
-            textObjective.color=MobileUiTheme.IndustrialInk;textObjective.alignment=TextAnchor.MiddleLeft;
-            textObjective.fontSize=30;textObjective.resizeTextMinSize=23;textObjective.resizeTextMaxSize=30;
-            MobileProgressBar objectiveProgress=ProgressBar("Objective Progress",objective,782,48,206,12,"0 / 1");
-            Text objectiveProgressText=objectiveProgress.ValueText;
-            if(objectiveProgressText!=null){objectiveProgressText.color=MobileUiTheme.IndustrialInk;objectiveProgressText.fontSize=20;}
-            var guidance=new SerializedObject(objective.GetComponent<NextUnlockGuidance>());
-            guidance.FindProperty("categoryText").objectReferenceValue=category;
-            guidance.FindProperty("progressRoot").objectReferenceValue=objectiveProgress.gameObject;
-            guidance.FindProperty("progressBar").objectReferenceValue=objectiveProgress;
-            guidance.ApplyModifiedPropertiesWithoutUndo();
-            Find("District Status").gameObject.SetActive(false);
-        }
+        private static void Hud() => IndustrialHudBuilder.Apply(safe);
 
         private static void Navigation()
         {
@@ -372,27 +293,6 @@ namespace IndustryTycoon.Editor
         }
         private static Transform Card(string name,Transform parent,Color color) {
             var g=new GameObject(name,typeof(RectTransform),typeof(Image)); g.transform.SetParent(parent,false); Surface(g.transform,color); g.GetComponent<Image>().raycastTarget=false; return g.transform;
-        }
-        private static void Style(Transform target,MobileUiComponent component,bool depth=true) {
-            MobileUiStyle style=target.GetComponent<MobileUiStyle>();
-            if(style==null)style=target.gameObject.AddComponent<MobileUiStyle>();
-            style.Configure(component,round,MobileUiState.Default,depth);
-        }
-        private static void AddHighlight(Transform parent) {
-            Transform highlight=Card("Top Highlight",parent,MobileUiTheme.WarmHighlight);
-            RectTransform rect=(RectTransform)highlight;rect.anchorMin=new Vector2(.06f,1);rect.anchorMax=new Vector2(.94f,1);
-            rect.pivot=new Vector2(.5f,1);rect.anchoredPosition=new Vector2(0,-5);rect.sizeDelta=new Vector2(0,5);
-            highlight.GetComponent<Image>().raycastTarget=false;
-        }
-        private static MobileProgressBar ProgressBar(string name,Transform parent,float x,float y,float w,float h,string value) {
-            Transform track=Card(name,parent,MobileUiTheme.CreamMuted);Place(track,x,y,w,h);
-            Style(track,MobileUiComponent.SecondaryButton,false);
-            Transform fill=Card(name+" Fill",track,MobileUiTheme.ProgressGold);
-            RectTransform fillRect=(RectTransform)fill;fillRect.anchorMin=Vector2.zero;fillRect.anchorMax=Vector2.one;
-            fillRect.offsetMin=fillRect.offsetMax=Vector2.zero;fill.GetComponent<Image>().color=MobileUiTheme.ProgressGold;
-            Text label=null;
-            if(value!=null){Label(track,value,0,-30,w,28,20,MobileUiTheme.IndustrialInk);label=track.GetComponentInChildren<Text>(true);}
-            MobileProgressBar bar=track.gameObject.AddComponent<MobileProgressBar>();bar.Configure(fill.GetComponent<Image>(),label);return bar;
         }
         private static Transform Icon(Transform parent,TycoonGlyph glyph,float x,float y,float size,Color color) {
             var g=new GameObject(glyph+" Icon",typeof(RectTransform),typeof(TycoonIcon)); g.transform.SetParent(parent,false); Place(g.transform,x,y,size,size);

@@ -40,6 +40,9 @@ namespace IndustryTycoon.Progression
             : IsTutorialActive
                 ? M18OnboardingRules.GetInstruction(CurrentStep)
                 : string.Empty;
+        public string ContextHint => _temporaryHint;
+        public string ObjectiveText => IsTutorialActive
+            ? M18OnboardingRules.GetInstruction(CurrentStep) : string.Empty;
         public GameObject TargetMarker => targetMarker;
         public int CompletionEventCount { get; private set; }
         public int ExplanationEventCount { get; private set; }
@@ -89,6 +92,9 @@ namespace IndustryTycoon.Progression
 
         public void RestorePersistentState(M18OnboardingSaveData state)
         {
+            if (_hintRoutine != null) StopCoroutine(_hintRoutine);
+            _hintRoutine = null;
+            _temporaryHint = string.Empty;
             _restoring = true;
             try
             {

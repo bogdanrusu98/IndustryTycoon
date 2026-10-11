@@ -343,7 +343,9 @@ namespace IndustryTycoon.Progression
         {
             if (upgradeableBuildings == null) return null;
             for (int i = 0; i < upgradeableBuildings.Length; i++)
-                if (upgradeableBuildings[i] is IProductionUpgradeable building
+                // Interface matching alone accepts destroyed Unity objects during teardown.
+                if (upgradeableBuildings[i] != null
+                    && upgradeableBuildings[i] is IProductionUpgradeable building
                     && string.Equals(building.ProductionBuildingId, id,
                         StringComparison.Ordinal)) return building;
             return null;

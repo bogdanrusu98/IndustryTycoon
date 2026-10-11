@@ -1,3 +1,5 @@
+> Superseded: this pass was visually rejected. See [Pass 1 correction](../UIVisualCorrection/review.md) and its actual runtime comparisons.
+
 # IndustryTycoon UI Visual Rebuild — Pass 1 review
 
 ## Review setup

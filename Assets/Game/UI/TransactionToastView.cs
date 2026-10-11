@@ -15,6 +15,7 @@ namespace IndustryTycoon.UI
         [SerializeField] private GameObject toastRoot;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private Text messageText;
+        [SerializeField] private ResourceHudIcon resourceIcon;
         [SerializeField, Min(0.25f)] private float holdSeconds = 0.8f;
         private Coroutine _routine;
 
@@ -52,15 +53,21 @@ namespace IndustryTycoon.UI
             toastRoot?.SetActive(false);
         }
 
-        private void HandleAdded(ResourceType type, int amount, int total) =>
-            Show($"+{amount} {Label(type)}  •  CARRY {total}/{carryStack.Capacity}");
-
-        private void HandleRemoved(ResourceType type, int amount, int total) =>
-            Show($"DELIVERED {amount} {Label(type)}  •  CARRY {total}/{carryStack.Capacity}");
-
-        private void HandleSale(SaleFeedbackData sale) =>
-            Show($"SOLD {Label(sale.ResourceType)}  •  +${sale.CashValue}");
-
+        private void HandleAdded(ResourceType type, int amount, int total)
+        {
+            resourceIcon?.Show(type);
+            Show($"+{amount}");
+        }
+        private void HandleRemoved(ResourceType type, int amount, int total)
+        {
+            resourceIcon?.Show(type);
+            Show($"−{amount}");
+        }
+        private void HandleSale(SaleFeedbackData sale)
+        {
+            resourceIcon?.Show(sale.ResourceType);
+            Show($"+${sale.CashValue}");
+        }
         private void Show(string message)
         {
             if (!isActiveAndEnabled || string.IsNullOrWhiteSpace(message)) return;
@@ -74,11 +81,17 @@ namespace IndustryTycoon.UI
             toastRoot?.SetActive(true);
             if (canvasGroup != null) canvasGroup.alpha = 1f;
             yield return new WaitForSecondsRealtime(holdSeconds);
+            float elapsed=0f;
+            while(elapsed<0.3f)
+            {
+                elapsed+=Time.unscaledDeltaTime;
+                if(canvasGroup!=null)canvasGroup.alpha=1f-IndustryTycoon.Feedback.FeedbackTween.EaseOutCubic(elapsed/0.3f);
+                yield return null;
+            }
             if (canvasGroup != null) canvasGroup.alpha = 0f;
             toastRoot?.SetActive(false);
             _routine = null;
         }
 
-        private static string Label(ResourceType type) => type.ToString().ToUpperInvariant();
     }
 }

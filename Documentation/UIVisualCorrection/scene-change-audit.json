@@ -1,0 +1,142 @@
+[
+  {
+    "Id": "1323946512",
+    "Name": "Cash Text",
+    "Class": "224"
+  },
+  {
+    "Id": "1323946513",
+    "Name": "Cash Text",
+    "Class": "114"
+  },
+  {
+    "Id": "2091869472",
+    "Name": "Empire Level Text",
+    "Class": "224"
+  },
+  {
+    "Id": "2091869473",
+    "Name": "Empire Level Text",
+    "Class": "114"
+  },
+  {
+    "Id": "1444636234",
+    "Name": "Main Objective",
+    "Class": "114"
+  },
+  {
+    "Id": "1444636237",
+    "Name": "Main Objective",
+    "Class": "224"
+  },
+  {
+    "Id": "1444636239",
+    "Name": "Main Objective",
+    "Class": "114"
+  },
+  {
+    "Id": "1444636238",
+    "Name": "Main Objective",
+    "Class": "114"
+  },
+  {
+    "Id": "1444636235",
+    "Name": "Main Objective",
+    "Class": "114"
+  },
+  {
+    "Id": "1444636233",
+    "Name": "Main Objective",
+    "Class": "1"
+  },
+  {
+    "Id": "444331409",
+    "Name": "Main Objective Text",
+    "Class": "224"
+  },
+  {
+    "Id": "444331407",
+    "Name": "Main Objective Text",
+    "Class": "114"
+  },
+  {
+    "Id": "1362416345",
+    "Name": "Pause Button",
+    "Class": "114"
+  },
+  {
+    "Id": "1362416348",
+    "Name": "Pause Button",
+    "Class": "114"
+  },
+  {
+    "Id": "1362416343",
+    "Name": "Pause Button",
+    "Class": "224"
+  },
+  {
+    "Id": "1362416347",
+    "Name": "Pause Button",
+    "Class": "114"
+  },
+  {
+    "Id": "1362416342",
+    "Name": "Pause Button",
+    "Class": "1"
+  },
+  {
+    "Id": "1625360698",
+    "Name": "Safe Area",
+    "Class": "114"
+  },
+  {
+    "Id": "728690917",
+    "Name": "Transaction Toast",
+    "Class": "114"
+  },
+  {
+    "Id": "728690916",
+    "Name": "Transaction Toast",
+    "Class": "224"
+  },
+  {
+    "Id": "728690915",
+    "Name": "Transaction Toast",
+    "Class": "1"
+  },
+  {
+    "Id": "194099191",
+    "Name": "Transaction Toast Text",
+    "Class": "114"
+  },
+  {
+    "Id": "194099190",
+    "Name": "Transaction Toast Text",
+    "Class": "224"
+  },
+  {
+    "Id": "1534354274",
+    "Name": "Wood Counter",
+    "Class": "114"
+  },
+  {
+    "Id": "1534354272",
+    "Name": "Wood Counter",
+    "Class": "114"
+  },
+  {
+    "Id": "1534354271",
+    "Name": "Wood Counter",
+    "Class": "224"
+  },
+  {
+    "Id": "1931630745",
+    "Name": "Wood Text",
+    "Class": "224"
+  },
+  {
+    "Id": "1931630746",
+    "Name": "Wood Text",
+    "Class": "114"
+  }
+]

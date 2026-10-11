@@ -1,0 +1,7 @@
+Industrial Playcraft Pass 1 mobile layout audit
+schema=9
+large-number=2.1B
+360x640|safe=(x:0.00, y:20.00, width:360.00, height:592.00)|HUD=PASS|touch=PASS
+1080x1920|safe=(x:0.00, y:64.00, width:1080.00, height:1760.00)|HUD=PASS|touch=PASS
+1440x3200|safe=(x:40.00, y:96.00, width:1360.00, height:2944.00)|HUD=PASS|touch=PASS
+android-back=owned-by-MobilePanelNavigation

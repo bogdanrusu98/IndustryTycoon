@@ -1,0 +1,24 @@
+IndustryTycoon HUD visual correction — final validation
+Unity 6000.5.9f1
+EditMode: 85 passed, 0 failed, 0 skipped (Logs/correction-editmode.xml)
+M18 PlayMode smoke PASS: fresh/resume/no-replay/M17 handoff/input/marker cleanup PASS
+M17 PlayMode smoke PASS: fresh → Lumber → Mining → Tools → Logistics → Industrial → Machine Parts → Specialization → Market → Empire 25 PASS
+M2 full-loop Play Mode smoke passed: sale 12 + 12 + 1 wood, early sale exit stopped, pooled feedback settled, HUD converged, completion count 1, production delta 2 -> 4 logs / 2.7s.
+Lumber Camp prototype validation passed: Assets/Game/Scenes/Prototype_LumberCamp.unity
+Android Player build passed: D:\IndustryTycoon\IndustryTycoon-ui-pass1\Builds\Android\IndustryTycoon-HudCorrection-Release.apk (514551244 bytes, 0 warnings).
+seven runtime resource types/icons/labels=PASS
+empty carry hidden/full badge=PASS
+M18 objective independent from three warnings=PASS
+Empire runtime Lv1/empty to Lv25/full; restore hints cleared=PASS
+existing Pause action/Android Back handler/restore HUD=PASS
+emblem renderers/save schema v9=PASS
+Industrial Playcraft Pass 1 mobile layout audit
+schema=9
+large-number=2.1B
+360x640|safe=(x:0.00, y:20.00, width:360.00, height:592.00)|HUD=PASS|touch=PASS
+1080x1920|safe=(x:0.00, y:64.00, width:1080.00, height:1760.00)|HUD=PASS|touch=PASS
+1440x3200|safe=(x:40.00, y:96.00, width:1360.00, height:2944.00)|HUD=PASS|touch=PASS
+android-back=owned-by-MobilePanelNavigation
+APK SHA256: 10595ABEA9B2A85B7F8F84BBEAE34EFF93B193EA078DE5F8E5DC70839E71716A
+Physical Android device testing: not performed; Back handler and safe-area simulations verified in Editor.
+APK file size: 42,087,421 bytes (Unity report total also includes build outputs).

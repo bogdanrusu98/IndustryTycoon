@@ -22,24 +22,35 @@ namespace IndustryTycoon.Editor
     public static class IndustrialPlaycraftCapture
     {
         private const string SessionKey = "IndustryTycoon.IndustrialPlaycraftCapture";
-        private const string OutputFolder = "Documentation/UIVisualPass1/after";
+        private static string OutputFolder => SessionState.GetString(SessionKey + ".Folder", "Documentation/UIVisualCorrection/initial");
         private static readonly string[] ShotNames =
         {
             "01-early-lumber",
             "02-active-carry-stack",
             "03-active-primary-objective",
-            "04-later-empire-progression"
+            "04-later-empire-progression",
+            "05-carry-full",
+            "06-wrong-resource",
+            "07-pickup"
         };
 
         private static int _frames;
         private static int _shot;
+        private static double _captureAt;
         private static Camera _camera;
         private static Canvas _canvas;
         private static RenderTexture _target;
         private static Texture2D _pixels;
+        private static Rect _safeRect;
 
         static IndustrialPlaycraftCapture()
         {
+            Application.logMessageReceived += (_, __, type) =>
+            {
+                if ((SessionState.GetBool(SessionKey, false) || SessionState.GetBool(SessionKey + ".Done", false))
+                    && (type == LogType.Error || type == LogType.Exception || type == LogType.Assert))
+                    SessionState.SetBool(SessionKey + ".Failed", true);
+            };
             if (SessionState.GetBool(SessionKey, false))
             {
                 EditorApplication.update += Tick;
@@ -59,6 +70,11 @@ namespace IndustryTycoon.Editor
 
         public static void Run()
         {
+            _frames = _shot = 0;
+            _captureAt = 0;
+            string[] args = Environment.GetCommandLineArgs();
+            int iteration = Array.IndexOf(args, "-visualIteration");
+            SessionState.SetString(SessionKey + ".Folder", "Documentation/UIVisualCorrection/" + (iteration >= 0 ? args[iteration + 1] : "initial"));
             EditorSceneManager.OpenScene("Assets/Game/Scenes/Prototype_LumberCamp.unity");
             UnityEngine.Object.FindAnyObjectByType<LocalPersistenceService>(FindObjectsInactive.Include).enabled = false;
             Directory.CreateDirectory(OutputFolder);
@@ -68,6 +84,13 @@ namespace IndustryTycoon.Editor
             EditorApplication.update -= Tick;
             EditorApplication.update += Tick;
             EditorApplication.EnterPlaymode();
+        }
+
+        public static void RebuildAndRun()
+        {
+            IndustrialHudAssets.Ensure(true);
+            ApplyCoreHudFromCommandLine();
+            Run();
         }
 
         public static void ApplyCoreHudFromCommandLine()
@@ -98,16 +121,19 @@ namespace IndustryTycoon.Editor
                     return;
                 }
 
-                if ((_frames - 40) % 18 == 0)
+                if (_captureAt == 0)
                 {
                     SetupShot(_shot);
+                    _captureAt = EditorApplication.timeSinceStartup + 0.45;
                 }
-                if ((_frames - 40) % 18 == 17)
+                if (EditorApplication.timeSinceStartup >= _captureAt)
                 {
                     Capture(ShotNames[_shot]);
+                    _captureAt = 0;
                     _shot++;
                     if (_shot == ShotNames.Length)
                     {
+                        ValidateHudContracts();
                         ValidateMobileLayouts();
                         Stop(false);
                     }
@@ -128,14 +154,14 @@ namespace IndustryTycoon.Editor
             _canvas.worldCamera = _camera;
             _canvas.planeDistance = 1f;
             UnityEngine.Object.FindAnyObjectByType<SafeAreaFitter>().enabled = false;
-            Resize(540, 960, new Rect(0, 0, 540, 960), true);
+            Resize(1080, 1920, new Rect(0, 0, 1080, 1920), true);
             ModernVisualCapture.ApplyFixture(false);
         }
 
         private static void SetupShot(int index)
         {
             UnityEngine.Object.FindAnyObjectByType<MobilePanelNavigation>().CloseAll();
-            Resize(540, 960, new Rect(0, 0, 540, 960), true);
+            Resize(1080, 1920, new Rect(0, 0, 1080, 1920), true);
             if (index == 0)
             {
                 ModernVisualCapture.ApplyFixture(false);
@@ -149,9 +175,15 @@ namespace IndustryTycoon.Editor
             {
                 ApplyObjectiveFixture();
             }
-            else
+            else if (index == 3)
             {
                 ModernVisualCapture.ApplyFixture(true);
+            }
+            else
+            {
+                ModernVisualCapture.ApplyFixture(false);
+                var carry = UnityEngine.Object.FindAnyObjectByType<CarryStack>();
+                carry.RestoreStableState(ResourceType.Wood, index == 4 ? carry.Capacity : 5);
             }
 
             Vector3 position = index == 3 ? new Vector3(12f, 0f, 25f) : new Vector3(0f, 0f, -1f);
@@ -172,6 +204,16 @@ namespace IndustryTycoon.Editor
             }
 
             Canvas.ForceUpdateCanvases();
+            if (index >= 4)
+            {
+                var guidance = UnityEngine.Object.FindAnyObjectByType<NextUnlockGuidance>();
+                string objective = guidance.DisplayText;
+                var onboarding = UnityEngine.Object.FindAnyObjectByType<FirstSessionOnboardingService>();
+                onboarding.ShowContextHint(index == 4 ? "CARRY FULL — SELL OR DELIVER" : index == 5 ? "WRONG RESOURCE — NEED PLANKS" : string.Empty, 20);
+                if (guidance.DisplayText != objective)
+                    throw new InvalidOperationException("Warning replaced primary objective.");
+                if (index == 6) UnityEngine.Object.FindAnyObjectByType<CarryStack>().TryAdd(ResourceType.Wood, 1);
+            }
         }
 
         private static void ApplyObjectiveFixture()
@@ -208,6 +250,7 @@ namespace IndustryTycoon.Editor
 
         private static void Resize(int width, int height, Rect safeArea, bool allocatePixels)
         {
+            _safeRect = safeArea;
             if (_target != null)
             {
                 _camera.targetTexture = null;
@@ -264,7 +307,7 @@ namespace IndustryTycoon.Editor
             {
                 (width: 360, height: 640, safe: new Rect(0, 20, 360, 592)),
                 (width: 1080, height: 1920, safe: new Rect(0, 64, 1080, 1760)),
-                (width: 1440, height: 3200, safe: new Rect(0, 96, 1440, 2944))
+                (width: 1440, height: 3200, safe: new Rect(40, 96, 1360, 2944))
             };
 
             foreach (var layout in cases)
@@ -275,6 +318,7 @@ namespace IndustryTycoon.Editor
                 RequireInside(Find("CARRY Chip").GetComponent<RectTransform>(), layout.width, layout.height);
                 RequireInside(Find("EMPIRE Chip").GetComponent<RectTransform>(), layout.width, layout.height);
                 RequireInside(Find("Main Objective").GetComponent<RectTransform>(), layout.width, layout.height);
+                RequireInside(Find("Context Hint").GetComponent<RectTransform>(), layout.width, layout.height);
                 RectTransform pause = Find("Pause Button").GetComponent<RectTransform>();
                 RequireInside(pause, layout.width, layout.height);
                 if (pause.rect.width < MobileUiTheme.MinimumTouchTarget
@@ -287,7 +331,7 @@ namespace IndustryTycoon.Editor
             }
 
             rows.Add("android-back=owned-by-MobilePanelNavigation");
-            File.WriteAllLines("Documentation/UIVisualPass1/mobile-validation.txt", rows);
+            File.WriteAllLines(Path.Combine(OutputFolder, "mobile-validation.txt"), rows);
         }
 
         private static void RequireInside(RectTransform rect, int width, int height)
@@ -297,11 +341,78 @@ namespace IndustryTycoon.Editor
             for (int i = 0; i < corners.Length; i++)
             {
                 Vector2 point = RectTransformUtility.WorldToScreenPoint(_camera, corners[i]);
-                if (point.x < -1f || point.x > width + 1f || point.y < -1f || point.y > height + 1f)
+                if (point.x < _safeRect.xMin - 1f || point.x > _safeRect.xMax + 1f
+                    || point.y < _safeRect.yMin - 1f || point.y > _safeRect.yMax + 1f)
                 {
                     throw new InvalidOperationException($"{rect.name} escapes {width}x{height}: {point}");
                 }
             }
+        }
+
+        private static void ValidateHudContracts()
+        {
+            var evidence = new List<string>();
+            var carry = UnityEngine.Object.FindAnyObjectByType<CarryStack>();
+            var guidance = UnityEngine.Object.FindAnyObjectByType<NextUnlockGuidance>();
+            var onboarding = UnityEngine.Object.FindAnyObjectByType<FirstSessionOnboardingService>();
+            var chip = Find("CARRY Chip");
+            Sprite previous = null;
+            foreach (ResourceType type in Enum.GetValues(typeof(ResourceType)))
+            {
+                if (!carry.RestoreStableState(type, 3))
+                    throw new InvalidOperationException("Resource fixture was rejected: " + type);
+                Image icon = chip.GetComponentInChildren<ResourceHudIcon>().GetComponent<Image>();
+                if (icon.sprite == null || icon.sprite == previous || !icon.enabled)
+                    throw new InvalidOperationException("Missing or reused resource artwork: " + type);
+                if (!chip.GetComponentsInChildren<Text>().Any(t => t.text == ResourceHudIcon.Label(type)))
+                    throw new InvalidOperationException("Incorrect carried resource label: " + type);
+                previous = icon.sprite;
+            }
+            evidence.Add("seven runtime resource types/icons/labels=PASS");
+            if (!carry.RestoreStableState(null, 0))
+                throw new InvalidOperationException("Empty carry fixture was rejected.");
+            if (chip.GetComponent<CanvasGroup>().alpha != 0)
+                throw new InvalidOperationException("Empty carry chip is not hidden.");
+            if (Find("Wood Text").GetComponent<Text>().text != $"0 / {carry.Capacity}")
+                throw new InvalidOperationException("Hidden carry value lost its runtime binding.");
+            carry.RestoreStableState(ResourceType.Wood, carry.Capacity);
+            if (!Find("Full Badge").activeInHierarchy)
+                throw new InvalidOperationException("Full carry badge is absent.");
+            evidence.Add("empty carry hidden/full badge=PASS");
+            string primary = guidance.DisplayText;
+            foreach (string warning in new[] { "CARRY FULL", "WRONG RESOURCE", "NOT ENOUGH CASH" })
+            {
+                onboarding.ShowContextHint(warning);
+                if (guidance.DisplayText != primary || Find("Context Hint").GetComponent<CanvasGroup>().alpha != 1)
+                    throw new InvalidOperationException("Warning/objective separation failed: " + warning);
+            }
+            evidence.Add("M18 objective independent from three warnings=PASS");
+            ModernVisualCapture.ApplyFixture(false);
+            if (!string.IsNullOrEmpty(onboarding.ContextHint))
+                throw new InvalidOperationException("Restore retained a stale contextual hint.");
+            var empire = UnityEngine.Object.FindAnyObjectByType<EmpireLevelView>();
+            var empireBar = Find("Empire Progress").GetComponent<MobileProgressBar>();
+            if (empire.DisplayedLevel != 1 || empireBar.NormalizedValue != 0)
+                throw new InvalidOperationException("Fresh Empire display is incorrect.");
+            ModernVisualCapture.ApplyFixture(true);
+            if (empire.DisplayedLevel != 25 || empireBar.NormalizedValue != 1)
+                throw new InvalidOperationException("Completed Empire display is incorrect.");
+            evidence.Add("Empire runtime Lv1/empty to Lv25/full; restore hints cleared=PASS");
+            var nav = UnityEngine.Object.FindAnyObjectByType<MobilePanelNavigation>();
+            nav.CloseAll();
+            Find("Pause Button").GetComponent<Button>().onClick.Invoke();
+            if (!nav.HasBlockingPanel || Find("Wood Counter").activeInHierarchy)
+                throw new InvalidOperationException("Pause binding/visibility failed.");
+            nav.Back();
+            if (nav.HasBlockingPanel || !Find("Wood Counter").activeInHierarchy)
+                throw new InvalidOperationException("Back did not restore exploration HUD.");
+            evidence.Add("existing Pause action/Android Back handler/restore HUD=PASS");
+            foreach (HudIllustration icon in _canvas.GetComponentsInChildren<HudIllustration>(true))
+                if (icon.GetComponent<CanvasRenderer>() == null)
+                    throw new InvalidOperationException("Emblem missing CanvasRenderer.");
+            if (M9SaveSchema.CurrentVersion != 9) throw new InvalidOperationException("Save schema changed.");
+            evidence.Add("emblem renderers/save schema v9=PASS");
+            File.WriteAllLines(Path.Combine(OutputFolder, "runtime-validation.txt"), evidence);
         }
 
         private static GameObject Find(string name)
@@ -316,7 +427,7 @@ namespace IndustryTycoon.Editor
         {
             SessionState.SetBool(SessionKey, false);
             SessionState.SetBool(SessionKey + ".Done", true);
-            SessionState.SetBool(SessionKey + ".Failed", failed);
+            SessionState.SetBool(SessionKey + ".Failed", failed || SessionState.GetBool(SessionKey + ".Failed", false));
             EditorApplication.update -= Tick;
             EditorApplication.ExitPlaymode();
         }

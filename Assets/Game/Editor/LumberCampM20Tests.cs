@@ -6,6 +6,31 @@ namespace IndustryTycoon.EditorTests
 {
     public sealed class LumberCampM20Tests
     {
+        [Test]
+        public void ProductionPresentation_IgnoresDestroyedBuildingsDuringSceneTeardown()
+        {
+            var owner = new GameObject("District teardown test");
+            var buildingObject = new GameObject("Destroyed processor");
+            try
+            {
+                var district = owner.AddComponent<IndustryTycoon.Progression.IndustrialDistrictService>();
+                var processor = buildingObject.AddComponent<IndustryTycoon.Processing.WoodProcessor>();
+                var serialized = new UnityEditor.SerializedObject(district);
+                var buildings = serialized.FindProperty("upgradeableBuildings");
+                buildings.arraySize = 1;
+                buildings.GetArrayElementAtIndex(0).objectReferenceValue = processor;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                Object.DestroyImmediate(buildingObject);
+                Assert.That(district.GetProductionStatus("wood_processor"),
+                    Is.EqualTo(IndustryTycoon.Processing.ProductionStatus.LockedInactive));
+            }
+            finally
+            {
+                Object.DestroyImmediate(owner);
+                if (buildingObject != null) Object.DestroyImmediate(buildingObject);
+            }
+        }
+
         [TestCase(360, 640, 0, 24, 360, 592)]
         [TestCase(1080, 1920, 0, 80, 1080, 1760)]
         [TestCase(1440, 3200, 40, 140, 1360, 2920)]

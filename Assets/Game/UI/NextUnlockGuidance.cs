@@ -164,9 +164,9 @@ namespace IndustryTycoon.UI
 
         public bool Refresh()
         {
-            if (onboarding != null && !string.IsNullOrEmpty(onboarding.GuidanceText))
+            if (onboarding != null && !string.IsNullOrEmpty(onboarding.ObjectiveText))
             {
-                string tutorialText = onboarding.GuidanceText;
+                string tutorialText = onboarding.ObjectiveText;
                 bool tutorialChanged = !string.Equals(
                     _displayText,
                     tutorialText,
@@ -179,7 +179,7 @@ namespace IndustryTycoon.UI
                     guidanceText.text = BuildPresentationTitle(_displayText);
                 }
 
-                ApplyCardPresentation("ONBOARDING", 0L, 1L, false);
+                ApplyCardPresentation("OBJECTIVE", 0L, 1L, true);
 
                 if (tutorialChanged)
                 {
@@ -210,10 +210,10 @@ namespace IndustryTycoon.UI
                     out long objectiveCurrent,
                     out long objectiveTarget);
                 ApplyCardPresentation(
-                    "PRIMARY OBJECTIVE",
+                    "OBJECTIVE",
                     objectiveCurrent,
                     objectiveTarget,
-                    objectiveTarget > 1L);
+                    objectiveTarget > 0L);
 
                 if (objectiveChanged)
                 {

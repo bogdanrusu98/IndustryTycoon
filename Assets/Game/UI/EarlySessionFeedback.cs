@@ -9,7 +9,7 @@ namespace IndustryTycoon.UI
 {
     /// <summary>
     /// Event-driven recovery hints for common early-session stalls. It only
-    /// borrows the primary guidance line briefly and never changes gameplay.
+    /// publishes subordinate contextual hints and never changes gameplay or objectives.
     /// </summary>
     public sealed class EarlySessionFeedback : MonoBehaviour
     {
