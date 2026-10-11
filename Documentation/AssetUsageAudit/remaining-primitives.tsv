@@ -1,0 +1,669 @@
+hierarchy	activeInDevelopedFixture	category	proof/reason
+Ground	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Player/Capsule Placeholder/Crafted Worker VisualRoot/Work jacket	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Player/Capsule Placeholder/Crafted Worker VisualRoot/Head	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Player/Capsule Placeholder/Crafted Worker VisualRoot/Hard hat	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Player/Capsule Placeholder/Crafted Worker VisualRoot/Hat brim	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Player/Capsule Placeholder/Crafted Worker VisualRoot/Boot -1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Player/Capsule Placeholder/Crafted Worker VisualRoot/Sleeve -1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Player/Capsule Placeholder/Crafted Worker VisualRoot/Glove -1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Player/Capsule Placeholder/Crafted Worker VisualRoot/Safety strap -1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Player/Capsule Placeholder/Crafted Worker VisualRoot/Boot 1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Player/Capsule Placeholder/Crafted Worker VisualRoot/Sleeve 1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Player/Capsule Placeholder/Crafted Worker VisualRoot/Glove 1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Player/Capsule Placeholder/Crafted Worker VisualRoot/Safety strap 1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Cash Pile/Collection Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Cash Pile/Cash Amount/Cash Amount Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Cash Pile/Dollar Marker	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Sale Point/Sale Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Sale Point/Delivery Marker	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Sale Point/Sale Label/Sale Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Purchase Pad/Upgrade Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Purchase Pad/Upgrade Plus Horizontal	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Purchase Pad/Upgrade Plus Vertical	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Purchase Pad/Purchase Status/Purchase Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Purchase Pad/Purchase Progress Track	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Purchase Pad/Purchase Progress Fill	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Saw Station/Production Status/Production Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Wood Stockpile/Stockpile Collection Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Wood Stockpile/Stockpile Platform	True	Wood stockpile rack	No log storage rack export; ore hopper and finished-goods crate have different gameplay identities.
+Wood Stockpile/Left Rail	True	Wood stockpile rack	No log storage rack export; ore hopper and finished-goods crate have different gameplay identities.
+Wood Stockpile/Right Rail	True	Wood stockpile rack	No log storage rack export; ore hopper and finished-goods crate have different gameplay identities.
+Wood Stockpile/Stockpile Amount/Stockpile Amount Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Worker Purchase Pad/Upgrade Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Worker Purchase Pad/Upgrade Plus Horizontal	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Worker Purchase Pad/Upgrade Plus Vertical	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Worker Purchase Pad/Purchase Status/Purchase Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Worker Purchase Pad/Purchase Progress Track	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Worker Purchase Pad/Purchase Progress Fill	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Lumber Worker/Worker Visual/Worker Capsule/Crafted Worker VisualRoot/Work jacket	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Lumber Worker/Worker Visual/Worker Capsule/Crafted Worker VisualRoot/Head	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Lumber Worker/Worker Visual/Worker Capsule/Crafted Worker VisualRoot/Hard hat	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Lumber Worker/Worker Visual/Worker Capsule/Crafted Worker VisualRoot/Hat brim	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Lumber Worker/Worker Visual/Worker Capsule/Crafted Worker VisualRoot/Boot -1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Lumber Worker/Worker Visual/Worker Capsule/Crafted Worker VisualRoot/Sleeve -1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Lumber Worker/Worker Visual/Worker Capsule/Crafted Worker VisualRoot/Glove -1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Lumber Worker/Worker Visual/Worker Capsule/Crafted Worker VisualRoot/Safety strap -1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Lumber Worker/Worker Visual/Worker Capsule/Crafted Worker VisualRoot/Boot 1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Lumber Worker/Worker Visual/Worker Capsule/Crafted Worker VisualRoot/Sleeve 1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Lumber Worker/Worker Visual/Worker Capsule/Crafted Worker VisualRoot/Glove 1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Lumber Worker/Worker Visual/Worker Capsule/Crafted Worker VisualRoot/Safety strap 1	True	Character	21-source census: no human, rig or character parts; authored helmet/uniform assembly retained.
+Processor Purchase Pad/Upgrade Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Processor Purchase Pad/Upgrade Plus Horizontal	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Processor Purchase Pad/Upgrade Plus Vertical	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Processor Purchase Pad/Purchase Status/Purchase Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Processor Purchase Pad/Purchase Progress Track	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Processor Purchase Pad/Purchase Progress Fill	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Wood Processor/Processor Visual/Processor Status/Processor Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Wood Processor/Processor Input Zone/Wood Input Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Wood Processor/Processor Input Zone/Input Amount/Input Amount Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Wood Processor/Processor Output Zone/Plank Output Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Wood Processor/Processor Output Zone/Output Amount/Output Amount Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Auto Feeder Purchase Pad/Upgrade Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Auto Feeder Purchase Pad/Upgrade Plus Horizontal	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Auto Feeder Purchase Pad/Upgrade Plus Vertical	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Auto Feeder Purchase Pad/Purchase Status/Purchase Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Auto Feeder Purchase Pad/Purchase Progress Track	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Auto Feeder Purchase Pad/Purchase Progress Fill	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Wood Auto Feeder/Auto Feeder Visual/Source Left Rail	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Source Right Rail	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Destination Left Rail	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Destination Right Rail	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 01	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 02	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 03	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 04	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 05	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 06	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 07	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 08	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 09	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 10	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 11	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 12	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 13	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 14	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 15	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 16	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 17	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 18	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Belt Slat 19	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Source Roller	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Destination Roller	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Auto Feeder Status Indicator	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Wood Auto Feeder/Auto Feeder Visual/Auto Feeder Status/Auto Feeder Status Backdrop	True	Auto feeder	No standalone spanning conveyor or roller export; source 20 is an inseparable roofed saw station, unsuitable for this animated transfer route.
+Packing Station Purchase Pad/Upgrade Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Packing Station Purchase Pad/Upgrade Plus Horizontal	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Packing Station Purchase Pad/Upgrade Plus Vertical	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Packing Station Purchase Pad/Purchase Status/Purchase Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Packing Station Purchase Pad/Purchase Progress Track	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Packing Station Purchase Pad/Purchase Progress Fill	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Packing Station/Packing Input Zone/Plank Input Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Packing Station/Packing Input Zone/Packing Input Amount/Packing Input Amount Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Packing Station/Packing Output Zone/Crate Output Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Packing Station/Packing Output Zone/Packing Output Amount/Packing Output Amount Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Packing Station/Courier Pickup Point/Courier Pickup Marker	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Packing Station/Courier Pickup Point/Courier Pickup Label/Courier Pickup Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Courier Purchase Pad/Upgrade Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Courier Purchase Pad/Upgrade Plus Horizontal	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Courier Purchase Pad/Upgrade Plus Vertical	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Courier Purchase Pad/Purchase Status/Purchase Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Courier Purchase Pad/Purchase Progress Track	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Courier Purchase Pad/Purchase Progress Fill	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Crate Courier Delivery/Delivery Point/Cash Delivery Marker	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Crate Courier Delivery/Delivery Point/Cash Delivery Arrow	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Crate Courier Delivery/Delivery Point/Delivery Point Label/Delivery Point Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Crate Courier Delivery/Crate Courier/Courier Visual/Courier Status Indicator	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Crate Courier Delivery/Crate Courier/Courier Visual/Courier Status/Courier Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Preview Platform	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Locked Presentation/Pickaxe Handle	False	Pickaxe	No full-size mining pickaxe export; tiny tools fused inside source 18 toolbox cannot serve this prop.
+Mine Teaser/Mine Locked Presentation/Pickaxe Head	False	Pickaxe	No full-size mining pickaxe export; tiny tools fused inside source 18 toolbox cannot serve this prop.
+Mine Teaser/Mine Locked Presentation/Mine Teaser Label/Mine Teaser Label Backdrop	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Mine Area Label/Mine Area Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Iron Vein/Mining Radius	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Iron Vein/Iron Vein Label/Iron Vein Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Iron Vein/Mining Status/Mining Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Iron Vein/Mining Progress Track	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Iron Vein/Mining Progress Fill	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Iron Smelter/Furnace Heat	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Iron Smelter/Smelter Label/Smelter Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Iron Smelter/Smelter Status/Smelter Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Iron Smelter/Smelter Input Zone/Ore Input Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Iron Smelter/Smelter Input Zone/Smelter Input Label/Smelter Input Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Iron Smelter/Smelter Output Zone/Bar Output Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Iron Smelter/Smelter Output Zone/Smelter Output Label/Smelter Output Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Smelter Purchase Pad/Upgrade Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Smelter Purchase Pad/Upgrade Plus Horizontal	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Smelter Purchase Pad/Upgrade Plus Vertical	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Smelter Purchase Pad/Purchase Status/Purchase Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Smelter Purchase Pad/Purchase Progress Track	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Smelter Purchase Pad/Purchase Progress Fill	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Ore Storage/Ore Collection Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Ore Storage/Ore Storage Label/Ore Storage Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Automated Mining Drill/Drill Base	True	Drill structure	Only source 04 drill bit exists; no mast, chassis or arm export/child.
+Mine Teaser/Mine Area/Automated Mining Drill/Drill Tower	True	Drill structure	Only source 04 drill bit exists; no mast, chassis or arm export/child.
+Mine Teaser/Mine Area/Automated Mining Drill/Drill Arm	True	Drill structure	Only source 04 drill bit exists; no mast, chassis or arm export/child.
+Mine Teaser/Mine Area/Automated Mining Drill/Drill Label/Drill Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Automated Mining Drill/Drill Status/Drill Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Drill Purchase Pad/Upgrade Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Drill Purchase Pad/Upgrade Plus Horizontal	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Drill Purchase Pad/Upgrade Plus Vertical	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Drill Purchase Pad/Purchase Status/Purchase Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Drill Purchase Pad/Purchase Progress Track	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Mine Teaser/Mine Area/Drill Purchase Pad/Purchase Progress Fill	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop Purchase Pad/Upgrade Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop Purchase Pad/Upgrade Plus Horizontal	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop Purchase Pad/Upgrade Plus Vertical	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop Purchase Pad/Purchase Status/Purchase Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop Purchase Pad/Purchase Progress Track	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop Purchase Pad/Purchase Progress Fill	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop/Tool Workshop Visual/Workshop Status Indicator	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop/Tool Workshop Visual/Tool Workshop Label/Tool Workshop Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop/Tool Workshop Visual/Tool Workshop Status/Tool Workshop Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop/Tool Workshop Visual/Forged Tool Output Visual	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop/Workshop Plank Input Zone/Plank Input Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop/Workshop Plank Input Zone/Workshop Plank Input Label/Workshop Plank Input Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop/Workshop Iron Bar Input Zone/Iron Bar Input Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop/Workshop Iron Bar Input Zone/Workshop Iron Bar Input Label/Workshop Iron Bar Input Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop/Workshop Tool Output Zone/Tool Output Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Tool Workshop/Workshop Tool Output Zone/Workshop Tool Output Label/Workshop Tool Output Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Central Warehouse/Warehouse Label/Warehouse Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Central Warehouse/Warehouse Deposit	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Central Warehouse/Warehouse Deposit/Warehouse Deposit Label/Warehouse Deposit Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Central Warehouse/Warehouse Withdraw	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Central Warehouse/Warehouse Withdraw/Warehouse Withdraw Label/Warehouse Withdraw Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Industrial District Tease/Industrial District Label/Industrial District Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Industrial District Tease/Industrial District Ready State/Industrial District Ready Label/Industrial District Ready Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Industrial District M14/Advanced Manufacturing Floor	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Assembly Plant Purchase/Upgrade Area	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Assembly Plant Purchase/Upgrade Plus Horizontal	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Assembly Plant Purchase/Upgrade Plus Vertical	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Assembly Plant Purchase/Purchase Status/Purchase Status Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Assembly Plant Purchase/Purchase Progress Track	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Assembly Plant Purchase/Purchase Progress Fill	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Assembly Plant/Assembly Label/Assembly Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Assembly Plant/Assembly Iron Bar Input	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Assembly Plant/Assembly Tool Input	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Assembly Plant/Assembly Machine Part Output	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Lumber Area/Lumber Area Boundary	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Lumber Area/Lumber Area Entrance Label/Lumber Area Entrance Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Lumber Area/Lumber Area Locked Marker	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Lumber Area/Lumber Area Open Marker	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Mining Area/Mining Area Boundary	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Mining Area/Mining Area Entrance Label/Mining Area Entrance Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Mining Area/Mining Area Locked Marker	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Mining Area/Mining Area Open Marker	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Central Logistics - Warehouse Area/Central Logistics - Warehouse Area Boundary	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Central Logistics - Warehouse Area/Central Logistics - Warehouse Area Entrance Label/Central Logistics - Warehouse Area Entrance Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Central Logistics - Warehouse Area/Central Logistics - Warehouse Area Locked Marker	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Central Logistics - Warehouse Area/Central Logistics - Warehouse Area Open Marker	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Industrial District/Industrial District Boundary	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Industrial District/Industrial District Entrance Label/Industrial District Entrance Label Backdrop	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Industrial District/Industrial District Locked Marker	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Industrial District/Industrial District Open Marker	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/LumberCamp Guidance Marker	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/MineEntrance Guidance Marker	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Smelter Guidance Marker	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/ToolWorkshop Guidance Marker	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Warehouse Guidance Marker	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/IndustrialEntrance Guidance Marker	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/AssemblyPlant Guidance Marker	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+World Areas M17/Market Guidance Marker	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+First Session Onboarding/Context Target Marker	False	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Distant meadow	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Avenue border	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Avenue	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Avenue border	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Avenue	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Avenue border	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Avenue	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Avenue border	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Avenue	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Avenue border	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Avenue	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Avenue border	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Avenue	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Wood Processor footprint	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Wood Processor entry stripe	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Packing Station footprint	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Packing Station entry stripe	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Tool Workshop footprint	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Tool Workshop entry stripe	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Central Warehouse footprint	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Central Warehouse entry stripe	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Assembly Plant footprint	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Assembly Plant entry stripe	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Iron Smelter footprint	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Iron Smelter entry stripe	True	DESIGN / FEEDBACK	Purpose-built floor, route, interaction marker, label backing, indicator, progress bar or process effect; not a replacement for an exported entity.
+Modern District Composition/Pine trunk 0	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine crown 0	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine trunk 1	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine crown 1	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine trunk 2	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine crown 2	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine trunk 3	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine crown 3	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine trunk 4	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine crown 4	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine trunk 5	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine crown 5	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine trunk 6	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine crown 6	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine trunk 7	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine crown 7	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine trunk 8	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine crown 8	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine trunk 9	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine crown 9	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine trunk 10	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine crown 10	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine trunk 11	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine crown 11	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine trunk 12	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine crown 12	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine trunk 13	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Modern District Composition/Pine crown 13	True	Trees	No tree/trunk/foliage export in the 21-model census.
+Player/Carry Stack Anchor/Carried Resource 01/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 01/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 01/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 01/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 01/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 01/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Player/Carry Stack Anchor/Carried Resource 02/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 02/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 02/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 02/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 02/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 02/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Player/Carry Stack Anchor/Carried Resource 03/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 03/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 03/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 03/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 03/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 03/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Player/Carry Stack Anchor/Carried Resource 04/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 04/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 04/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 04/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 04/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 04/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Player/Carry Stack Anchor/Carried Resource 05/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 05/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 05/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 05/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 05/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 05/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Player/Carry Stack Anchor/Carried Resource 06/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 06/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 06/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 06/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 06/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 06/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Player/Carry Stack Anchor/Carried Resource 07/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 07/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 07/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 07/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 07/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 07/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Player/Carry Stack Anchor/Carried Resource 08/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 08/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 08/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 08/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 08/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 08/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Player/Carry Stack Anchor/Carried Resource 09/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 09/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 09/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 09/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 09/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 09/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Player/Carry Stack Anchor/Carried Resource 10/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 10/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 10/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 10/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 10/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 10/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Player/Carry Stack Anchor/Carried Resource 11/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 11/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 11/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 11/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 11/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 11/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Player/Carry Stack Anchor/Carried Resource 12/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 12/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 12/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Player/Carry Stack Anchor/Carried Resource 12/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 12/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Player/Carry Stack Anchor/Carried Resource 12/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Wood Spawner/Wood (Pooled)/Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Spawner/Wood (Pooled)/Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Cash Pile/Cash Stack Visuals/Cash Bundle 01/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 01/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 02/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 02/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 03/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 03/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 04/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 04/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 05/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 05/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 06/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 06/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 07/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 07/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 08/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Cash Stack Visuals/Cash Bundle 08/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Flying Cash 01/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Flying Cash 01/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Flying Cash 02/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Flying Cash 02/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Flying Cash 03/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Flying Cash 03/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Flying Cash 04/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Cash Pile/Flying Cash 04/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Sale Point/Sale Flight Resource 01/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Sale Point/Sale Flight Resource 01/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Sale Point/Sale Flight Resource 01/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Sale Point/Sale Flight Resource 01/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Sale Point/Sale Flight Resource 01/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Sale Point/Sale Flight Resource 01/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Sale Point/Sale Flight Resource 02/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Sale Point/Sale Flight Resource 02/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Sale Point/Sale Flight Resource 02/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Sale Point/Sale Flight Resource 02/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Sale Point/Sale Flight Resource 02/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Sale Point/Sale Flight Resource 02/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Sale Point/Sale Flight Resource 03/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Sale Point/Sale Flight Resource 03/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Sale Point/Sale Flight Resource 03/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Sale Point/Sale Flight Resource 03/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Sale Point/Sale Flight Resource 03/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Sale Point/Sale Flight Resource 03/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Sale Point/Sale Flight Resource 04/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Sale Point/Sale Flight Resource 04/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Sale Point/Sale Flight Resource 04/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Sale Point/Sale Flight Resource 04/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Sale Point/Sale Flight Resource 04/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Sale Point/Sale Flight Resource 04/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Purchase Pad/Purchase Token 01/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Purchase Pad/Purchase Token 01/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Purchase Pad/Purchase Token 02/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Purchase Pad/Purchase Token 02/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Purchase Pad/Purchase Token 03/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Purchase Pad/Purchase Token 03/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Purchase Pad/Purchase Token 04/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Purchase Pad/Purchase Token 04/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 01/Wood Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 01/Wood Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 01/Wood Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 01/Plank Visual/Plank Board	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 01/Plank Visual/Plank Grain	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 01/Machine Part Visual	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 02/Wood Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 02/Wood Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 02/Wood Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 02/Plank Visual/Plank Board	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 02/Plank Visual/Plank Grain	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 02/Machine Part Visual	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 03/Wood Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 03/Wood Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 03/Wood Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 03/Plank Visual/Plank Board	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 03/Plank Visual/Plank Grain	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 03/Machine Part Visual	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 04/Wood Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 04/Wood Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 04/Wood Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 04/Plank Visual/Plank Board	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 04/Plank Visual/Plank Grain	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 04/Machine Part Visual	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 05/Wood Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 05/Wood Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 05/Wood Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 05/Plank Visual/Plank Board	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 05/Plank Visual/Plank Grain	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 05/Machine Part Visual	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 06/Wood Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 06/Wood Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 06/Wood Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 06/Plank Visual/Plank Board	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 06/Plank Visual/Plank Grain	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 06/Machine Part Visual	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 07/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 07/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 07/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 07/Plank Visual/Plank Board	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 07/Plank Visual/Plank Grain	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 07/Machine Part Visual	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 08/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 08/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 08/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 08/Plank Visual/Plank Board	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 08/Plank Visual/Plank Grain	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 08/Machine Part Visual	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 09/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 09/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 09/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 09/Plank Visual/Plank Board	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 09/Plank Visual/Plank Grain	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 09/Machine Part Visual	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 10/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 10/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 10/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 10/Plank Visual/Plank Board	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 10/Plank Visual/Plank Grain	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Stockpile/Stockpile Wood Visuals/Stockpile Bundle 10/Machine Part Visual	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Worker Purchase Pad/Purchase Token 01/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Worker Purchase Pad/Purchase Token 01/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Worker Purchase Pad/Purchase Token 02/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Worker Purchase Pad/Purchase Token 02/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Worker Purchase Pad/Purchase Token 03/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Worker Purchase Pad/Purchase Token 03/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Worker Purchase Pad/Purchase Token 04/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Worker Purchase Pad/Purchase Token 04/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Lumber Worker/Worker Visual/Worker Carry Anchor/Worker Carried Wood/Wood Visual/Bark	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Lumber Worker/Worker Visual/Worker Carry Anchor/Worker Carried Wood/Wood Visual/Cut End Left	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Lumber Worker/Worker Visual/Worker Carry Anchor/Worker Carried Wood/Wood Visual/Cut End Right	True	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Lumber Worker/Worker Visual/Worker Carry Anchor/Worker Carried Wood/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Lumber Worker/Worker Visual/Worker Carry Anchor/Worker Carried Wood/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Lumber Worker/Worker Visual/Worker Carry Anchor/Worker Carried Wood/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Lumber Worker/Worker Deposit Visual/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Lumber Worker/Worker Deposit Visual/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Lumber Worker/Worker Deposit Visual/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Lumber Worker/Worker Deposit Visual/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Lumber Worker/Worker Deposit Visual/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Lumber Worker/Worker Deposit Visual/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Processor Purchase Pad/Purchase Token 01/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Processor Purchase Pad/Purchase Token 01/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Processor Purchase Pad/Purchase Token 02/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Processor Purchase Pad/Purchase Token 02/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Processor Purchase Pad/Purchase Token 03/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Processor Purchase Pad/Purchase Token 03/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Processor Purchase Pad/Purchase Token 04/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Processor Purchase Pad/Purchase Token 04/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 01/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 01/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 01/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 01/Plank Visual/Plank Board	True	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 01/Plank Visual/Plank Grain	True	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 01/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 02/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 02/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 02/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 02/Plank Visual/Plank Board	True	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 02/Plank Visual/Plank Grain	True	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 02/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 03/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 03/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 03/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 03/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 03/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 03/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 04/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 04/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 04/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 04/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 04/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 04/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 05/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 05/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 05/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 05/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 05/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 05/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 06/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 06/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 06/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 06/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 06/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Processor/Processor Visual/Processor Output Visuals/Processor Output Planks 06/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Auto Feeder Purchase Pad/Purchase Token 01/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Auto Feeder Purchase Pad/Purchase Token 01/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Auto Feeder Purchase Pad/Purchase Token 02/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Auto Feeder Purchase Pad/Purchase Token 02/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Auto Feeder Purchase Pad/Purchase Token 03/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Auto Feeder Purchase Pad/Purchase Token 03/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Auto Feeder Purchase Pad/Purchase Token 04/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Auto Feeder Purchase Pad/Purchase Token 04/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Wood Auto Feeder/Auto Feeder Visual/Transfer Visual Pool/Auto Feeder Wood 01/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Auto Feeder/Auto Feeder Visual/Transfer Visual Pool/Auto Feeder Wood 01/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Auto Feeder/Auto Feeder Visual/Transfer Visual Pool/Auto Feeder Wood 01/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Auto Feeder/Auto Feeder Visual/Transfer Visual Pool/Auto Feeder Wood 01/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Auto Feeder/Auto Feeder Visual/Transfer Visual Pool/Auto Feeder Wood 01/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Auto Feeder/Auto Feeder Visual/Transfer Visual Pool/Auto Feeder Wood 01/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Wood Auto Feeder/Auto Feeder Visual/Transfer Visual Pool/Auto Feeder Wood 02/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Auto Feeder/Auto Feeder Visual/Transfer Visual Pool/Auto Feeder Wood 02/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Auto Feeder/Auto Feeder Visual/Transfer Visual Pool/Auto Feeder Wood 02/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Wood Auto Feeder/Auto Feeder Visual/Transfer Visual Pool/Auto Feeder Wood 02/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Auto Feeder/Auto Feeder Visual/Transfer Visual Pool/Auto Feeder Wood 02/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Wood Auto Feeder/Auto Feeder Visual/Transfer Visual Pool/Auto Feeder Wood 02/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Packing Station Purchase Pad/Purchase Token 01/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Packing Station Purchase Pad/Purchase Token 01/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Packing Station Purchase Pad/Purchase Token 02/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Packing Station Purchase Pad/Purchase Token 02/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Packing Station Purchase Pad/Purchase Token 03/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Packing Station Purchase Pad/Purchase Token 03/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Packing Station Purchase Pad/Purchase Token 04/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Packing Station Purchase Pad/Purchase Token 04/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 01/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 01/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 01/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 01/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 01/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 01/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 02/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 02/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 02/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 02/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 02/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 02/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 03/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 03/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 03/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 03/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 03/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 03/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 04/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 04/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 04/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 04/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 04/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 04/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 05/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 05/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 05/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 05/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 05/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 05/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 06/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 06/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 06/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 06/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 06/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Packing Station/Packing Workshop Visual/Packing Crate Output Visuals/Packing Output Crates 06/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Courier Purchase Pad/Purchase Token 01/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Courier Purchase Pad/Purchase Token 01/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Courier Purchase Pad/Purchase Token 02/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Courier Purchase Pad/Purchase Token 02/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Courier Purchase Pad/Purchase Token 03/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Courier Purchase Pad/Purchase Token 03/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Courier Purchase Pad/Purchase Token 04/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Courier Purchase Pad/Purchase Token 04/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Crate Courier Delivery/Crate Courier/Courier Visual/Carried Crate Anchor/Courier Cargo Crate 01/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Crate Courier Delivery/Crate Courier/Courier Visual/Carried Crate Anchor/Courier Cargo Crate 01/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Crate Courier Delivery/Crate Courier/Courier Visual/Carried Crate Anchor/Courier Cargo Crate 01/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Crate Courier Delivery/Crate Courier/Courier Visual/Carried Crate Anchor/Courier Cargo Crate 01/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Crate Courier Delivery/Crate Courier/Courier Visual/Carried Crate Anchor/Courier Cargo Crate 01/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Crate Courier Delivery/Crate Courier/Courier Visual/Carried Crate Anchor/Courier Cargo Crate 01/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Crate Courier Delivery/Crate Courier/Courier Visual/Carried Crate Anchor/Courier Cargo Crate 02/Wood Visual/Bark	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Crate Courier Delivery/Crate Courier/Courier Visual/Carried Crate Anchor/Courier Cargo Crate 02/Wood Visual/Cut End Left	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Crate Courier Delivery/Crate Courier/Courier Visual/Carried Crate Anchor/Courier Cargo Crate 02/Wood Visual/Cut End Right	False	Wood	21-source census: no log export or log mesh child; crate is a different resource.
+Crate Courier Delivery/Crate Courier/Courier Visual/Carried Crate Anchor/Courier Cargo Crate 02/Plank Visual/Plank Board	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Crate Courier Delivery/Crate Courier/Courier Visual/Carried Crate Anchor/Courier Cargo Crate 02/Plank Visual/Plank Grain	False	Plank	21-source census: no plank export/child; saw table is one complete machine mesh.
+Crate Courier Delivery/Crate Courier/Courier Visual/Carried Crate Anchor/Courier Cargo Crate 02/Machine Part Visual	False	Machine part	21-source census: no recipe-output machine part; source 04 is the mounted boring head, not the crafted output.
+Mine Teaser/Mine Area/Smelter Purchase Pad/Purchase Token 01/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Smelter Purchase Pad/Purchase Token 01/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Smelter Purchase Pad/Purchase Token 02/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Smelter Purchase Pad/Purchase Token 02/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Smelter Purchase Pad/Purchase Token 03/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Smelter Purchase Pad/Purchase Token 03/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Smelter Purchase Pad/Purchase Token 04/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Smelter Purchase Pad/Purchase Token 04/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Drill Purchase Pad/Purchase Token 01/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Drill Purchase Pad/Purchase Token 01/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Drill Purchase Pad/Purchase Token 02/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Drill Purchase Pad/Purchase Token 02/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Drill Purchase Pad/Purchase Token 03/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Drill Purchase Pad/Purchase Token 03/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Drill Purchase Pad/Purchase Token 04/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Mine Teaser/Mine Area/Drill Purchase Pad/Purchase Token 04/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Tool Workshop Purchase Pad/Purchase Token 01/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Tool Workshop Purchase Pad/Purchase Token 01/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Tool Workshop Purchase Pad/Purchase Token 02/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Tool Workshop Purchase Pad/Purchase Token 02/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Tool Workshop Purchase Pad/Purchase Token 03/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Tool Workshop Purchase Pad/Purchase Token 03/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Tool Workshop Purchase Pad/Purchase Token 04/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Tool Workshop Purchase Pad/Purchase Token 04/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Assembly Plant Purchase/Purchase Token 01/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Assembly Plant Purchase/Purchase Token 01/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Assembly Plant Purchase/Purchase Token 02/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Assembly Plant Purchase/Purchase Token 02/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Assembly Plant Purchase/Purchase Token 03/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Assembly Plant Purchase/Purchase Token 03/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Assembly Plant Purchase/Purchase Token 04/Bills	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.
+Assembly Plant Purchase/Purchase Token 04/Band	False	Cash	21-source census: no currency mesh; cash feedback must retain its identity.

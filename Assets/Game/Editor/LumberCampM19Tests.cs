@@ -150,6 +150,55 @@ namespace IndustryTycoon.EditorTests
             Assert.AreEqual(360f, drill.DrillBitRotationSpeed, 0.001f);
         }
 
+        [Test]
+        public void InitialCutters_UseProductionShellAndBladeInsideOriginalUnlockRoot()
+        {
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            foreach (string name in new[] { "Saw One", "Saw Two (Unlock)" })
+            {
+                GameObject cutter = Find(scene, name);
+                GameObject shell = Find(scene, name + " Station Production Visual");
+                GameObject blade = Find(scene, name + " Blade Production Visual");
+                Assert.IsTrue(shell.transform.IsChildOf(cutter.transform));
+                Assert.IsTrue(blade.transform.IsChildOf(cutter.transform.Find("Blade")));
+                Assert.That(shell.GetComponent<Renderer>().bounds.min.y, Is.EqualTo(0).Within(.01));
+                foreach (string legacy in new[] { "Stand", "Blade", "Hub" })
+                    Assert.IsFalse(cutter.transform.Find(legacy).GetComponent<Renderer>().enabled);
+                Assert.AreEqual(name == "Saw One", cutter.activeSelf);
+            }
+        }
+
+        [Test]
+        public void OreDepositAndStorage_UseOreMeshAndPreserveFeedbackOwnership()
+        {
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            GameObject fill = Find(scene, "Stored Ore Production Visual");
+            Assert.IsTrue(fill.transform.IsChildOf(Find(scene, "Stored Ore").transform));
+            Assert.IsTrue(Find(scene, "Iron Vein Production Visual").transform.IsChildOf(Find(scene, "Iron Vein").transform));
+            foreach (string name in new[] { "Ore Deposit Rock", "Exposed Iron Ore", "Stored Ore", "Industrial Skyline", "Industrial Lock Barrier" })
+                Assert.IsFalse(Find(scene, name).GetComponent<Renderer>().enabled, name);
+            Assert.That(AssetDatabase.GetAssetPath(fill.GetComponent<MeshFilter>().sharedMesh), Does.EndWith("Resources/IronOre/IronOre.fbx"));
+        }
+
+        [Test]
+        public void CourierArt_FacesTravelDirectionWithOutwardWheelsAndRearCargo()
+        {
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            Transform courier = Find(scene, "Crate Courier").transform;
+            Transform model = Find(scene, "Courier Production Visual").transform;
+            // The source cab is +X; CrateCourier uses LookRotation(offset), therefore runtime forward is +Z.
+            Assert.Greater(Vector3.Dot(model.TransformDirection(Vector3.right), courier.forward), .999f);
+            Assert.Less(Find(scene, "Carried Crate Anchor").transform.localPosition.z, 0);
+            foreach (string name in new[] { "Front Left Wheel", "Front Right Wheel", "Rear Left Wheel", "Rear Right Wheel" })
+            {
+                Transform wheel = Find(scene, name).transform;
+                Transform visual = wheel.GetComponentsInChildren<Transform>().First(t=>t.name=="CourierWheel Production Visual");
+                Vector3 outward = courier.right * (name.Contains("Right") ? 1 : -1);
+                Assert.Greater(Vector3.Dot(visual.TransformDirection(Vector3.up), outward), .999f, name);
+                Assert.That(wheel.localPosition.z > 0, Is.EqualTo(name.StartsWith("Front")), name);
+            }
+        }
+
         private static T FindComponent<T>(Scene scene) where T : Component
         {
             return scene.GetRootGameObjects()

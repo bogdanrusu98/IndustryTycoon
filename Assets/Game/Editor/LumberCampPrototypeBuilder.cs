@@ -825,6 +825,7 @@ namespace IndustryTycoon.Editor
 
             M19ProductionSceneIntegrator.IntegrateScene(scene);
             ModernWorldComposition.Apply(scene);
+            ExhaustiveProductionIntegration.Apply(scene);
             ModernPresentationBuilder.Apply(scene);
 
             ConfigurePortraitSettings();
@@ -5279,7 +5280,7 @@ namespace IndustryTycoon.Editor
             Text districtText = CreateHudLine(
                 "District Status Text",
                 districtPanel.transform,
-                "LUMBER OPEN  •  MINING LOCKED  •  LOGISTICS LOCKED  •  INDUSTRIAL LOCKED",
+                "LUMBER OPEN  •  MINING LOCKED  •  LOGISTICS LOCKED  • INDUSTRIAL LOCKED",
                 Vector2.zero,
                 Vector2.one,
                 22);

@@ -76,7 +76,7 @@ namespace IndustryTycoon.Editor
             SafeAreaFitter.CalculateAnchors(inset?new Rect(0,32,540,height-80):new Rect(0,0,540,height),new Vector2Int(540,height),out Vector2 min,out Vector2 max);
             safe.anchorMin=min;safe.anchorMax=max;safe.offsetMin=safe.offsetMax=Vector2.zero;
         }
-        private static void ApplyFixture(bool developed) {
+        internal static void ApplyFixture(bool developed, bool lockedMine = false) {
             long now=DateTimeOffset.UtcNow.ToUnixTimeSeconds();var data=M9SaveData.CreateFresh(now);
             if(developed) {
                 for(int i=0;i<data.purchasePads.Length;i++){data.purchasePads[i].completed=true;data.purchasePads[i].paidCash=M9PurchasePadIds.GetTotalCost(i);}
@@ -95,6 +95,7 @@ namespace IndustryTycoon.Editor
                 data.factoryScaling.optimizationObjectiveCompleted=true;data.factoryScaling.upgradedRouteUnitsTransported=100;
                 M15FactoryRules.RecalculateDistrictLevel(data.factoryScaling);
             }
+            if(lockedMine) data.mining.mineUnlocked=false;
             var persistence=UnityEngine.Object.FindAnyObjectByType<LocalPersistenceService>(FindObjectsInactive.Include);
             typeof(LocalPersistenceService).GetMethod("ApplyStableState",BindingFlags.NonPublic|BindingFlags.Instance).Invoke(persistence,new object[]{data,now});
             if(developed) {

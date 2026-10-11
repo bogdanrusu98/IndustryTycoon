@@ -1,0 +1,1 @@
+PASS: 572 normalized serialized component/root records identical. All MonoBehaviour configuration/references, colliders, rigidbodies and scene root transforms preserved.

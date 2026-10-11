@@ -129,7 +129,7 @@ namespace IndustryTycoon.Editor
             if (courierVisual != null)
             {
                 AttachModel(courierVisual, "Vehicles/Courier/Courier", 1.92f,
-                    new Vector3(0f, 0f, 0f), new Vector3(0f, 90f, 0f), true);
+                    new Vector3(0f, 0f, 0f), new Vector3(0f, 270f, 0f), true);
                 DisableNamedRenderers(courierVisual,
                     "Courier Chassis", "Courier Cabin", "Courier Windscreen", "Courier Cargo Deck");
                 AttachCourierWheels(courierVisual);
@@ -366,7 +366,7 @@ namespace IndustryTycoon.Editor
                 // The M20 feedback rotates local X, so the axle must also be local X.
                 wheel.localRotation = Quaternion.identity;
                 AttachModel(wheel, "Vehicles/CourierWheel/CourierWheel", 0.58f,
-                    Vector3.zero, new Vector3(0f, 90f, 0f), false, true);
+                    Vector3.zero, new Vector3(0f, wheelName.Contains("Right") ? 270f : 90f, 0f), false, true);
                 DisableOwnRenderer(wheel);
             }
         }

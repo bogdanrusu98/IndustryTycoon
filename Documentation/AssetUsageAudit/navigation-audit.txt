@@ -1,0 +1,9 @@
+Developed fixture; 0.5m cardinal grid, actual CharacterController capsule clearance, trigger colliders ignored.
+Lengths are conservative grid walking bounds; no diagonals. Movement speed unchanged at 5.5m/s.
+Wood Stockpile|destination=(7.20, 0.00, 5.10)|grid-walk=13.0m|time<=2.36s|controller=PASS
+Processor Input Zone|destination=(-9.80, 0.00, 3.65)|grid-walk=14.5m|time<=2.64s|controller=PASS
+Packing Station|destination=(-8.20, 0.00, 11.50)|grid-walk=20.5m|time<=3.73s|controller=PASS
+Ore Storage|destination=(17.90, 0.00, 25.05)|grid-walk=44.0m|time<=8.00s|controller=PASS
+Iron Smelter|destination=(8.20, 0.00, 27.85)|grid-walk=37.0m|time<=6.73s|controller=PASS
+Central Warehouse|destination=(-20.00, 0.00, 21.00)|grid-walk=42.0m|time<=7.64s|controller=PASS
+Assembly Plant|destination=(-6.00, 0.00, 38.30)|grid-walk=48.5m|time<=8.82s|controller=PASS

@@ -1,0 +1,35 @@
+FINAL PASS — exhaustive asset integration audit, 2026-10-11
+Unity 6000.5.9f1; feature/core-prototype; baseline e29422b06d75f58a95f11f680ad95bc0af5910e9
+107 external source files unchanged by SHA256: 21 FBX + 86 PNG.
+78 embedded images decoded/reviewed and individually matched to external atlases; 21 embedded materials accounted for.
+21 source mesh nodes / one submesh each; 18 canonical production meshes, 3 unused duplicate/alternate exports, 0 unexplained.
+36/36 portrait 540x960 normal-camera probes PASS, including four separate wheels, three blades, all reused roles and escarpments.
+Fresh/mine-locked/developed gating and empty ore storage visibility PASS.
+73/73 NUnit tests PASS, including actual Play Mode procedural-animation and 600-frame soak tests.
+M9–M17 deterministic regression PASS.
+M19 PlayMode smoke PASS: active-only saw/courier/drill animation; material/resource integration.
+M17 full progression PlayMode smoke PASS.
+23 gameplay/UI portrait captures PASS; all seven CharacterController navigation routes PASS.
+572 normalized serialized component/root records identical to baseline; all existing script values/references, colliders, rigidbodies, root transforms unchanged.
+Original save JSON and .bak restored byte-for-byte; schema9 unchanged.
+Android release build PASS: IL2CPP ARM64, min API26, target API36, portrait, non-development, 0 warnings.
+No adb device connected: Android installation/hardware runtime/FPS not tested.
+Unity-generated pipeline/build caches and legacy material alias changes restored; authored graphics settings unchanged.
+Normalized gameplay signature SHA256 (before=after): 066bc92c726777199b4dcdb9778524e557d65e495e36478aa6bd01374a4294be
+APK: Builds/IndustryTycoon-AssetAudit.apk
+APK bytes: 41912171
+APK SHA256: bbcf0f92ce1d2247c7aef8ebdca1fba2ee87f166a99e4ae8f79d60d3313c2a38
+M22_PERF editor-playmode frames=600, avg=16.35ms, max=33.16ms, max-gc-frame=96030B, managed-growth=0B, objects=1473
+nunit|exit=0|seconds=38.3
+regression|exit=0|seconds=22.7
+m19|exit=0|seconds=29.1
+m17|exit=0|seconds=28.5
+portraits|exit=0|seconds=31
+android|exit=0|seconds=78.4
+FINAL COURIER ORIENTATION REVISION
+nunit|exit=0|seconds=40.4
+regression|exit=0|seconds=23.2
+m19|exit=0|seconds=26.3
+m17|exit=0|seconds=28.4
+portraits|exit=0|seconds=31.4
+android|exit=0|seconds=64.3

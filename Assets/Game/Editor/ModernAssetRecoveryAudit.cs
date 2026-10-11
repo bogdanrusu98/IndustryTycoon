@@ -16,11 +16,16 @@ namespace IndustryTycoon.Editor
 
         public static void Run()
         {
-            Directory.CreateDirectory(Output);
+            RunTo(Output);
+        }
+
+        public static void RunTo(string output)
+        {
+            Directory.CreateDirectory(output);
             Directory.CreateDirectory(Temporary);
             var report = new List<string>();
             string[] files = Directory.GetFiles("Meshy Import", "*", SearchOption.AllDirectories);
-            File.WriteAllLines(Output + "/all-files.txt", files.Select(p => p + "|" + new FileInfo(p).Length));
+            File.WriteAllLines(output + "/all-files.txt", files.OrderBy(p => p).Select(p => p + "|" + new FileInfo(p).Length));
             string[] models = files.Where(p => p.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase)).OrderBy(p => p).ToArray();
             for (int i = 0; i < models.Length; i++)
             {
@@ -29,6 +34,10 @@ namespace IndustryTycoon.Editor
                 File.Copy(models[i], dest, true);
                 AssetDatabase.ImportAsset(dest, ImportAssetOptions.ForceSynchronousImport);
                 var importer = (ModelImporter)AssetImporter.GetAtPath(dest);
+                importer.materialImportMode = ModelImporterMaterialImportMode.ImportStandard;
+                importer.SaveAndReimport();
+                foreach (Material sourceMaterial in AssetDatabase.LoadAllAssetsAtPath(dest).OfType<Material>())
+                    report.Add($"EMBEDDED-MATERIAL|{id}|{sourceMaterial.name}|shader={sourceMaterial.shader.name}|textures={string.Join(",", sourceMaterial.GetTexturePropertyNames().Select(n => n + "=" + sourceMaterial.GetTexture(n)))}");
                 importer.importAnimation = false;
                 importer.materialImportMode = ModelImporterMaterialImportMode.None;
                 importer.isReadable = true;
@@ -42,7 +51,7 @@ namespace IndustryTycoon.Editor
                 {
                     Mesh mesh = t.GetComponent<MeshFilter>()?.sharedMesh;
                     Renderer renderer = t.GetComponent<Renderer>();
-                    report.Add($"NODE|{id}|{t.name}|pos={t.localPosition.ToString("F6")}|rot={t.localEulerAngles}|scale={t.localScale}|active={t.gameObject.activeSelf}|enabled={renderer?.enabled}|materials={renderer?.sharedMaterials.Length}|vertices={mesh?.vertexCount}|triangles={mesh?.triangles.Length / 3}|normals={mesh?.normals.Length}|bounds-center={mesh?.bounds.center.ToString("F6")}|bounds-size={mesh?.bounds.size.ToString("F6")}");
+                    report.Add($"NODE|{id}|{t.name}|mesh={mesh?.name}|submeshes={mesh?.subMeshCount}|pos={t.localPosition.ToString("F6")}|rot={t.localEulerAngles}|scale={t.localScale}|active={t.gameObject.activeSelf}|enabled={renderer?.enabled}|materials={renderer?.sharedMaterials.Length}|vertices={mesh?.vertexCount}|triangles={mesh?.triangles.Length / 3}|normals={mesh?.normals.Length}|bounds-center={mesh?.bounds.center.ToString("F6")}|bounds-size={mesh?.bounds.size.ToString("F6")}");
                 }
                 string[] textures = Directory.GetFiles(Path.GetDirectoryName(models[i]), "*.png");
                 report.AddRange(textures.Select(p => "TEXTURE|" + id + "|" + p));
@@ -53,11 +62,11 @@ namespace IndustryTycoon.Editor
                 Texture2D tex = null;
                 if (color != null) { tex = new Texture2D(2, 2); tex.LoadImage(File.ReadAllBytes(color)); mat.SetTexture("_BaseMap", tex); }
                 mat.SetFloat("_Smoothness", 0.18f);
-                Render(asset, mat, Output + "/" + id + ".png");
+                Render(asset, mat, output + "/" + id + ".png");
                 UnityEngine.Object.DestroyImmediate(mat);
                 if (tex != null) UnityEngine.Object.DestroyImmediate(tex);
             }
-            File.WriteAllLines(Output + "/geometry.txt", report);
+            File.WriteAllLines(output + "/geometry.txt", report);
             // The sources remain outside production and must never be shipped or committed.
             AssetDatabase.DeleteAsset(Temporary);
             Debug.Log("SOURCE RECOVERY AUDIT: " + models.Length + " FBX files inspected and rendered.");
