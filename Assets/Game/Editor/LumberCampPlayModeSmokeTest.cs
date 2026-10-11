@@ -4,6 +4,7 @@ using IndustryTycoon.CameraSystem;
 using IndustryTycoon.Economy;
 using IndustryTycoon.Feedback;
 using IndustryTycoon.Interaction;
+using IndustryTycoon.Persistence;
 using IndustryTycoon.Player;
 using IndustryTycoon.ResourceSystem;
 using IndustryTycoon.UI;
@@ -142,6 +143,16 @@ namespace IndustryTycoon.Editor
 
             M9EditorSaveUtility.PrepareFreshSmokeTest();
             EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            // The desktop editor can be open in another worktree while this
+            // validation runs. Disable persistence in the unsaved test scene so
+            // another instance cannot repopulate the shared LocalLow save between
+            // deletion and Play Mode initialization.
+            LocalPersistenceService persistence =
+                Object.FindAnyObjectByType<LocalPersistenceService>(FindObjectsInactive.Include);
+            if (persistence != null)
+            {
+                persistence.enabled = false;
+            }
             SessionState.SetBool(RunningKey, true);
             SessionState.SetBool(CommandLineKey, commandLine);
             SessionState.SetBool(FinishPendingKey, false);
@@ -220,12 +231,16 @@ namespace IndustryTycoon.Editor
             _salePoint = Object.FindAnyObjectByType<SalePoint>();
             _cashPile = Object.FindAnyObjectByType<CashPile>();
             _cashCollector = Object.FindAnyObjectByType<CashPileCollector>();
-            _purchasePad = Object.FindAnyObjectByType<PurchasePad>();
             _productionUpgrade = Object.FindAnyObjectByType<WoodProductionUpgrade>();
+            _purchasePad = _productionUpgrade != null
+                ? _productionUpgrade.PurchasePad
+                : null;
             _pickupFeedback = Object.FindAnyObjectByType<PlayerPickupFeedback>();
             _saleFeedback = Object.FindAnyObjectByType<SalePointFeedback>();
             _cashFeedback = Object.FindAnyObjectByType<CashPileFeedback>();
-            _purchaseFeedback = Object.FindAnyObjectByType<PurchasePadFeedback>();
+            _purchaseFeedback = _purchasePad != null
+                ? _purchasePad.GetComponent<PurchasePadFeedback>()
+                : null;
             _unlockFeedback = Object.FindAnyObjectByType<ProductionUnlockFeedback>();
             _walletHud = Object.FindAnyObjectByType<WalletHud>();
             _followCamera = Object.FindAnyObjectByType<SmoothFollowCamera>();
@@ -535,7 +550,7 @@ namespace IndustryTycoon.Editor
             }
 
             Require(_walletHud.DisplayedBalance == _wallet.Balance
-                    && _cashText.text == $"$ {_wallet.Balance}",
+                    && _cashText.text == "$" + WalletHud.FormatAmount(_wallet.Balance),
                 "Animated Wallet HUD did not converge exactly to the authoritative cash value.");
 
             _previousWalletCash = _wallet.Balance;
@@ -673,8 +688,8 @@ namespace IndustryTycoon.Editor
             Require(_wallet.Balance == 5, "Completed Purchase Pad consumed cash from the repeat loop.");
             Require(_purchasePad.IsCompleted && _completionCount == 1,
                 "Completed Purchase Pad changed completion state.");
-            Require(_woodText.text == "Wood: 0 / 12", "Wood HUD did not finish at 0 / 12.");
-            Require(_cashText.text == "$ 5", "Wallet HUD did not finish at $5.");
+            Require(_woodText.text == "0 / 12", "CarryStack HUD did not finish at 0 / 12.");
+            Require(_cashText.text == "$" + WalletHud.FormatAmount(5), "Wallet HUD did not finish at $5.");
             Require(_walletHud.DisplayedBalance == _wallet.Balance,
                 "Wallet HUD did not converge to the final authoritative value.");
             Require(_saleEventCount == 25

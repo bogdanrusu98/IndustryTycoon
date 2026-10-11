@@ -15,6 +15,7 @@ namespace IndustryTycoon.UI
         [SerializeField] private AudioFeedback audioFeedback;
         [SerializeField] private HapticFeedback hapticFeedback;
         [SerializeField] private bool compactLabel;
+        [SerializeField] private MobileProgressBar progressBar;
 
         private int _displayedLevel = M10ProgressionRules.MinimumEmpireLevel;
         private string _displayText = string.Empty;
@@ -101,6 +102,16 @@ namespace IndustryTycoon.UI
             if (levelText != null)
             {
                 levelText.text = compactLabel ? $"Lv {_displayedLevel}" : _displayText;
+            }
+
+
+            if (progressBar != null)
+            {
+                progressBar.SetProgress(
+                    _displayedLevel - M10ProgressionRules.MinimumEmpireLevel,
+                    M16MarketSaveData.MaximumEmpireLevel
+                    - M10ProgressionRules.MinimumEmpireLevel,
+                    false);
             }
         }
     }

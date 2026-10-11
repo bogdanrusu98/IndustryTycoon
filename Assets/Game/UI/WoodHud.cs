@@ -9,6 +9,9 @@ namespace IndustryTycoon.UI
     {
         [SerializeField] private CarryStack carryStack;
         [SerializeField] private Text countText;
+        [SerializeField] private Text resourceLabelText;
+        [SerializeField] private TycoonIcon resourceIcon;
+        [SerializeField] private CanvasGroup chipCanvasGroup;
 
         private void OnEnable()
         {
@@ -37,7 +40,20 @@ namespace IndustryTycoon.UI
 
             if (!carryStack.TryGetActiveResourceType(out ResourceType resourceType))
             {
-                countText.text = $"Wood: 0 / {carryStack.Capacity}";
+                countText.text = $"0 / {carryStack.Capacity}";
+                if (resourceLabelText != null)
+                {
+                    resourceLabelText.text = "CARRY EMPTY";
+                }
+                if (resourceIcon != null)
+                {
+                    resourceIcon.Glyph = TycoonGlyph.Crate;
+                    resourceIcon.color = MobileUiTheme.MutedInk;
+                }
+                if (chipCanvasGroup != null)
+                {
+                    chipCanvasGroup.alpha = 0.68f;
+                }
                 return;
             }
 
@@ -67,7 +83,34 @@ namespace IndustryTycoon.UI
                     break;
             }
 
-            countText.text = $"{resourceLabel}: {carryStack.TotalAmount} / {carryStack.Capacity}";
+            countText.text = $"{carryStack.TotalAmount} / {carryStack.Capacity}";
+            if (resourceLabelText != null)
+            {
+                resourceLabelText.text = resourceLabel.ToUpperInvariant();
+            }
+            if (resourceIcon != null)
+            {
+                resourceIcon.Glyph = GlyphFor(resourceType);
+                resourceIcon.color = MobileUiTheme.RewardOrange;
+            }
+            if (chipCanvasGroup != null)
+            {
+                chipCanvasGroup.alpha = 1f;
+            }
+        }
+
+        private static TycoonGlyph GlyphFor(ResourceType resourceType)
+        {
+            switch (resourceType)
+            {
+                case ResourceType.Plank: return TycoonGlyph.Plank;
+                case ResourceType.Crate: return TycoonGlyph.Crate;
+                case ResourceType.IronOre: return TycoonGlyph.IronOre;
+                case ResourceType.IronBar: return TycoonGlyph.IronBar;
+                case ResourceType.Tool: return TycoonGlyph.Tool;
+                case ResourceType.MachinePart: return TycoonGlyph.MachinePart;
+                default: return TycoonGlyph.Wood;
+            }
         }
     }
 }

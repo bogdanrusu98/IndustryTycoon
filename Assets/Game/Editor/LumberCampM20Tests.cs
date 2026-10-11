@@ -35,5 +35,42 @@ namespace IndustryTycoon.EditorTests
             Assert.That(typeof(IndustrialDistrictView).GetMethod("OnGUI", Flags), Is.Null);
             Assert.That(typeof(MarketPlanningView).GetMethod("OnGUI", Flags), Is.Null);
         }
+
+        [TestCase(0, "0")]
+        [TestCase(999, "999")]
+        [TestCase(1200, "1.2K")]
+        [TestCase(28460, "28.5K")]
+        [TestCase(2000000, "2M")]
+        [TestCase(int.MaxValue, "2.1B")]
+        public void WalletFormatting_HandlesLargeRuntimeValues(int value, string expected)
+        {
+            Assert.That(WalletHud.FormatAmount(value), Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void IndustrialPlaycraftTheme_ReservesSemanticColors()
+        {
+            Assert.That(
+                MobileUiTheme.StateColor(MobileUiState.Claimable, Color.black),
+                Is.EqualTo(MobileUiTheme.SuccessGreen));
+            Assert.That(
+                MobileUiTheme.StateColor(MobileUiState.Warning, Color.black),
+                Is.EqualTo(MobileUiTheme.RewardOrange));
+            Assert.That(
+                MobileUiTheme.StateColor(MobileUiState.Disabled, Color.black),
+                Is.EqualTo(MobileUiTheme.DisabledSurface));
+            Assert.That(MobileUiTheme.MinimumTouchTarget, Is.GreaterThanOrEqualTo(96f));
+        }
+
+        [TestCase("OBJECTIVE: UNLOCK WORKER", "Unlock Worker")]
+        [TestCase("DRAG TO MOVE — GO TO THE WOOD", "Drag To Move  •  Go To The Wood")]
+        [TestCase("NEXT: PROCESSOR\n$25 / $100", "Processor  •  $25 / $100")]
+        [TestCase("PRODUCE PLANKS  •  6 / 10", "Produce Planks")]
+        public void ObjectivePresentation_IsConciseWithoutChangingSource(
+            string source,
+            string expected)
+        {
+            Assert.That(NextUnlockGuidance.BuildPresentationTitle(source), Is.EqualTo(expected));
+        }
     }
 }

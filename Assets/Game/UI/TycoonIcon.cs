@@ -3,7 +3,25 @@ using UnityEngine.UI;
 
 namespace IndustryTycoon.UI
 {
-    public enum TycoonGlyph { Coin, Crate, Factory, Flag, Star, Routes, Market, Gem, Arrow }
+    public enum TycoonGlyph
+    {
+        Coin,
+        Crate,
+        Factory,
+        Flag,
+        Star,
+        Routes,
+        Market,
+        Gem,
+        Arrow,
+        Wood,
+        Plank,
+        IronOre,
+        IronBar,
+        Tool,
+        MachinePart,
+        Pause
+    }
 
     /// <summary>Small atlas-free, resolution-independent UI silhouettes. No Update or raycasting.</summary>
     [RequireComponent(typeof(CanvasRenderer))]
@@ -42,6 +60,21 @@ namespace IndustryTycoon.UI
                 case TycoonGlyph.Gem:
                     Triangle(vh,new Vector2(.12f,.6f),new Vector2(.5f,.12f),new Vector2(.88f,.6f));
                     Quad(vh,.25f,.6f,.75f,.85f); break;
+                case TycoonGlyph.Wood:
+                    Quad(vh,.18f,.38f,.82f,.62f); Disc(vh,.18f,.5f,.12f); Disc(vh,.82f,.5f,.12f); break;
+                case TycoonGlyph.Plank:
+                    Quad(vh,.12f,.28f,.88f,.48f); Quad(vh,.12f,.54f,.88f,.74f); break;
+                case TycoonGlyph.IronOre:
+                    Triangle(vh,new Vector2(.12f,.22f),new Vector2(.34f,.82f),new Vector2(.55f,.25f));
+                    Triangle(vh,new Vector2(.42f,.22f),new Vector2(.68f,.9f),new Vector2(.9f,.22f)); break;
+                case TycoonGlyph.IronBar:
+                    Quad(vh,.14f,.26f,.86f,.52f); Quad(vh,.22f,.54f,.78f,.74f); break;
+                case TycoonGlyph.Tool:
+                    Quad(vh,.43f,.14f,.57f,.68f); Quad(vh,.22f,.62f,.78f,.78f); break;
+                case TycoonGlyph.MachinePart:
+                    Disc(vh,.5f,.5f,.42f); Disc(vh,.5f,.5f,.16f); break;
+                case TycoonGlyph.Pause:
+                    Quad(vh,.24f,.16f,.42f,.84f); Quad(vh,.58f,.16f,.76f,.84f); break;
                 default:
                     Quad(vh,.12f,.42f,.68f,.58f); Triangle(vh,new Vector2(.55f,.18f),new Vector2(.9f,.5f),new Vector2(.55f,.82f)); break;
             }

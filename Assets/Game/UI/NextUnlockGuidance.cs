@@ -37,6 +37,9 @@ namespace IndustryTycoon.UI
 
         [Header("Presentation")]
         [SerializeField] private Text guidanceText;
+        [SerializeField] private Text categoryText;
+        [SerializeField] private GameObject progressRoot;
+        [SerializeField] private MobileProgressBar progressBar;
 
         private string _displayText = string.Empty;
 
@@ -173,8 +176,10 @@ namespace IndustryTycoon.UI
                 _displayText = tutorialText;
                 if (guidanceText != null)
                 {
-                    guidanceText.text = _displayText;
+                    guidanceText.text = BuildPresentationTitle(_displayText);
                 }
+
+                ApplyCardPresentation("ONBOARDING", 0L, 1L, false);
 
                 if (tutorialChanged)
                 {
@@ -197,8 +202,18 @@ namespace IndustryTycoon.UI
                 _displayText = objectiveText;
                 if (guidanceText != null)
                 {
-                    guidanceText.text = _displayText;
+                    guidanceText.text = BuildPresentationTitle(_displayText);
                 }
+
+
+                progressionService.GetObjectiveProgress(
+                    out long objectiveCurrent,
+                    out long objectiveTarget);
+                ApplyCardPresentation(
+                    "PRIMARY OBJECTIVE",
+                    objectiveCurrent,
+                    objectiveTarget,
+                    objectiveTarget > 1L);
 
                 if (objectiveChanged)
                 {
@@ -234,8 +249,14 @@ namespace IndustryTycoon.UI
 
             if (guidanceText != null)
             {
-                guidanceText.text = _displayText;
+                guidanceText.text = BuildPresentationTitle(_displayText);
             }
+
+            ApplyCardPresentation(
+                "PRIMARY OBJECTIVE",
+                nextPaidAmount,
+                nextTotalCost,
+                nextTotalCost > 0);
 
             if (changed)
             {
@@ -243,6 +264,48 @@ namespace IndustryTycoon.UI
             }
 
             return changed;
+        }
+
+        public static string BuildPresentationTitle(string source)
+        {
+            if (string.IsNullOrWhiteSpace(source))
+            {
+                return string.Empty;
+            }
+
+            string result = source.Trim()
+                .Replace("OBJECTIVE: ", string.Empty)
+                .Replace("NEXT: ", string.Empty)
+                .Replace(" — ", "  •  ")
+                .Replace("\n", "  •  ");
+            result = System.Text.RegularExpressions.Regex.Replace(
+                result,
+                @"\s+•\s+\d[\d,]*\s*/\s*\d[\d,]*$",
+                string.Empty);
+            return System.Globalization.CultureInfo.InvariantCulture.TextInfo
+                .ToTitleCase(result.ToLowerInvariant());
+        }
+
+        private void ApplyCardPresentation(
+            string category,
+            long current,
+            long target,
+            bool showProgress)
+        {
+            if (categoryText != null)
+            {
+                categoryText.text = category;
+            }
+
+            if (progressRoot != null)
+            {
+                progressRoot.SetActive(showProgress);
+            }
+
+            if (showProgress && progressBar != null)
+            {
+                progressBar.SetProgress(current, target, true);
+            }
         }
 
         public LumberCampProgressStage ResolveCurrentStage()

@@ -8770,8 +8770,8 @@ namespace IndustryTycoon.Editor
             RectTransform guidanceRect = guidance.GetComponent<RectTransform>();
             Require(guidanceRect != null
                     && guidanceRect.sizeDelta.x <= 1016f
-                    && guidanceRect.sizeDelta.y <= 110f,
-                "Main Objective HUD must remain one compact portrait line.");
+                    && guidanceRect.sizeDelta.y <= 120f,
+                "Main Objective HUD must remain a compact portrait card.");
 
             Require(completionFeedback.Completion == completion
                     && completionFeedback.BannerRoot != null

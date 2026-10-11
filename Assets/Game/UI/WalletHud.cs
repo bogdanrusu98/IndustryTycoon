@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Globalization;
 using IndustryTycoon.Economy;
 using IndustryTycoon.Feedback;
 using UnityEngine;
@@ -94,8 +95,40 @@ namespace IndustryTycoon.UI
             _displayedBalance = Mathf.Max(0, balance);
             if (cashText != null)
             {
-                cashText.text = $"$ {_displayedBalance}";
+                cashText.text = "$" + FormatAmount(_displayedBalance);
             }
+        }
+
+        public static string FormatAmount(int amount)
+        {
+            int safeAmount = Mathf.Max(0, amount);
+            if (safeAmount < 1000)
+            {
+                return safeAmount.ToString("N0", CultureInfo.InvariantCulture);
+            }
+
+            string suffix;
+            float scaled;
+            if (safeAmount >= 1000000000)
+            {
+                suffix = "B";
+                scaled = safeAmount / 1000000000f;
+            }
+            else if (safeAmount >= 1000000)
+            {
+                suffix = "M";
+                scaled = safeAmount / 1000000f;
+            }
+            else
+            {
+                suffix = "K";
+                scaled = safeAmount / 1000f;
+            }
+
+            string pattern = scaled >= 100f || Mathf.Approximately(scaled, Mathf.Round(scaled))
+                ? "0"
+                : "0.#";
+            return scaled.ToString(pattern, CultureInfo.InvariantCulture) + suffix;
         }
 
         private void OnValidate()
