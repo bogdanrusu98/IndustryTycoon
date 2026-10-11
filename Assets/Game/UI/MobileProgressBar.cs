@@ -25,10 +25,12 @@ namespace IndustryTycoon.UI
             long safeCurrent = System.Math.Max(0L, System.Math.Min(current, safeTarget));
             if (fill != null)
             {
-                fill.type = Image.Type.Filled;
+                fill.type = Image.Type.Sliced;
                 fill.fillMethod = Image.FillMethod.Horizontal;
                 fill.fillOrigin = 0;
                 fill.fillAmount = safeCurrent / (float)safeTarget;
+                fill.rectTransform.anchorMax = new Vector2(fill.fillAmount, 1f);
+                fill.enabled = safeCurrent > 0;
             }
 
             if (valueText != null)

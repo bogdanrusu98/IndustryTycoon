@@ -22,7 +22,7 @@ namespace IndustryTycoon.Editor
     public static class IndustrialPlaycraftCapture
     {
         private const string SessionKey = "IndustryTycoon.IndustrialPlaycraftCapture";
-        private static string OutputFolder => SessionState.GetString(SessionKey + ".Folder", "Documentation/UIVisualCorrection/initial");
+        private static string OutputFolder => SessionState.GetString(SessionKey + ".Folder", "Documentation/UIHudComposition/initial");
         private static readonly string[] ShotNames =
         {
             "01-early-lumber",
@@ -74,7 +74,7 @@ namespace IndustryTycoon.Editor
             _captureAt = 0;
             string[] args = Environment.GetCommandLineArgs();
             int iteration = Array.IndexOf(args, "-visualIteration");
-            SessionState.SetString(SessionKey + ".Folder", "Documentation/UIVisualCorrection/" + (iteration >= 0 ? args[iteration + 1] : "initial"));
+            SessionState.SetString(SessionKey + ".Folder", "Documentation/UIHudComposition/" + (iteration >= 0 ? args[iteration + 1] : "initial"));
             EditorSceneManager.OpenScene("Assets/Game/Scenes/Prototype_LumberCamp.unity");
             UnityEngine.Object.FindAnyObjectByType<LocalPersistenceService>(FindObjectsInactive.Include).enabled = false;
             Directory.CreateDirectory(OutputFolder);
@@ -97,6 +97,12 @@ namespace IndustryTycoon.Editor
         {
             Scene scene = EditorSceneManager.OpenScene("Assets/Game/Scenes/Prototype_LumberCamp.unity");
             ModernPresentationBuilder.ApplyCoreHud(scene);
+            var follow=UnityEngine.Object.FindAnyObjectByType<SmoothFollowCamera>();
+            var settings=new SerializedObject(follow);
+            settings.FindProperty("offset").vector3Value=ModernWorldComposition.CameraOffset;
+            settings.FindProperty("lookAtOffset").vector3Value=ModernWorldComposition.CameraLookAtOffset;
+            settings.ApplyModifiedPropertiesWithoutUndo();
+            follow.SnapToTarget();
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
             Debug.Log("Industrial Playcraft core HUD applied to the existing prototype scene.");
@@ -178,6 +184,7 @@ namespace IndustryTycoon.Editor
             else if (index == 3)
             {
                 ModernVisualCapture.ApplyFixture(true);
+                UnityEngine.Object.FindAnyObjectByType<CarryStack>().RestoreStableState(ResourceType.Wood, 1);
             }
             else
             {
@@ -186,6 +193,10 @@ namespace IndustryTycoon.Editor
                 carry.RestoreStableState(ResourceType.Wood, index == 4 ? carry.Capacity : 5);
             }
 
+            // Fixture transitions are not player unlocks: clear the prior fixture's queued notifications.
+            var unlockToast = UnityEngine.Object.FindAnyObjectByType<MajorUnlockToastView>();
+            unlockToast.enabled = false;
+            unlockToast.enabled = true;
             Vector3 position = index == 3 ? new Vector3(12f, 0f, 25f) : new Vector3(0f, 0f, -1f);
             GameObject player = Find("Player");
             CharacterController controller = player.GetComponent<CharacterController>();
@@ -352,6 +363,18 @@ namespace IndustryTycoon.Editor
         private static void ValidateHudContracts()
         {
             var evidence = new List<string>();
+            var follow = _camera.GetComponent<SmoothFollowCamera>();
+            if ((_camera.fieldOfView != 43f)
+                || (follow.Offset - ModernWorldComposition.CameraOffset).sqrMagnitude > .0001f
+                || (follow.LookAtOffset - ModernWorldComposition.CameraLookAtOffset).sqrMagnitude > .0001f)
+                throw new InvalidOperationException("Portrait camera lost the reviewed framing.");
+            Vector3 playerPosition = Find("Player").transform.position;
+            Vector3 feet = _camera.WorldToViewportPoint(playerPosition);
+            Vector3 head = _camera.WorldToViewportPoint(playerPosition + Vector3.up * 1.8f);
+            float projectedHeight = head.y - feet.y;
+            if (projectedHeight < .07f || projectedHeight > .16f || feet.y < .3f || feet.y > .6f)
+                throw new InvalidOperationException($"Player readability/framing failed: height={projectedHeight}, feet={feet}.");
+            evidence.Add($"portrait camera/player readability=PASS (height={projectedHeight:P1}, foot viewport={feet})");
             var carry = UnityEngine.Object.FindAnyObjectByType<CarryStack>();
             var guidance = UnityEngine.Object.FindAnyObjectByType<NextUnlockGuidance>();
             var onboarding = UnityEngine.Object.FindAnyObjectByType<FirstSessionOnboardingService>();
@@ -395,20 +418,32 @@ namespace IndustryTycoon.Editor
             if (empire.DisplayedLevel != 1 || empireBar.NormalizedValue != 0)
                 throw new InvalidOperationException("Fresh Empire display is incorrect.");
             ModernVisualCapture.ApplyFixture(true);
+                UnityEngine.Object.FindAnyObjectByType<CarryStack>().RestoreStableState(ResourceType.Wood, 1);
             if (empire.DisplayedLevel != 25 || empireBar.NormalizedValue != 1)
                 throw new InvalidOperationException("Completed Empire display is incorrect.");
             evidence.Add("Empire runtime Lv1/empty to Lv25/full; restore hints cleared=PASS");
             var nav = UnityEngine.Object.FindAnyObjectByType<MobilePanelNavigation>();
             nav.CloseAll();
-            Find("Pause Button").GetComponent<Button>().onClick.Invoke();
+            var pauseButton = Find("Pause Button").GetComponent<Button>();
+            var events = UnityEngine.EventSystems.EventSystem.current;
+            var pointer = new UnityEngine.EventSystems.PointerEventData(events)
+            {
+                position = RectTransformUtility.WorldToScreenPoint(_camera, pauseButton.transform.position
+                    + pauseButton.transform.TransformVector(new Vector3(0, -59, 0)))
+            };
+            var hits = new List<UnityEngine.EventSystems.RaycastResult>();
+            events.RaycastAll(pointer, hits);
+            if (!pauseButton.IsInteractable() || !hits.Any(hit => hit.gameObject == pauseButton.gameObject))
+                throw new InvalidOperationException("Pause button does not receive pointer raycasts.");
+            pauseButton.onClick.Invoke();
             if (!nav.HasBlockingPanel || Find("Wood Counter").activeInHierarchy)
                 throw new InvalidOperationException("Pause binding/visibility failed.");
             nav.Back();
             if (nav.HasBlockingPanel || !Find("Wood Counter").activeInHierarchy)
                 throw new InvalidOperationException("Back did not restore exploration HUD.");
-            evidence.Add("existing Pause action/Android Back handler/restore HUD=PASS");
-            foreach (HudIllustration icon in _canvas.GetComponentsInChildren<HudIllustration>(true))
-                if (icon.GetComponent<CanvasRenderer>() == null)
+            evidence.Add("Pause pointer raycast/existing action/Android Back handler/restore HUD=PASS");
+            foreach (Image icon in _canvas.GetComponentsInChildren<Image>(true).Where(i => i.name.EndsWith(" Illustration")))
+                if (icon.GetComponent<CanvasRenderer>() == null || icon.sprite == null)
                     throw new InvalidOperationException("Emblem missing CanvasRenderer.");
             if (M9SaveSchema.CurrentVersion != 9) throw new InvalidOperationException("Save schema changed.");
             evidence.Add("emblem renderers/save schema v9=PASS");

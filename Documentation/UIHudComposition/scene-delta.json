@@ -1,0 +1,173 @@
+{
+  "baseline": "3d70ce6385afa1a7fc3cdc2825b061d64c7677bc",
+  "changedExisting": 33,
+  "added": 145,
+  "removed": 118,
+  "changedRecords": [
+    {
+      "id": "1323946513",
+      "class": "114",
+      "owner": "Cash Text"
+    },
+    {
+      "id": "1323946512",
+      "class": "224",
+      "owner": "Cash Text"
+    },
+    {
+      "id": "2091869473",
+      "class": "114",
+      "owner": "Empire Level Text"
+    },
+    {
+      "id": "2091869472",
+      "class": "224",
+      "owner": "Empire Level Text"
+    },
+    {
+      "id": "666179696",
+      "class": "114",
+      "owner": "Main Camera"
+    },
+    {
+      "id": "666179695",
+      "class": "4",
+      "owner": "Main Camera"
+    },
+    {
+      "id": "1444636233",
+      "class": "1",
+      "owner": "Main Objective"
+    },
+    {
+      "id": "1444636235",
+      "class": "114",
+      "owner": "Main Objective"
+    },
+    {
+      "id": "1444636238",
+      "class": "114",
+      "owner": "Main Objective"
+    },
+    {
+      "id": "1444636234",
+      "class": "114",
+      "owner": "Main Objective"
+    },
+    {
+      "id": "1444636237",
+      "class": "224",
+      "owner": "Main Objective"
+    },
+    {
+      "id": "444331407",
+      "class": "114",
+      "owner": "Main Objective Text"
+    },
+    {
+      "id": "444331409",
+      "class": "224",
+      "owner": "Main Objective Text"
+    },
+    {
+      "id": "1010360270",
+      "class": "1",
+      "owner": "Major Unlock Banner"
+    },
+    {
+      "id": "1010360272",
+      "class": "114",
+      "owner": "Major Unlock Banner"
+    },
+    {
+      "id": "1010360271",
+      "class": "224",
+      "owner": "Major Unlock Banner"
+    },
+    {
+      "id": "177135921",
+      "class": "114",
+      "owner": "Major Unlock Text"
+    },
+    {
+      "id": "177135920",
+      "class": "224",
+      "owner": "Major Unlock Text"
+    },
+    {
+      "id": "1362416342",
+      "class": "1",
+      "owner": "Pause Button"
+    },
+    {
+      "id": "1362416347",
+      "class": "114",
+      "owner": "Pause Button"
+    },
+    {
+      "id": "1362416345",
+      "class": "114",
+      "owner": "Pause Button"
+    },
+    {
+      "id": "1362416343",
+      "class": "224",
+      "owner": "Pause Button"
+    },
+    {
+      "id": "1625360698",
+      "class": "114",
+      "owner": "Safe Area"
+    },
+    {
+      "id": "728690917",
+      "class": "114",
+      "owner": "Transaction Toast"
+    },
+    {
+      "id": "728690920",
+      "class": "114",
+      "owner": "Transaction Toast"
+    },
+    {
+      "id": "728690916",
+      "class": "224",
+      "owner": "Transaction Toast"
+    },
+    {
+      "id": "194099191",
+      "class": "114",
+      "owner": "Transaction Toast Text"
+    },
+    {
+      "id": "194099190",
+      "class": "224",
+      "owner": "Transaction Toast Text"
+    },
+    {
+      "id": "1534354272",
+      "class": "114",
+      "owner": "Wood Counter"
+    },
+    {
+      "id": "1534354274",
+      "class": "114",
+      "owner": "Wood Counter"
+    },
+    {
+      "id": "1534354271",
+      "class": "224",
+      "owner": "Wood Counter"
+    },
+    {
+      "id": "1931630746",
+      "class": "114",
+      "owner": "Wood Text"
+    },
+    {
+      "id": "1931630745",
+      "class": "224",
+      "owner": "Wood Text"
+    }
+  ]
+}

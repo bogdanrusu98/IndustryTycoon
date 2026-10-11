@@ -1,0 +1,16 @@
+[composition-m18.log]
+M18 PlayMode smoke PASS: fresh/resume/no-replay/M17 handoff/input/marker cleanup PASS
+[composition-m17.log]
+M17 PlayMode smoke PASS: fresh → Lumber → Mining → Tools → Logistics → Industrial → Machine Parts → Specialization → Market → Empire 25 PASS
+[composition-gameplay.log]
+M2 full-loop Play Mode smoke passed: sale 12 + 12 + 1 wood, early sale exit stopped, pooled feedback settled, HUD converged, completion count 1, production delta 2 -> 4 logs / 2.7s.
+[composition-scene-audit.log]
+Lumber Camp prototype validation passed: Assets/Game/Scenes/Prototype_LumberCamp.unity
+[composition-android-release.log]
+Android Player build passed: D:\IndustryTycoon\IndustryTycoon-ui-pass1\Builds\Android\IndustryTycoon-HudComposition-Release.apk (515742635 bytes, 0 warnings).
+[composition-m11.log]
+M11 vertical-slice Play Mode smoke failed: Fresh M11 smoke did not begin at the exact locked Mining state.
+M11 vertical-slice Play Mode smoke failed: Fresh M11 smoke did not begin at the exact locked Mining state.
+[composition-m11-baseline.log]
+M11 vertical-slice Play Mode smoke failed: M11 camera must use offset (0,14,-10.6) and vertical FOV 43.
+M11 vertical-slice Play Mode smoke failed: M11 camera must use offset (0,14,-10.6) and vertical FOV 43.

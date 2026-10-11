@@ -1,0 +1,6 @@
+seven runtime resource types/icons/labels=PASS
+empty carry hidden/full badge=PASS
+M18 objective independent from three warnings=PASS
+Empire runtime Lv1/empty to Lv25/full; restore hints cleared=PASS
+existing Pause action/Android Back handler/restore HUD=PASS
+emblem renderers/save schema v9=PASS

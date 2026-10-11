@@ -9,10 +9,12 @@ namespace IndustryTycoon.Editor
     public static class IndustrialHudAssets
     {
         private const string Folder="Assets/Game/UI/Art/IndustrialHud";
+        public static Sprite Emblem(string name) => AssetDatabase.LoadAssetAtPath<Sprite>(Folder+"/"+name+".png");
         public static Sprite Round => AssetDatabase.LoadAssetAtPath<Sprite>(Folder+"/Rounded.png");
         public static Sprite[] Resources => Enumerable.Range(0,7).Select(i=>AssetDatabase.LoadAssetAtPath<Sprite>(Folder+"/Resource"+i+".png")).ToArray();
         public static void Ensure(bool force = false)
         {
+            foreach(string name in new[]{"Coin","Star","Flag"}) Import(Folder+"/"+name+".png",Vector4.zero);
             if(!force && Round!=null && Resources.All(s=>s!=null))return;
             Directory.CreateDirectory(Folder);
             Texture2D rounded=new Texture2D(128,128,TextureFormat.RGBA32,false);
@@ -20,7 +22,7 @@ namespace IndustryTycoon.Editor
             {
                 Vector2 q=new Vector2(Mathf.Abs(x-63.5f)-35.5f,Mathf.Abs(y-63.5f)-35.5f);
                 float distance=new Vector2(Mathf.Max(q.x,0),Mathf.Max(q.y,0)).magnitude-28;
-                float shade=Mathf.Lerp(.92f,1f,y/127f);
+                float shade=Mathf.Lerp(.87f,1f,y/127f);
                 rounded.SetPixel(x,y,new Color(shade,shade,shade,Mathf.Clamp01(.5f-distance)));
             }
             File.WriteAllBytes(Folder+"/Rounded.png",rounded.EncodeToPNG());
@@ -35,7 +37,18 @@ namespace IndustryTycoon.Editor
             var preview=new PreviewRenderUtility();
             try
             {
-                GameObject instance=Object.Instantiate(source);
+                GameObject instance=new GameObject("Resource icon studio");
+                GameObject model=Object.Instantiate(source,instance.transform);
+                model.SetActive(true);
+                if(path.EndsWith("Resource0.png") || path.EndsWith("Resource1.png"))
+                {
+                    // A bundle of the actual carried model reads at phone scale.
+                    model.transform.localPosition=new Vector3(-.12f,-.10f,0);
+                    var second=Object.Instantiate(model,instance.transform);
+                    second.transform.localPosition=new Vector3(.14f,-.10f,.06f);
+                    var third=Object.Instantiate(model,instance.transform);
+                    third.transform.localPosition=new Vector3(0,.13f,.03f);
+                }
                 instance.SetActive(true);
                 preview.AddSingleGO(instance);
                 Renderer[] renderers=instance.GetComponentsInChildren<Renderer>();
@@ -43,7 +56,7 @@ namespace IndustryTycoon.Editor
                 foreach(Renderer renderer in renderers)bounds.Encapsulate(renderer.bounds);
                 Camera camera=preview.camera;
                 camera.orthographic=true;
-                camera.orthographicSize=bounds.extents.magnitude*1.12f;
+                camera.orthographicSize=bounds.extents.magnitude*.94f;
                 camera.nearClipPlane=.01f;camera.farClipPlane=100;
                 camera.transform.position=bounds.center+new Vector3(1.2f,1.3f,-2f).normalized*10;
                 camera.transform.LookAt(bounds.center);
@@ -84,7 +97,7 @@ namespace IndustryTycoon.Editor
             importer.textureType=TextureImporterType.Sprite;
             importer.spriteImportMode=SpriteImportMode.Single;
             importer.spritePixelsPerUnit=100;importer.spriteBorder=border;
-            importer.alphaIsTransparency=true;importer.mipmapEnabled=false;
+            importer.maxTextureSize=256;importer.alphaIsTransparency=true;importer.mipmapEnabled=false;
             importer.textureCompression=TextureImporterCompression.Uncompressed;
             importer.SaveAndReimport();
         }

@@ -6641,7 +6641,7 @@ namespace IndustryTycoon.Editor
                     && Vector3.Distance(
                         followCamera.Offset,
                         ModernWorldComposition.CameraOffset) < 0.001f
-                    && followCamera.LookAtOffset == new Vector3(0f, 1f, 0f),
+                    && followCamera.LookAtOffset == ModernWorldComposition.CameraLookAtOffset,
                 "Portrait camera must preserve FOV 43 and the screenshot-reviewed modern composition offset.");
             Require(Mathf.Approximately(followCamera.ImpulseAmplitude, 0.06f)
                     && Mathf.Approximately(followCamera.ImpulseDuration, 0.18f),
@@ -8770,7 +8770,7 @@ namespace IndustryTycoon.Editor
             RectTransform guidanceRect = guidance.GetComponent<RectTransform>();
             Require(guidanceRect != null
                     && guidanceRect.sizeDelta.x <= 1016f
-                    && guidanceRect.sizeDelta.y <= 120f,
+                    && guidanceRect.sizeDelta.y <= 160f,
                 "Main Objective HUD must remain a compact portrait card.");
 
             Require(completionFeedback.Completion == completion

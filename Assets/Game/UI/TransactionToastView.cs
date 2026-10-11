@@ -80,6 +80,15 @@ namespace IndustryTycoon.UI
             if (messageText != null) messageText.text = message;
             toastRoot?.SetActive(true);
             if (canvasGroup != null) canvasGroup.alpha = 1f;
+            float popElapsed = 0f;
+            while (popElapsed < .16f)
+            {
+                popElapsed += Time.unscaledDeltaTime;
+                float pop = IndustryTycoon.Feedback.FeedbackTween.EaseOutCubic(popElapsed / .16f);
+                if (toastRoot != null) toastRoot.transform.localScale = Vector3.one * Mathf.Lerp(.82f, 1f, pop);
+                yield return null;
+            }
+            if (toastRoot != null) toastRoot.transform.localScale = Vector3.one;
             yield return new WaitForSecondsRealtime(holdSeconds);
             float elapsed=0f;
             while(elapsed<0.3f)

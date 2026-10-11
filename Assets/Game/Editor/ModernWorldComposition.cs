@@ -15,7 +15,8 @@ namespace IndustryTycoon.Editor
         public static readonly Vector3 IndustryShift = new Vector3(-2,0,14);
         public static readonly Vector3 GroundPosition = new Vector3(0,-.15f,15);
         public static readonly Vector3 GroundSize = new Vector3(60,.3f,66);
-        public static readonly Vector3 CameraOffset = new Vector3(0,21,-16);
+        public static readonly Vector3 CameraOffset = new Vector3(-1,14.5f,-11);
+        public static readonly Vector3 CameraLookAtOffset = new Vector3(-1,1,1.5f);
         private static Scene scene;
         private static Transform decor;
 
@@ -85,6 +86,7 @@ namespace IndustryTycoon.Editor
             var follow=UnityEngine.Object.FindAnyObjectByType<IndustryTycoon.CameraSystem.SmoothFollowCamera>();
             var cameraSettings=new SerializedObject(follow);
             cameraSettings.FindProperty("offset").vector3Value=CameraOffset;
+            cameraSettings.FindProperty("lookAtOffset").vector3Value=CameraLookAtOffset;
             cameraSettings.ApplyModifiedPropertiesWithoutUndo();follow.SnapToTarget();
             // Boundary rock silhouettes use the inexpensive reviewed sources, not high-density duplicates.
             for(int i=0;i<6;i++)

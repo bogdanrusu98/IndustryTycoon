@@ -1,0 +1,7 @@
+portrait camera/player readability=PASS (height=8.3 %, foot viewport=(0.62, 0.38, 18.11))
+seven runtime resource types/icons/labels=PASS
+empty carry hidden/full badge=PASS
+M18 objective independent from three warnings=PASS
+Empire runtime Lv1/empty to Lv25/full; restore hints cleared=PASS
+Pause pointer raycast/existing action/Android Back handler/restore HUD=PASS
+emblem renderers/save schema v9=PASS

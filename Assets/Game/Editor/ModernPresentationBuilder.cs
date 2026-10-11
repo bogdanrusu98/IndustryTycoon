@@ -61,7 +61,7 @@ namespace IndustryTycoon.Editor
             UnityEditor.Events.UnityEventTools.AddPersistentListener(
                 Find("Shop Panel").gameObject.AddComponent<PanelShown>().shown,
                 safe.GetComponentInChildren<MonetizationShopView>(true).Refresh);
-            foreach (string name in new[] {"Achievement Toast", "Transaction Toast", "Major Unlock Banner", "Completion Banner"})
+            foreach (string name in new[] {"Achievement Toast", "Completion Banner"})
             {
                 Transform t=Find(name); if(t==null) continue;
                 Surface(t, Green);

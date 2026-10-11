@@ -1,3 +1,5 @@
+> REJECTED by the user. Preserved as the previous comparison input; superseded by Documentation/UIHudComposition/review.md. Prior visual conclusions below are historical, not current acceptance.
+
 # Industrial Playcraft HUD — Pass 1 correction
 
 Supersedes the visually rejected Pass 1 at `eae10c5`. Work is isolated to `feature/core-prototype` in the existing UI worktree. The other checkout and `main` are untouched.
