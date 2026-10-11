@@ -1,0 +1,10 @@
+Player|speed=0|legMotion=2.73|ground=-0.004..0.004|root motion=0
+Player|speed=3.5|legMotion=55.54|ground=-0.094..0.018|root motion=0
+Player|speed=5.5|legMotion=68.03|ground=-0.039..0.132|root motion=0
+Player|toe forward alignment=0.861
+Lumber Worker|speed=0|legMotion=2.86|ground=-0.005..0.004|root motion=0
+Lumber Worker|speed=3.5|legMotion=57.37|ground=-0.059..0.019|root motion=0
+Lumber Worker|speed=5.5|legMotion=64.45|ground=0.008..0.145|root motion=0
+Lumber Worker|toe forward alignment=0.860
+Authoritative player move/idle and worker pickup/carry/deposit animation mapping PASS
+CarryStack reuse, selector and Lumber production/output transfer PASS

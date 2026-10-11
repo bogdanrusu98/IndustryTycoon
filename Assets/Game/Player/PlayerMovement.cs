@@ -21,6 +21,11 @@ namespace IndustryTycoon.Player
         private Vector3 _planarVelocity;
         private float _verticalVelocity;
 
+        // Controller depenetration can report lateral velocity while input movement is idle.
+        public float PlanarSpeed => _characterController != null && isActiveAndEnabled
+            ? Mathf.Min(_planarVelocity.magnitude,
+                Vector3.ProjectOnPlane(_characterController.velocity, Vector3.up).magnitude) : 0f;
+
         private void Awake()
         {
             _characterController = GetComponent<CharacterController>();

@@ -32,8 +32,8 @@ namespace IndustryTycoon.EditorTests
         {
             string[] models = AssetDatabase.FindAssets("t:Model", new[] { ProductionRoot });
             string[] textures = AssetDatabase.FindAssets("t:Texture2D", new[] { ProductionRoot });
-            Assert.AreEqual(18, models.Length, "Unexpected production model inventory.");
-            Assert.AreEqual(30, textures.Length, "Unexpected production texture inventory.");
+            Assert.AreEqual(26, models.Length, "Unexpected production model inventory.");
+            Assert.AreEqual(38, textures.Length, "Unexpected production texture inventory.");
 
             foreach (string guid in models)
             {
@@ -43,7 +43,7 @@ namespace IndustryTycoon.EditorTests
                 Assert.IsFalse(importer.isReadable, path + " retained CPU mesh data.");
                 Assert.AreEqual(ModelImporterMeshCompression.Medium,
                     importer.meshCompression, path);
-                Assert.AreEqual(ModelImporterAnimationType.None,
+                Assert.AreEqual(path.Contains("/Characters/") ? ModelImporterAnimationType.Human : ModelImporterAnimationType.None,
                     importer.animationType, path);
                 Assert.AreEqual(ModelImporterMaterialImportMode.None,
                     importer.materialImportMode, path);

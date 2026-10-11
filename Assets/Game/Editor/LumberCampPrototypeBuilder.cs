@@ -826,6 +826,7 @@ namespace IndustryTycoon.Editor
             M19ProductionSceneIntegrator.IntegrateScene(scene);
             ModernWorldComposition.Apply(scene);
             ExhaustiveProductionIntegration.Apply(scene);
+            AnimatedProductionIntegration.Apply(scene);
             ModernPresentationBuilder.Apply(scene);
 
             ConfigurePortraitSettings();
@@ -1159,6 +1160,7 @@ namespace IndustryTycoon.Editor
                 SetObjectReference(resourceVisual, "toolRoot", toolVisual);
                 SetObjectReference(resourceVisual, "machinePartRoot", machinePartVisual);
                 M19ProductionSceneIntegrator.ReplaceResourceVisuals(root);
+                AnimatedProductionIntegration.ReplaceResources(resourceVisual);
                 root.transform.localScale = Vector3.one * 0.7f;
                 return SavePrefabAndReload(root, WoodVisualPrefabPath);
             }
@@ -1213,6 +1215,7 @@ namespace IndustryTycoon.Editor
                 GameObject visual = new GameObject("Visual");
                 visual.transform.SetParent(root.transform, false);
                 CreateWoodGeometry(visual.transform, barkMaterial, cutMaterial);
+                AnimatedProductionIntegration.ReplaceLooseWood(visual.transform);
 
                 GameObject savedPrefab = SavePrefabAndReload(root, WoodResourcePrefabPath);
                 ResourcePickup savedPickup = savedPrefab.GetComponent<ResourcePickup>();
@@ -1381,6 +1384,7 @@ namespace IndustryTycoon.Editor
                 SetObjectReference(pickupFeedback, "carryStack", carryStack);
                 SetObjectReference(pickupFeedback, "pickupParticles", pickupParticles);
 
+                AnimatedProductionIntegration.AttachCharacter(root, "Player");
                 return SavePrefabAndReload(root, PlayerPrefabPath);
             }
             finally

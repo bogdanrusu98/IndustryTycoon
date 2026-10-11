@@ -25,8 +25,15 @@ namespace IndustryTycoon.Editor
             }
 
             var importer = (ModelImporter)assetImporter;
-            importer.animationType = ModelImporterAnimationType.None;
-            importer.importAnimation = false;
+            bool character = assetPath.StartsWith(ProductionRoot + "Characters/", StringComparison.Ordinal);
+            importer.animationType = character ? ModelImporterAnimationType.Human : ModelImporterAnimationType.None;
+            importer.importAnimation = character;
+            if (character)
+            {
+                importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+                importer.animationCompression = ModelImporterAnimationCompression.Optimal;
+                importer.optimizeGameObjects = false;
+            }
             importer.importCameras = false;
             importer.importLights = false;
             importer.isReadable = false;
@@ -39,6 +46,31 @@ namespace IndustryTycoon.Editor
             importer.useFileScale = true;
         }
 
+        private void OnPreprocessAnimation()
+        {
+            if (!assetPath.StartsWith(ProductionRoot + "Characters/", StringComparison.Ordinal)) return;
+            ConfigureCharacterClips((ModelImporter)assetImporter);
+        }
+
+        internal static void ConfigureCharacterClips(ModelImporter importer)
+        {
+            ModelImporterClipAnimation[] clips = importer.defaultClipAnimations;
+            foreach (ModelImporterClipAnimation clip in clips)
+            {
+                clip.name = Path.GetFileNameWithoutExtension(importer.assetPath);
+                clip.loopTime = true;
+                clip.loopPose = true;
+                clip.lockRootRotation = true;
+                clip.lockRootHeightY = true;
+                clip.lockRootPositionXZ = true;
+                clip.keepOriginalOrientation = true;
+                clip.keepOriginalPositionY = true;
+                clip.heightFromFeet = false;
+                clip.keepOriginalPositionXZ = true;
+            }
+            importer.clipAnimations = clips;
+        }
+
         private void OnPreprocessTexture()
         {
             if (!assetPath.StartsWith(ProductionRoot, StringComparison.Ordinal))
@@ -49,8 +81,9 @@ namespace IndustryTycoon.Editor
             var importer = (TextureImporter)assetImporter;
             bool isNormal = assetPath.EndsWith("_Normal.png", StringComparison.OrdinalIgnoreCase);
             importer.textureType = isNormal ? TextureImporterType.NormalMap : TextureImporterType.Default;
-            importer.sRGBTexture = !isNormal;
-            importer.alphaSource = TextureImporterAlphaSource.None;
+            importer.sRGBTexture = !isNormal && !assetPath.EndsWith("_MetallicSmoothness.png", StringComparison.OrdinalIgnoreCase);
+            importer.alphaSource = assetPath.EndsWith("_MetallicSmoothness.png", StringComparison.OrdinalIgnoreCase)
+                ? TextureImporterAlphaSource.FromInput : TextureImporterAlphaSource.None;
             importer.alphaIsTransparency = false;
             importer.isReadable = false;
             importer.mipmapEnabled = true;

@@ -52,6 +52,7 @@ namespace IndustryTycoon.Workers
         public bool HasValidTarget => _targetClaim.IsValid;
         public bool HasIncomingReservation => _stockpileReservation.IsValid;
         public bool IsCarrying => _isCarrying;
+        public float PlanarSpeed { get; private set; }
         public bool IsWaitingForStockpile => _isCarrying
             ? !_stockpileReservation.IsValid
             : _state == LumberWorkerState.Idle
@@ -84,6 +85,7 @@ namespace IndustryTycoon.Workers
 
         private void OnDisable()
         {
+            PlanarSpeed = 0f;
             if (stockpile != null)
             {
                 stockpile.StateChanged -= HandleStockpileChanged;
@@ -110,6 +112,7 @@ namespace IndustryTycoon.Workers
 
         private void Update()
         {
+            PlanarSpeed = 0f;
             if (woodSpawner == null || stockpile == null)
             {
                 return;
@@ -296,6 +299,8 @@ namespace IndustryTycoon.Workers
                 currentPosition,
                 destination,
                 moveSpeed * Time.deltaTime);
+            PlanarSpeed = Time.deltaTime > 0f
+                ? Vector3.Distance(currentPosition, transform.position) / Time.deltaTime : 0f;
             if (offset.sqrMagnitude > 0.0001f)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(offset.normalized, Vector3.up);

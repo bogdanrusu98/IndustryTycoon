@@ -35,10 +35,10 @@ namespace IndustryTycoon.Editor
 
         private static readonly CoverageEntry[] Coverage =
         {
-            Entry("Player", "Crafted uniform and hardhat", "Full 21-FBX reaudit: no character", "Authored character", "No production character/rig source"),
-            Entry("Lumber Worker", "Crafted uniform and hardhat", "Full 21-FBX reaudit: no character", "Authored character", "No production character/rig source"),
-            Entry("Loose Wood", "Low-poly log", "No matching export", "Fallback retained", "No production Wood source"),
-            Entry("Plank", "Readable plank", "No matching export", "Fallback retained", "No production Plank source"),
+            Entry("Player", "Player Animated Production Model", "Mobile Optimized Safe: Idle/Walk/Run", "Assets/Art/Production/Characters/Player", string.Empty),
+            Entry("Lumber Worker", "LumberWorker Animated Production Model", "Game Ready Builder: Idle/Walk/Run", "Assets/Art/Production/Characters/LumberWorker", string.Empty),
+            Entry("Loose Wood", "WoodLog Production Visual", "Mobile Game Wood Log 1011082912", "Assets/Art/Production/Resources/WoodLog", string.Empty),
+            Entry("Plank", "Plank Production Visual", "Mobile Wooden Plank L 1011082921", "Assets/Art/Production/Resources/Plank", string.Empty),
             Entry("Cash", "Cash bundle", "No matching export", "Fallback retained", "No production Cash source"),
             Entry("Crate", "Crate Visual", "Mobile Lowpoly Wooden Crate", "Assets/Art/Production/Resources/WoodCrate", string.Empty),
             Entry("Iron Ore", "Iron Ore Visual", "Optimized Iron Ore", "Assets/Art/Production/Resources/IronOre", string.Empty),

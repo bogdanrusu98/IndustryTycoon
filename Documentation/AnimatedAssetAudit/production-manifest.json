@@ -1,0 +1,110 @@
+[
+  {
+    "source": "Meshy Import\\character\\Meshy_AI_Mobile_Optimized_Safe_biped\\Meshy_AI_Mobile_Optimized_Safe_biped_Animation_Idle_3_withSkin.fbx",
+    "production": "Assets\\Art\\Production\\Characters\\Player\\Idle.fbx",
+    "sha256": "76a8c13dfbbe62abc80b5447c87a4737afc7bd9dde99b40161a8d7c212b10d25"
+  },
+  {
+    "source": "Meshy Import\\character\\Meshy_AI_Mobile_Optimized_Safe_biped\\Meshy_AI_Mobile_Optimized_Safe_biped_Animation_Walking_withSkin.fbx",
+    "production": "Assets\\Art\\Production\\Characters\\Player\\Walk.fbx",
+    "sha256": "f7a8074e23bbeb2ff4b17e7231942ef90c093f77a87cb57394569d56eec28234"
+  },
+  {
+    "source": "Meshy Import\\character\\Meshy_AI_Mobile_Optimized_Safe_biped\\Meshy_AI_Mobile_Optimized_Safe_biped_Animation_Running_withSkin.fbx",
+    "production": "Assets\\Art\\Production\\Characters\\Player\\Run.fbx",
+    "sha256": "9cd67b17f8df2971daf065da563938a2d46f7d6a74baff5879323d320febed2c"
+  },
+  {
+    "source": "Meshy Import\\character\\Meshy_AI_Mobile_Optimized_Safe_biped\\Meshy_AI_Mobile_Optimized_Safe_biped_texture_0.png",
+    "production": "Assets\\Art\\Production\\Characters\\Player\\Player_BaseColor.png",
+    "sha256": "03a28e56d4282ebf4ab25d9746befbdad95ad5344a0dd5138d3114fca8727706"
+  },
+  {
+    "sources": [
+      "Meshy Import\\character\\Meshy_AI_Mobile_Optimized_Safe_biped\\Meshy_AI_Mobile_Optimized_Safe_biped_texture_0_metallic.png",
+      "Meshy Import\\character\\Meshy_AI_Mobile_Optimized_Safe_biped\\Meshy_AI_Mobile_Optimized_Safe_biped_texture_0_roughness.png"
+    ],
+    "production": "Assets\\Art\\Production\\Characters\\Player\\Player_MetallicSmoothness.png",
+    "packing": "RGB=metallic; A=255-roughness; linear import",
+    "source_size": [
+      4096,
+      4096
+    ]
+  },
+  {
+    "source": "Meshy Import\\worker\\Meshy_AI_game_ready_builder_ch_biped\\Meshy_AI_game_ready_builder_ch_biped_Animation_Idle_3_withSkin.fbx",
+    "production": "Assets\\Art\\Production\\Characters\\LumberWorker\\Idle.fbx",
+    "sha256": "dbda164722799a6f65599619ca964842a357c6e1b3433e06b789a01b334c90d5"
+  },
+  {
+    "source": "Meshy Import\\worker\\Meshy_AI_game_ready_builder_ch_biped\\Meshy_AI_game_ready_builder_ch_biped_Animation_Walking_withSkin.fbx",
+    "production": "Assets\\Art\\Production\\Characters\\LumberWorker\\Walk.fbx",
+    "sha256": "523b1062ca80c86f38f6a8d3a1faeb835ee1e09efd90d189888e4c9351bf3581"
+  },
+  {
+    "source": "Meshy Import\\worker\\Meshy_AI_game_ready_builder_ch_biped\\Meshy_AI_game_ready_builder_ch_biped_Animation_Running_withSkin.fbx",
+    "production": "Assets\\Art\\Production\\Characters\\LumberWorker\\Run.fbx",
+    "sha256": "b6f7354e81cb562315d08834708d113eaf16c1327bb7a0787b22aa4dd60939c7"
+  },
+  {
+    "source": "Meshy Import\\worker\\Meshy_AI_game_ready_builder_ch_biped\\Meshy_AI_game_ready_builder_ch_biped_texture_0.png",
+    "production": "Assets\\Art\\Production\\Characters\\LumberWorker\\LumberWorker_BaseColor.png",
+    "sha256": "ba11b33cc6bd51bbeb19797c6416cd6c8a1e012b70ee2c3c5827a533791e38dd"
+  },
+  {
+    "sources": [
+      "Meshy Import\\worker\\Meshy_AI_game_ready_builder_ch_biped\\Meshy_AI_game_ready_builder_ch_biped_texture_0_metallic.png",
+      "Meshy Import\\worker\\Meshy_AI_game_ready_builder_ch_biped\\Meshy_AI_game_ready_builder_ch_biped_texture_0_roughness.png"
+    ],
+    "production": "Assets\\Art\\Production\\Characters\\LumberWorker\\LumberWorker_MetallicSmoothness.png",
+    "packing": "RGB=metallic; A=255-roughness; linear import",
+    "source_size": [
+      4096,
+      4096
+    ]
+  },
+  {
+    "source": "Meshy Import\\Meshy_AI_Mobile_Wooden_Plank_L_1011082921_texture_fbx\\Meshy_AI_Mobile_Wooden_Plank_L_1011082921_texture_fbx\\Meshy_AI_Mobile_Wooden_Plank_L_1011082921_texture.fbx",
+    "production": "Assets\\Art\\Production\\Resources\\Plank\\Plank.fbx",
+    "sha256": "32a6b53f52ea5a9880246cbc889f6c9094399304dd97b37032fe9cb2437e1a03"
+  },
+  {
+    "source": "Meshy Import\\Meshy_AI_Mobile_Wooden_Plank_L_1011082921_texture_fbx\\Meshy_AI_Mobile_Wooden_Plank_L_1011082921_texture_fbx\\Meshy_AI_Mobile_Wooden_Plank_L_1011082921_texture.png",
+    "production": "Assets\\Art\\Production\\Resources\\Plank\\Plank_BaseColor.png",
+    "sha256": "894b84033db15f29df219301648d24abd04b593355d8813cb01084e8992595c0"
+  },
+  {
+    "sources": [
+      "Meshy Import\\Meshy_AI_Mobile_Wooden_Plank_L_1011082921_texture_fbx\\Meshy_AI_Mobile_Wooden_Plank_L_1011082921_texture_fbx\\Meshy_AI_Mobile_Wooden_Plank_L_1011082921_texture_metallic.png",
+      "Meshy Import\\Meshy_AI_Mobile_Wooden_Plank_L_1011082921_texture_fbx\\Meshy_AI_Mobile_Wooden_Plank_L_1011082921_texture_fbx\\Meshy_AI_Mobile_Wooden_Plank_L_1011082921_texture_roughness.png"
+    ],
+    "production": "Assets\\Art\\Production\\Resources\\Plank\\Plank_MetallicSmoothness.png",
+    "packing": "RGB=metallic; A=255-roughness; linear import",
+    "source_size": [
+      4096,
+      4096
+    ]
+  },
+  {
+    "source": "Meshy Import\\Meshy_AI_Mobile_Game_Wood_Log_1011082912_texture_fbx\\Meshy_AI_Mobile_Game_Wood_Log_1011082912_texture_fbx\\Meshy_AI_Mobile_Game_Wood_Log_1011082912_texture.fbx",
+    "production": "Assets\\Art\\Production\\Resources\\WoodLog\\WoodLog.fbx",
+    "sha256": "411c9715b6db0d0c8ab8a7a7b7262fe7af816b424c7557e61b1f333cec23d49a"
+  },
+  {
+    "source": "Meshy Import\\Meshy_AI_Mobile_Game_Wood_Log_1011082912_texture_fbx\\Meshy_AI_Mobile_Game_Wood_Log_1011082912_texture_fbx\\Meshy_AI_Mobile_Game_Wood_Log_1011082912_texture.png",
+    "production": "Assets\\Art\\Production\\Resources\\WoodLog\\WoodLog_BaseColor.png",
+    "sha256": "fe1903bf352bbc64ac3506a57ede40bcfe0fb225cc0a24210c433375feb9783a"
+  },
+  {
+    "sources": [
+      "Meshy Import\\Meshy_AI_Mobile_Game_Wood_Log_1011082912_texture_fbx\\Meshy_AI_Mobile_Game_Wood_Log_1011082912_texture_fbx\\Meshy_AI_Mobile_Game_Wood_Log_1011082912_texture_metallic.png",
+      "Meshy Import\\Meshy_AI_Mobile_Game_Wood_Log_1011082912_texture_fbx\\Meshy_AI_Mobile_Game_Wood_Log_1011082912_texture_fbx\\Meshy_AI_Mobile_Game_Wood_Log_1011082912_texture_roughness.png"
+    ],
+    "production": "Assets\\Art\\Production\\Resources\\WoodLog\\WoodLog_MetallicSmoothness.png",
+    "packing": "RGB=metallic; A=255-roughness; linear import",
+    "source_size": [
+      4096,
+      4096
+    ]
+  }
+]
