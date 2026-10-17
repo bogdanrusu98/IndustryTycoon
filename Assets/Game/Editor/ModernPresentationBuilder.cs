@@ -46,6 +46,7 @@ namespace IndustryTycoon.Editor
                 ButtonStyle(b, Soft, Ink);
             Hud();
             Navigation();
+            IndustrialHudBuilder.ApplyNavigationArtwork();
             Production();
             Market();
             Logistics();

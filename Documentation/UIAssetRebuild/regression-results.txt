@@ -1,0 +1,4 @@
+M18 PlayMode smoke PASS: fresh/resume/no-replay/M17 handoff/input/marker cleanup PASS
+M17 PlayMode smoke PASS: fresh → Lumber → Mining → Tools → Logistics → Industrial → Machine Parts → Specialization → Market → Empire 25 PASS
+M2 full-loop Play Mode smoke passed: sale 12 + 12 + 1 wood, early sale exit stopped, pooled feedback settled, HUD converged, completion count 1, production delta 2 -> 4 logs / 2.7s.
+Lumber Camp prototype validation passed: Assets/Game/Scenes/Prototype_LumberCamp.unity

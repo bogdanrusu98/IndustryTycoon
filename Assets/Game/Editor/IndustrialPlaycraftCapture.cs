@@ -296,6 +296,11 @@ namespace IndustryTycoon.Editor
 
         private static void Capture(string name)
         {
+            // Camera.Render in batch mode does not run the normal Game View frame.
+            // Settle dynamic font atlas rebuilds before reading the render target.
+            foreach (Text label in _canvas.GetComponentsInChildren<Text>()) label.SetVerticesDirty();
+            Canvas.ForceUpdateCanvases();
+            foreach (Text label in _canvas.GetComponentsInChildren<Text>()) label.SetVerticesDirty();
             Canvas.ForceUpdateCanvases();
             _camera.Render();
             RenderTexture previous = RenderTexture.active;
@@ -443,8 +448,21 @@ namespace IndustryTycoon.Editor
                 throw new InvalidOperationException("Back did not restore exploration HUD.");
             evidence.Add("Pause pointer raycast/existing action/Android Back handler/restore HUD=PASS");
             foreach (Image icon in _canvas.GetComponentsInChildren<Image>(true).Where(i => i.name.EndsWith(" Illustration")))
+            {
                 if (icon.GetComponent<CanvasRenderer>() == null || icon.sprite == null)
                     throw new InvalidOperationException("Emblem missing CanvasRenderer.");
+                if (!AssetDatabase.GetAssetPath(icon.sprite).StartsWith("Assets/Game/UI/Art/Meshy/"))
+                    throw new InvalidOperationException("HUD is using obsolete emblem artwork: " + icon.name);
+            }
+            foreach (string name in new[] { "Cash Text", "Wood Text", "Empire Level Text", "Main Objective Text" })
+            {
+                Text label = Find(name).GetComponent<Text>();
+                if (label.font == null || !AssetDatabase.GetAssetPath(label.font).Contains("BarlowSemiCondensed"))
+                    throw new InvalidOperationException("Missing bundled HUD font: " + name);
+                if (label.GetComponents<Shadow>().Length != 0)
+                    throw new InvalidOperationException("Legacy text shadow remains: " + name);
+            }
+            evidence.Add("uploaded Meshy emblems/bundled fonts/crisp type=PASS");
             if (M9SaveSchema.CurrentVersion != 9) throw new InvalidOperationException("Save schema changed.");
             evidence.Add("emblem renderers/save schema v9=PASS");
             File.WriteAllLines(Path.Combine(OutputFolder, "runtime-validation.txt"), evidence);

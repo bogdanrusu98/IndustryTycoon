@@ -9,25 +9,39 @@ namespace IndustryTycoon.Editor
     public static class IndustrialHudAssets
     {
         private const string Folder="Assets/Game/UI/Art/IndustrialHud";
-        public static Sprite Emblem(string name) => AssetDatabase.LoadAssetAtPath<Sprite>(Folder+"/"+name+".png");
+        private const string MeshyFolder = "Assets/Game/UI/Art/Meshy";
+        private static readonly string[] IconNames = { "Cash_Coin", "Empire_Star", "Objective_Flag", "Build_Hardhat", "Awards_Trophy", "Goals_Clipboard" };
+        public static Sprite Emblem(string name)
+        {
+            string key = name switch { "Coin" => "Cash_Coin", "Star" => "Empire_Star", "Flag" => "Objective_Flag", "Hardhat" => "Build_Hardhat", "Trophy" => "Awards_Trophy", "Clipboard" => "Goals_Clipboard", _ => name };
+            return AssetDatabase.LoadAssetAtPath<Sprite>(MeshyFolder + "/UI_" + key + ".png");
+        }
+        public static Font Font(bool bold = false) => AssetDatabase.LoadAssetAtPath<Font>(
+            "Assets/Game/UI/Art/Fonts/BarlowSemiCondensed-" + (bold ? "Bold" : "SemiBold") + ".ttf");
+        public static Sprite Surface(bool dark) => AssetDatabase.LoadAssetAtPath<Sprite>(Folder + (dark ? "/TealSurface.png" : "/CreamSurface.png"));
         public static Sprite Round => AssetDatabase.LoadAssetAtPath<Sprite>(Folder+"/Rounded.png");
         public static Sprite[] Resources => Enumerable.Range(0,7).Select(i=>AssetDatabase.LoadAssetAtPath<Sprite>(Folder+"/Resource"+i+".png")).ToArray();
         public static void Ensure(bool force = false)
         {
-            foreach(string name in new[]{"Coin","Star","Flag"}) Import(Folder+"/"+name+".png",Vector4.zero);
-            if(!force && Round!=null && Resources.All(s=>s!=null))return;
+            foreach (string name in IconNames) Import(MeshyFolder + "/UI_" + name + ".png", Vector4.zero, 512);
+            foreach (string name in new[] { "Cream", "Teal" })
+                Import(MeshyFolder + "/UI_Card_" + name + "_Source.png", Vector4.zero, 512);
+            if(!force && Round!=null && Surface(false)!=null && Surface(true)!=null && Resources.All(s=>s!=null))return;
             Directory.CreateDirectory(Folder);
             Texture2D rounded=new Texture2D(128,128,TextureFormat.RGBA32,false);
             for(int y=0;y<128;y++)for(int x=0;x<128;x++)
             {
                 Vector2 q=new Vector2(Mathf.Abs(x-63.5f)-35.5f,Mathf.Abs(y-63.5f)-35.5f);
                 float distance=new Vector2(Mathf.Max(q.x,0),Mathf.Max(q.y,0)).magnitude-28;
-                float shade=Mathf.Lerp(.87f,1f,y/127f);
-                rounded.SetPixel(x,y,new Color(shade,shade,shade,Mathf.Clamp01(.5f-distance)));
+                rounded.SetPixel(x,y,new Color(1,1,1,Mathf.Clamp01(.5f-distance)));
             }
             File.WriteAllBytes(Folder+"/Rounded.png",rounded.EncodeToPNG());
             Object.DestroyImmediate(rounded);
             Import(Folder+"/Rounded.png",new Vector4(32,32,32,32));
+            // Clean scalable shells are code-native assets. Uploaded card sources remain
+            // intact; their ornate frames and background-removal residue are not stretched.
+            BakeSurface(false);
+            BakeSurface(true);
             ResourceVisual visual=AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Game/Prefabs/WoodCarryVisual.prefab").GetComponent<ResourceVisual>();
             GameObject[] roots={visual.WoodRoot,visual.PlankRoot,visual.CrateRoot,visual.IronOreRoot,visual.IronBarRoot,visual.ToolRoot,visual.MachinePartRoot};
             for(int i=0;i<roots.Length;i++)Bake(roots[i],Folder+"/Resource"+i+".png");
@@ -90,14 +104,43 @@ namespace IndustryTycoon.Editor
             preview.Render(true);
             return preview.EndStaticPreview();
         }
-        private static void Import(string path,Vector4 border)
+        private static void BakeSurface(bool dark)
+        {
+            const int size = 128;
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
+            Color bottom = dark ? new Color(.035f, .125f, .15f) : new Color(.975f, .925f, .785f);
+            Color top = dark ? new Color(.065f, .185f, .205f) : new Color(1f, .975f, .87f);
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                Vector2 q = new Vector2(Mathf.Abs(x - 63.5f) - 39.5f, Mathf.Abs(y - 63.5f) - 39.5f);
+                float distance = new Vector2(Mathf.Max(q.x, 0), Mathf.Max(q.y, 0)).magnitude + Mathf.Min(Mathf.Max(q.x, q.y), 0) - 24;
+                Color color = Color.Lerp(bottom, top, y / 127f);
+                if (distance > -2f)
+                    color = Color.Lerp(color, dark ? new Color(.40f, .55f, .53f) : new Color(1f, .995f, .94f), .75f);
+                color.a = Mathf.Clamp01(.5f - distance);
+                texture.SetPixel(x, y, color);
+            }
+            string path = Folder + (dark ? "/TealSurface.png" : "/CreamSurface.png");
+            File.WriteAllBytes(path, texture.EncodeToPNG());
+            Object.DestroyImmediate(texture);
+            Import(path, new Vector4(28, 28, 28, 28));
+        }
+
+        private static void Import(string path,Vector4 border, int maxSize = 256)
         {
             AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceSynchronousImport);
             var importer=(TextureImporter)AssetImporter.GetAtPath(path);
             importer.textureType=TextureImporterType.Sprite;
             importer.spriteImportMode=SpriteImportMode.Single;
             importer.spritePixelsPerUnit=100;importer.spriteBorder=border;
-            importer.maxTextureSize=256;importer.alphaIsTransparency=true;importer.mipmapEnabled=false;
+            importer.maxTextureSize=maxSize;importer.alphaIsTransparency=true;importer.mipmapEnabled=false;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.filterMode = FilterMode.Bilinear;
+            var settings = new TextureImporterSettings();
+            importer.ReadTextureSettings(settings);
+            settings.spriteMeshType = SpriteMeshType.FullRect;
+            importer.SetTextureSettings(settings);
             importer.textureCompression=TextureImporterCompression.Uncompressed;
             importer.SaveAndReimport();
         }

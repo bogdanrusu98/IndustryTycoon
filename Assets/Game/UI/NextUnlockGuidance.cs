@@ -294,7 +294,7 @@ namespace IndustryTycoon.UI
         {
             if (categoryText != null)
             {
-                categoryText.text = category;
+                categoryText.text = category == "OBJECTIVE" ? "Objective" : category;
             }
 
             if (progressRoot != null)

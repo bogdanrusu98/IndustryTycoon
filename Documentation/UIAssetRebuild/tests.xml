@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="88" result="Passed" total="88" passed="88" failed="0" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-10-17 16:15:08Z" end-time="2026-10-17 16:15:09Z" duration="1.4049416">
+  <test-suite type="TestSuite" id="1000" name="IndustryTycoon" fullname="IndustryTycoon" runstate="Runnable" testcasecount="88" result="Passed" start-time="2026-10-17 16:15:08Z" end-time="2026-10-17 16:15:09Z" duration="1.404942" total="88" passed="88" failed="0" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="EditMode" />
+    </properties>
+    <test-suite type="Assembly" id="1105" name="Assembly-CSharp-Editor.dll" fullname="D:/IndustryTycoon/IndustryTycoon-ui-pass1/Library/ScriptAssemblies/Assembly-CSharp-Editor.dll" runstate="Runnable" testcasecount="88" result="Passed" start-time="2026-10-17 16:15:08Z" end-time="2026-10-17 16:15:09Z" duration="1.330592" total="88" passed="88" failed="0" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="35332" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="EditMode" />
+        <property name="EditorOnly" value="True" />
+      </properties>
+      <test-suite type="TestSuite" id="1106" name="IndustryTycoon" fullname="IndustryTycoon" runstate="Runnable" testcasecount="88" result="Passed" start-time="2026-10-17 16:15:08Z" end-time="2026-10-17 16:15:09Z" duration="1.329549" total="88" passed="88" failed="0" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <test-suite type="TestSuite" id="1108" name="Editor" fullname="IndustryTycoon.Editor" runstate="Runnable" testcasecount="15" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.126103" total="15" passed="15" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1089" name="LumberCampM21Tests" fullname="IndustryTycoon.Editor.LumberCampM21Tests" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" testcasecount="15" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.123981" total="15" passed="15" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1102" name="Analytics_ConsentAndTransportFailureAreSafe" fullname="IndustryTycoon.Editor.LumberCampM21Tests.Analytics_ConsentAndTransportFailureAreSafe" methodname="Analytics_ConsentAndTransportFailureAreSafe" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="1652363828" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.025831" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1097" name="Boost_IsPersistentNonStackingAndRollbackSafe" fullname="IndustryTycoon.Editor.LumberCampM21Tests.Boost_IsPersistentNonStackingAndRollbackSafe" methodname="Boost_IsPersistentNonStackingAndRollbackSafe" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="45877354" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.005377" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1103" name="Catalog_HasNoFabricatedExternalIdsOrDiscounts" fullname="IndustryTycoon.Editor.LumberCampM21Tests.Catalog_HasNoFabricatedExternalIdsOrDiscounts" methodname="Catalog_HasNoFabricatedExternalIdsOrDiscounts" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="1890015271" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.004712" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1090" name="Gems_AtomicGrantSpendAndInsufficientFunds" fullname="IndustryTycoon.Editor.LumberCampM21Tests.Gems_AtomicGrantSpendAndInsufficientFunds" methodname="Gems_AtomicGrantSpendAndInsufficientFunds" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="1195155763" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.001385" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1091" name="Gems_DuplicateTransactionIsExactlyOnce" fullname="IndustryTycoon.Editor.LumberCampM21Tests.Gems_DuplicateTransactionIsExactlyOnce" methodname="Gems_DuplicateTransactionIsExactlyOnce" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="1314937513" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.000585" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1092" name="Gems_PersistenceAndResetSemantics" fullname="IndustryTycoon.Editor.LumberCampM21Tests.Gems_PersistenceAndResetSemantics" methodname="Gems_PersistenceAndResetSemantics" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="345699291" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.021059" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1096" name="OfflineDouble_IsOncePerPersistentSession" fullname="IndustryTycoon.Editor.LumberCampM21Tests.OfflineDouble_IsOncePerPersistentSession" methodname="OfflineDouble_IsOncePerPersistentSession" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="1089094054" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.000837" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1098" name="OrderRefresh_PreservesActiveAndPersistsLimits" fullname="IndustryTycoon.Editor.LumberCampM21Tests.OrderRefresh_PreservesActiveAndPersistsLimits" methodname="OrderRefresh_PreservesActiveAndPersistsLimits" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="854415989" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.003421" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1100" name="Purchase_GrantedPendingResumesWithoutDuplicateGrant" fullname="IndustryTycoon.Editor.LumberCampM21Tests.Purchase_GrantedPendingResumesWithoutDuplicateGrant" methodname="Purchase_GrantedPendingResumesWithoutDuplicateGrant" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="414948606" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.012336" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1099" name="Purchase_InitPendingConfirmCancelAndFailure" fullname="IndustryTycoon.Editor.LumberCampM21Tests.Purchase_InitPendingConfirmCancelAndFailure" methodname="Purchase_InitPendingConfirmCancelAndFailure" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="285805641" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.003508" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1101" name="Purchase_RestorationUsesPermanentLogicalProduct" fullname="IndustryTycoon.Editor.LumberCampM21Tests.Purchase_RestorationUsesPermanentLogicalProduct" methodname="Purchase_RestorationUsesPermanentLogicalProduct" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="1191183419" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.004188" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1094" name="Rewarded_GameplayGrantIsCompletionOnlyAndIdempotent" fullname="IndustryTycoon.Editor.LumberCampM21Tests.Rewarded_GameplayGrantIsCompletionOnlyAndIdempotent" methodname="Rewarded_GameplayGrantIsCompletionOnlyAndIdempotent" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="1100057728" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.007437" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1095" name="Rewarded_RepeatedTapAllowsOnlyOneDisplay" fullname="IndustryTycoon.Editor.LumberCampM21Tests.Rewarded_RepeatedTapAllowsOnlyOneDisplay" methodname="Rewarded_RepeatedTapAllowsOnlyOneDisplay" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="511981564" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.001960" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1093" name="Rewarded_SuccessCancelFailureAndDuplicateCallback" fullname="IndustryTycoon.Editor.LumberCampM21Tests.Rewarded_SuccessCancelFailureAndDuplicateCallback" methodname="Rewarded_SuccessCancelFailureAndDuplicateCallback" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="549773187" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.000918" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1104" name="Schema_V8MigratesOnceToV9" fullname="IndustryTycoon.Editor.LumberCampM21Tests.Schema_V8MigratesOnceToV9" methodname="Schema_V8MigratesOnceToV9" classname="IndustryTycoon.Editor.LumberCampM21Tests" runstate="Runnable" seed="560778830" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.002187" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+        </test-suite>
+        <test-suite type="TestSuite" id="1107" name="EditorTests" fullname="IndustryTycoon.EditorTests" runstate="Runnable" testcasecount="73" result="Passed" start-time="2026-10-17 16:15:08Z" end-time="2026-10-17 16:15:09Z" duration="1.317814" total="73" passed="73" failed="0" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <test-suite type="TestFixture" id="1001" name="AnimatedProductionTests" fullname="IndustryTycoon.EditorTests.AnimatedProductionTests" classname="IndustryTycoon.EditorTests.AnimatedProductionTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-17 16:14:43Z" end-time="2026-10-17 16:14:54Z" duration="11.023700" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1002" name="ImportedCharacters_HaveValidAvatarsLoopingClipsAndBakedRoots" fullname="IndustryTycoon.EditorTests.AnimatedProductionTests.ImportedCharacters_HaveValidAvatarsLoopingClipsAndBakedRoots" methodname="ImportedCharacters_HaveValidAvatarsLoopingClipsAndBakedRoots" classname="IndustryTycoon.EditorTests.AnimatedProductionTests" runstate="Runnable" seed="767222791" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:34Z" duration="0.042514" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1004" name="Runtime_AnimationOwnershipCarryPoolingAndProduction" fullname="IndustryTycoon.EditorTests.AnimatedProductionTests.Runtime_AnimationOwnershipCarryPoolingAndProduction" methodname="Runtime_AnimationOwnershipCarryPoolingAndProduction" classname="IndustryTycoon.EditorTests.AnimatedProductionTests" runstate="Runnable" seed="1401602014" result="Passed" start-time="2026-10-17 16:14:34Z" end-time="2026-10-17 16:14:53Z" duration="18.769946" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+              </properties>
+            </test-case>
+            <test-case id="1003" name="SerializedPresentation_PreservesRootsAndReplacesVisiblePrimitives" fullname="IndustryTycoon.EditorTests.AnimatedProductionTests.SerializedPresentation_PreservesRootsAndReplacesVisiblePrimitives" methodname="SerializedPresentation_PreservesRootsAndReplacesVisiblePrimitives" classname="IndustryTycoon.EditorTests.AnimatedProductionTests" runstate="Runnable" seed="2095213082" result="Passed" start-time="2026-10-17 16:14:53Z" end-time="2026-10-17 16:14:54Z" duration="0.501762" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1005" name="LumberCampM151IntegrationTests" fullname="IndustryTycoon.EditorTests.LumberCampM151IntegrationTests" classname="IndustryTycoon.EditorTests.LumberCampM151IntegrationTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.011248" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1007" name="EmpireLevels16To20_UseGlobalSequentialSilentRestorePipeline" fullname="IndustryTycoon.EditorTests.LumberCampM151IntegrationTests.EmpireLevels16To20_UseGlobalSequentialSilentRestorePipeline" methodname="EmpireLevels16To20_UseGlobalSequentialSilentRestorePipeline" classname="IndustryTycoon.EditorTests.LumberCampM151IntegrationTests" runstate="Runnable" seed="1216825166" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.002964" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1008" name="SmelterOffline_RespectsPersistedBudgetsAndAllModifiers" fullname="IndustryTycoon.EditorTests.LumberCampM151IntegrationTests.SmelterOffline_RespectsPersistedBudgetsAndAllModifiers" methodname="SmelterOffline_RespectsPersistedBudgetsAndAllModifiers" classname="IndustryTycoon.EditorTests.LumberCampM151IntegrationTests" runstate="Runnable" seed="1510629355" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.002422" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1006" name="StrategyContracts_RotateOnlyAcrossEligiblePersistentContracts" fullname="IndustryTycoon.EditorTests.LumberCampM151IntegrationTests.StrategyContracts_RotateOnlyAcrossEligiblePersistentContracts" methodname="StrategyContracts_RotateOnlyAcrossEligiblePersistentContracts" classname="IndustryTycoon.EditorTests.LumberCampM151IntegrationTests" runstate="Runnable" seed="1603248986" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.001296" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1009" name="LumberCampM15Tests" fullname="IndustryTycoon.EditorTests.LumberCampM15Tests" classname="IndustryTycoon.EditorTests.LumberCampM15Tests" runstate="Runnable" testcasecount="11" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.012776" total="11" passed="11" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-suite type="ParameterizedMethod" id="1019" name="BottleneckStatus_IsDerived" fullname="IndustryTycoon.EditorTests.LumberCampM15Tests.BottleneckStatus_IsDerived" classname="IndustryTycoon.EditorTests.LumberCampM15Tests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.002189" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1014" name="BottleneckStatus_IsDerived(False,True,False,True,True,False,LockedInactive)" fullname="IndustryTycoon.EditorTests.LumberCampM15Tests.BottleneckStatus_IsDerived(False,True,False,True,True,False,LockedInactive)" methodname="BottleneckStatus_IsDerived" classname="IndustryTycoon.EditorTests.LumberCampM15Tests" runstate="Runnable" seed="1824593006" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000632" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1015" name="BottleneckStatus_IsDerived(True,True,False,False,True,False,MissingInput)" fullname="IndustryTycoon.EditorTests.LumberCampM15Tests.BottleneckStatus_IsDerived(True,True,False,False,True,False,MissingInput)" methodname="BottleneckStatus_IsDerived" classname="IndustryTycoon.EditorTests.LumberCampM15Tests" runstate="Runnable" seed="1371468404" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000125" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1016" name="BottleneckStatus_IsDerived(True,True,False,True,False,False,OutputFull)" fullname="IndustryTycoon.EditorTests.LumberCampM15Tests.BottleneckStatus_IsDerived(True,True,False,True,False,False,OutputFull)" methodname="BottleneckStatus_IsDerived" classname="IndustryTycoon.EditorTests.LumberCampM15Tests" runstate="Runnable" seed="1492503341" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000073" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1017" name="BottleneckStatus_IsDerived(True,True,False,True,False,True,WaitingForLogistics)" fullname="IndustryTycoon.EditorTests.LumberCampM15Tests.BottleneckStatus_IsDerived(True,True,False,True,False,True,WaitingForLogistics)" methodname="BottleneckStatus_IsDerived" classname="IndustryTycoon.EditorTests.LumberCampM15Tests" runstate="Runnable" seed="679836828" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000075" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1018" name="BottleneckStatus_IsDerived(True,True,True,False,False,False,Running)" fullname="IndustryTycoon.EditorTests.LumberCampM15Tests.BottleneckStatus_IsDerived(True,True,True,False,False,False,Running)" methodname="BottleneckStatus_IsDerived" classname="IndustryTycoon.EditorTests.LumberCampM15Tests" runstate="Runnable" seed="863652941" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000072" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1012" name="Efficiency_ConservesExactlyOnceEveryFiveCompletedRecipes" fullname="IndustryTycoon.EditorTests.LumberCampM15Tests.Efficiency_ConservesExactlyOnceEveryFiveCompletedRecipes" methodname="Efficiency_ConservesExactlyOnceEveryFiveCompletedRecipes" classname="IndustryTycoon.EditorTests.LumberCampM15Tests" runstate="Runnable" seed="254452583" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000249" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1021" name="EmpireLevels_AreSequentialAndNonSkipping" fullname="IndustryTycoon.EditorTests.LumberCampM15Tests.EmpireLevels_AreSequentialAndNonSkipping" methodname="EmpireLevels_AreSequentialAndNonSkipping" classname="IndustryTycoon.EditorTests.LumberCampM15Tests" runstate="Runnable" seed="1374366248" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000237" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1010" name="Specialization_IsMutuallyExclusive_AndUnlocksDistrictTwo" fullname="IndustryTycoon.EditorTests.LumberCampM15Tests.Specialization_IsMutuallyExclusive_AndUnlocksDistrictTwo" methodname="Specialization_IsMutuallyExclusive_AndUnlocksDistrictTwo" classname="IndustryTycoon.EditorTests.LumberCampM15Tests" runstate="Runnable" seed="1556339367" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000181" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1011" name="Timing_StacksUpgradeSpecializationAndDistrictDeterministically" fullname="IndustryTycoon.EditorTests.LumberCampM15Tests.Timing_StacksUpgradeSpecializationAndDistrictDeterministically" methodname="Timing_StacksUpgradeSpecializationAndDistrictDeterministically" classname="IndustryTycoon.EditorTests.LumberCampM15Tests" runstate="Runnable" seed="317409797" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000346" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1020" name="V6_MigratesToCurrentSchema_Idempotently" fullname="IndustryTycoon.EditorTests.LumberCampM15Tests.V6_MigratesToCurrentSchema_Idempotently" methodname="V6_MigratesToCurrentSchema_Idempotently" classname="IndustryTycoon.EditorTests.LumberCampM15Tests" runstate="Runnable" seed="1719128745" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.007527" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1013" name="Validator_PreservesMidCounter_AndResetIsClean" fullname="IndustryTycoon.EditorTests.LumberCampM15Tests.Validator_PreservesMidCounter_AndResetIsClean" methodname="Validator_PreservesMidCounter_AndResetIsClean" classname="IndustryTycoon.EditorTests.LumberCampM15Tests" runstate="Runnable" seed="771594126" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000304" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1022" name="LumberCampM16Tests" fullname="IndustryTycoon.EditorTests.LumberCampM16Tests" classname="IndustryTycoon.EditorTests.LumberCampM16Tests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.012062" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1029" name="Empire21To25_IsSequentialOnceOnlyAndRestoresSilently" fullname="IndustryTycoon.EditorTests.LumberCampM16Tests.Empire21To25_IsSequentialOnceOnlyAndRestoresSilently" methodname="Empire21To25_IsSequentialOnceOnlyAndRestoresSilently" classname="IndustryTycoon.EditorTests.LumberCampM16Tests" runstate="Runnable" seed="254010182" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.001293" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1027" name="FlowBonus_IsOrderedNonStackingExpiringAndPersistent" fullname="IndustryTycoon.EditorTests.LumberCampM16Tests.FlowBonus_IsOrderedNonStackingExpiringAndPersistent" methodname="FlowBonus_IsOrderedNonStackingExpiringAndPersistent" classname="IndustryTycoon.EditorTests.LumberCampM16Tests" runstate="Runnable" seed="139605507" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000583" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1028" name="Goals_AreMarketGated" fullname="IndustryTycoon.EditorTests.LumberCampM16Tests.Goals_AreMarketGated" methodname="Goals_AreMarketGated" classname="IndustryTycoon.EditorTests.LumberCampM16Tests" runstate="Runnable" seed="1570543392" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.001173" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1026" name="OrderDelivery_ConsumesWarehouseAndPaysOnlyOnClaim" fullname="IndustryTycoon.EditorTests.LumberCampM16Tests.OrderDelivery_ConsumesWarehouseAndPaysOnlyOnClaim" methodname="OrderDelivery_ConsumesWarehouseAndPaysOnlyOnClaim" classname="IndustryTycoon.EditorTests.LumberCampM16Tests" runstate="Runnable" seed="358776936" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.003209" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1025" name="Orders_AreDeterministicPremiumAndStateSafe" fullname="IndustryTycoon.EditorTests.LumberCampM16Tests.Orders_AreDeterministicPremiumAndStateSafe" methodname="Orders_AreDeterministicPremiumAndStateSafe" classname="IndustryTycoon.EditorTests.LumberCampM16Tests" runstate="Runnable" seed="1320321490" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000511" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1023" name="PricePipeline_StacksDemandAndFlowOnce" fullname="IndustryTycoon.EditorTests.LumberCampM16Tests.PricePipeline_StacksDemandAndFlowOnce" methodname="PricePipeline_StacksDemandAndFlowOnce" classname="IndustryTycoon.EditorTests.LumberCampM16Tests" runstate="Runnable" seed="2085755279" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000234" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1024" name="Rotation_IsDeterministicPersistentCappedAndFiltersLocks" fullname="IndustryTycoon.EditorTests.LumberCampM16Tests.Rotation_IsDeterministicPersistentCappedAndFiltersLocks" methodname="Rotation_IsDeterministicPersistentCappedAndFiltersLocks" classname="IndustryTycoon.EditorTests.LumberCampM16Tests" runstate="Runnable" seed="1424894003" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.001471" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1030" name="Schema7_MigratesExactlyOnceAndFreshResetClearsM16" fullname="IndustryTycoon.EditorTests.LumberCampM16Tests.Schema7_MigratesExactlyOnceAndFreshResetClearsM16" methodname="Schema7_MigratesExactlyOnceAndFreshResetClearsM16" classname="IndustryTycoon.EditorTests.LumberCampM16Tests" runstate="Runnable" seed="363327443" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.001583" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1031" name="LumberCampM17Tests" fullname="IndustryTycoon.EditorTests.LumberCampM17Tests" classname="IndustryTycoon.EditorTests.LumberCampM17Tests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.010859" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1037" name="AcceleratedFreshToEmpire25_CompletesWithoutDeadState" fullname="IndustryTycoon.EditorTests.LumberCampM17Tests.AcceleratedFreshToEmpire25_CompletesWithoutDeadState" methodname="AcceleratedFreshToEmpire25_CompletesWithoutDeadState" classname="IndustryTycoon.EditorTests.LumberCampM17Tests" runstate="Runnable" seed="758109493" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.002029" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1033" name="DistrictGates_AreDerivedAndOrdered" fullname="IndustryTycoon.EditorTests.LumberCampM17Tests.DistrictGates_AreDerivedAndOrdered" methodname="DistrictGates_AreDerivedAndOrdered" classname="IndustryTycoon.EditorTests.LumberCampM17Tests" runstate="Runnable" seed="2012345696" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000551" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1034" name="Empire15To25_IsSequentialWithoutDuplicateEvents" fullname="IndustryTycoon.EditorTests.LumberCampM17Tests.Empire15To25_IsSequentialWithoutDuplicateEvents" methodname="Empire15To25_IsSequentialWithoutDuplicateEvents" classname="IndustryTycoon.EditorTests.LumberCampM17Tests" runstate="Runnable" seed="738634943" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000911" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1032" name="Guidance_CoversTheCompleteLegitimatePathOneActionAtATime" fullname="IndustryTycoon.EditorTests.LumberCampM17Tests.Guidance_CoversTheCompleteLegitimatePathOneActionAtATime" methodname="Guidance_CoversTheCompleteLegitimatePathOneActionAtATime" classname="IndustryTycoon.EditorTests.LumberCampM17Tests" runstate="Runnable" seed="1199155201" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000931" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1035" name="RepresentativeCheckpoints_RoundTripOnSchema8" fullname="IndustryTycoon.EditorTests.LumberCampM17Tests.RepresentativeCheckpoints_RoundTripOnSchema8" methodname="RepresentativeCheckpoints_RoundTripOnSchema8" classname="IndustryTycoon.EditorTests.LumberCampM17Tests" runstate="Runnable" seed="494265026" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.003880" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1036" name="UnlockFeedback_IsMajorOnlyAndDeterministic" fullname="IndustryTycoon.EditorTests.LumberCampM17Tests.UnlockFeedback_IsMajorOnlyAndDeterministic" methodname="UnlockFeedback_IsMajorOnlyAndDeterministic" classname="IndustryTycoon.EditorTests.LumberCampM17Tests" runstate="Runnable" seed="1861089497" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000432" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1038" name="LumberCampM18Tests" fullname="IndustryTycoon.EditorTests.LumberCampM18Tests" classname="IndustryTycoon.EditorTests.LumberCampM18Tests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.007069" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1043" name="AnalyticsHooks_AreInternalAndCanonical" fullname="IndustryTycoon.EditorTests.LumberCampM18Tests.AnalyticsHooks_AreInternalAndCanonical" methodname="AnalyticsHooks_AreInternalAndCanonical" classname="IndustryTycoon.EditorTests.LumberCampM18Tests" runstate="Runnable" seed="129466046" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000417" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1041" name="CompletedSteps_CannotReplayOrSkipGates" fullname="IndustryTycoon.EditorTests.LumberCampM18Tests.CompletedSteps_CannotReplayOrSkipGates" methodname="CompletedSteps_CannotReplayOrSkipGates" classname="IndustryTycoon.EditorTests.LumberCampM18Tests" runstate="Runnable" seed="1194631749" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000305" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1044" name="ExistingSchema8Save_DefaultsSafely" fullname="IndustryTycoon.EditorTests.LumberCampM18Tests.ExistingSchema8Save_DefaultsSafely" methodname="ExistingSchema8Save_DefaultsSafely" classname="IndustryTycoon.EditorTests.LumberCampM18Tests" runstate="Runnable" seed="1647609583" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000652" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1042" name="Explanations_AppearOnlyAfterLegitimateUnlock" fullname="IndustryTycoon.EditorTests.LumberCampM18Tests.Explanations_AppearOnlyAfterLegitimateUnlock" methodname="Explanations_AppearOnlyAfterLegitimateUnlock" classname="IndustryTycoon.EditorTests.LumberCampM18Tests" runstate="Runnable" seed="1724409002" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000385" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1039" name="FreshSequence_IsShortOrderedAndActionable" fullname="IndustryTycoon.EditorTests.LumberCampM18Tests.FreshSequence_IsShortOrderedAndActionable" methodname="FreshSequence_IsShortOrderedAndActionable" classname="IndustryTycoon.EditorTests.LumberCampM18Tests" runstate="Runnable" seed="1666702235" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.000262" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1040" name="SaveLoad_ResumesAtMultipleStepsOnSchema8" fullname="IndustryTycoon.EditorTests.LumberCampM18Tests.SaveLoad_ResumesAtMultipleStepsOnSchema8" methodname="SaveLoad_ResumesAtMultipleStepsOnSchema8" classname="IndustryTycoon.EditorTests.LumberCampM18Tests" runstate="Runnable" seed="1156793094" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:14:54Z" duration="0.003482" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1054" name="LumberCampM19PlayModeTests" fullname="IndustryTycoon.EditorTests.LumberCampM19PlayModeTests" classname="IndustryTycoon.EditorTests.LumberCampM19PlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-17 16:14:59Z" end-time="2026-10-17 16:15:00Z" duration="1.086453" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1055" name="SawCourierAndDrillRotateOnlyInActiveStates" fullname="IndustryTycoon.EditorTests.LumberCampM19PlayModeTests.SawCourierAndDrillRotateOnlyInActiveStates" methodname="SawCourierAndDrillRotateOnlyInActiveStates" classname="IndustryTycoon.EditorTests.LumberCampM19PlayModeTests" runstate="Runnable" seed="1872904340" result="Passed" start-time="2026-10-17 16:14:54Z" end-time="2026-10-17 16:15:00Z" duration="6.375616" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1045" name="LumberCampM19Tests" fullname="IndustryTycoon.EditorTests.LumberCampM19Tests" classname="IndustryTycoon.EditorTests.LumberCampM19Tests" runstate="Runnable" testcasecount="8" result="Passed" start-time="2026-10-17 16:15:00Z" end-time="2026-10-17 16:15:03Z" duration="2.525833" total="8" passed="8" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1053" name="CourierArt_FacesTravelDirectionWithOutwardWheelsAndRearCargo" fullname="IndustryTycoon.EditorTests.LumberCampM19Tests.CourierArt_FacesTravelDirectionWithOutwardWheelsAndRearCargo" methodname="CourierArt_FacesTravelDirectionWithOutwardWheelsAndRearCargo" classname="IndustryTycoon.EditorTests.LumberCampM19Tests" runstate="Runnable" seed="1547808893" result="Passed" start-time="2026-10-17 16:15:00Z" end-time="2026-10-17 16:15:00Z" duration="0.510646" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1051" name="InitialCutters_UseProductionShellAndBladeInsideOriginalUnlockRoot" fullname="IndustryTycoon.EditorTests.LumberCampM19Tests.InitialCutters_UseProductionShellAndBladeInsideOriginalUnlockRoot" methodname="InitialCutters_UseProductionShellAndBladeInsideOriginalUnlockRoot" classname="IndustryTycoon.EditorTests.LumberCampM19Tests" runstate="Runnable" seed="1761022847" result="Passed" start-time="2026-10-17 16:15:00Z" end-time="2026-10-17 16:15:01Z" duration="0.489968" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1052" name="OreDepositAndStorage_UseOreMeshAndPreserveFeedbackOwnership" fullname="IndustryTycoon.EditorTests.LumberCampM19Tests.OreDepositAndStorage_UseOreMeshAndPreserveFeedbackOwnership" methodname="OreDepositAndStorage_UseOreMeshAndPreserveFeedbackOwnership" classname="IndustryTycoon.EditorTests.LumberCampM19Tests" runstate="Runnable" seed="856068816" result="Passed" start-time="2026-10-17 16:15:01Z" end-time="2026-10-17 16:15:01Z" duration="0.496424" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1050" name="ProceduralParts_AreSeparateAndFullyWired" fullname="IndustryTycoon.EditorTests.LumberCampM19Tests.ProceduralParts_AreSeparateAndFullyWired" methodname="ProceduralParts_AreSeparateAndFullyWired" classname="IndustryTycoon.EditorTests.LumberCampM19Tests" runstate="Runnable" seed="443373716" result="Passed" start-time="2026-10-17 16:15:01Z" end-time="2026-10-17 16:15:02Z" duration="0.488782" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1047" name="ProductionImports_AreMobileSafeAndDeterministic" fullname="IndustryTycoon.EditorTests.LumberCampM19Tests.ProductionImports_AreMobileSafeAndDeterministic" methodname="ProductionImports_AreMobileSafeAndDeterministic" classname="IndustryTycoon.EditorTests.LumberCampM19Tests" runstate="Runnable" seed="157233094" result="Passed" start-time="2026-10-17 16:15:02Z" end-time="2026-10-17 16:15:02Z" duration="0.036058" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1049" name="ResourcePrefab_UsesOneRendererPerVariantAndKeepsSelectors" fullname="IndustryTycoon.EditorTests.LumberCampM19Tests.ResourcePrefab_UsesOneRendererPerVariantAndKeepsSelectors" methodname="ResourcePrefab_UsesOneRendererPerVariantAndKeepsSelectors" classname="IndustryTycoon.EditorTests.LumberCampM19Tests" runstate="Runnable" seed="1780174024" result="Passed" start-time="2026-10-17 16:15:02Z" end-time="2026-10-17 16:15:02Z" duration="0.002873" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1048" name="Scene_ProductionVisualsPreserveGameplayRootsAndPhysics" fullname="IndustryTycoon.EditorTests.LumberCampM19Tests.Scene_ProductionVisualsPreserveGameplayRootsAndPhysics" methodname="Scene_ProductionVisualsPreserveGameplayRootsAndPhysics" classname="IndustryTycoon.EditorTests.LumberCampM19Tests" runstate="Runnable" seed="1646483223" result="Passed" start-time="2026-10-17 16:15:02Z" end-time="2026-10-17 16:15:03Z" duration="0.498339" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1046" name="Schema_RemainsVersion9" fullname="IndustryTycoon.EditorTests.LumberCampM19Tests.Schema_RemainsVersion9" methodname="Schema_RemainsVersion9" classname="IndustryTycoon.EditorTests.LumberCampM19Tests" runstate="Runnable" seed="843275615" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000178" asserts="0">
+              <properties />
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1056" name="LumberCampM20Tests" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" testcasecount="16" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.015355" total="16" passed="16" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1070" name="IndustrialPlaycraftTheme_ReservesSemanticColors" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.IndustrialPlaycraftTheme_ReservesSemanticColors" methodname="IndustrialPlaycraftTheme_ReservesSemanticColors" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="1873045767" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.001014" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1075" name="ObjectivePresentation_IsConciseWithoutChangingSource" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.ObjectivePresentation_IsConciseWithoutChangingSource" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" testcasecount="4" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.001843" total="4" passed="4" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1071" name="ObjectivePresentation_IsConciseWithoutChangingSource(&quot;OBJECTIVE: UNLOCK WORKER&quot;,&quot;Unlock Worker&quot;)" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.ObjectivePresentation_IsConciseWithoutChangingSource(&quot;OBJECTIVE: UNLOCK WORKER&quot;,&quot;Unlock Worker&quot;)" methodname="ObjectivePresentation_IsConciseWithoutChangingSource" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="1112656622" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000360" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1072" name="ObjectivePresentation_IsConciseWithoutChangingSource(&quot;DRAG TO MOVE — GO TO THE WOOD&quot;,&quot;Drag To Move  •  Go To The Wood&quot;)" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.ObjectivePresentation_IsConciseWithoutChangingSource(&quot;DRAG TO MOVE — GO TO THE WOOD&quot;,&quot;Drag To Move  •  Go To The Wood&quot;)" methodname="ObjectivePresentation_IsConciseWithoutChangingSource" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="1623693968" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000113" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1073" name="ObjectivePresentation_IsConciseWithoutChangingSource(&quot;NEXT: PROCESSOR\n$25 / $100&quot;,&quot;Processor  •  $25 / $100&quot;)" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.ObjectivePresentation_IsConciseWithoutChangingSource(&quot;NEXT: PROCESSOR\n$25 / $100&quot;,&quot;Processor  •  $25 / $100&quot;)" methodname="ObjectivePresentation_IsConciseWithoutChangingSource" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="1987967910" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000066" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1074" name="ObjectivePresentation_IsConciseWithoutChangingSource(&quot;PRODUCE PLANKS  •  6 / 10&quot;,&quot;Produce Planks&quot;)" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.ObjectivePresentation_IsConciseWithoutChangingSource(&quot;PRODUCE PLANKS  •  6 / 10&quot;,&quot;Produce Planks&quot;)" methodname="ObjectivePresentation_IsConciseWithoutChangingSource" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="781534235" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000428" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-case id="1062" name="PlayerFacingViews_DoNotUseLegacyImgui" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.PlayerFacingViews_DoNotUseLegacyImgui" methodname="PlayerFacingViews_DoNotUseLegacyImgui" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="1404308821" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000294" asserts="0">
+              <properties />
+            </test-case>
+            <test-case id="1057" name="ProductionPresentation_IgnoresDestroyedBuildingsDuringSceneTeardown" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.ProductionPresentation_IgnoresDestroyedBuildingsDuringSceneTeardown" methodname="ProductionPresentation_IgnoresDestroyedBuildingsDuringSceneTeardown" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="1329370927" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.002745" asserts="0">
+              <properties />
+            </test-case>
+            <test-suite type="ParameterizedMethod" id="1061" name="SafeAreaAnchors_StayNormalizedAcrossPortraitSizes" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.SafeAreaAnchors_StayNormalizedAcrossPortraitSizes" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.002146" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1058" name="SafeAreaAnchors_StayNormalizedAcrossPortraitSizes(360,640,0,24,360,592)" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.SafeAreaAnchors_StayNormalizedAcrossPortraitSizes(360,640,0,24,360,592)" methodname="SafeAreaAnchors_StayNormalizedAcrossPortraitSizes" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="1871606390" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000868" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1059" name="SafeAreaAnchors_StayNormalizedAcrossPortraitSizes(1080,1920,0,80,1080,1760)" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.SafeAreaAnchors_StayNormalizedAcrossPortraitSizes(1080,1920,0,80,1080,1760)" methodname="SafeAreaAnchors_StayNormalizedAcrossPortraitSizes" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="147004291" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000099" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1060" name="SafeAreaAnchors_StayNormalizedAcrossPortraitSizes(1440,3200,40,140,1360,2920)" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.SafeAreaAnchors_StayNormalizedAcrossPortraitSizes(1440,3200,40,140,1360,2920)" methodname="SafeAreaAnchors_StayNormalizedAcrossPortraitSizes" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="1697429465" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000056" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+            <test-suite type="ParameterizedMethod" id="1069" name="WalletFormatting_HandlesLargeRuntimeValues" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.WalletFormatting_HandlesLargeRuntimeValues" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" testcasecount="6" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.001759" total="6" passed="6" failed="0" inconclusive="0" skipped="0" asserts="0">
+              <properties />
+              <test-case id="1063" name="WalletFormatting_HandlesLargeRuntimeValues(0,&quot;0&quot;)" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.WalletFormatting_HandlesLargeRuntimeValues(0,&quot;0&quot;)" methodname="WalletFormatting_HandlesLargeRuntimeValues" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="262230084" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000380" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1064" name="WalletFormatting_HandlesLargeRuntimeValues(999,&quot;999&quot;)" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.WalletFormatting_HandlesLargeRuntimeValues(999,&quot;999&quot;)" methodname="WalletFormatting_HandlesLargeRuntimeValues" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="2049952090" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000091" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1065" name="WalletFormatting_HandlesLargeRuntimeValues(1200,&quot;1.2K&quot;)" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.WalletFormatting_HandlesLargeRuntimeValues(1200,&quot;1.2K&quot;)" methodname="WalletFormatting_HandlesLargeRuntimeValues" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="1193362184" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000064" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1066" name="WalletFormatting_HandlesLargeRuntimeValues(28460,&quot;28.5K&quot;)" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.WalletFormatting_HandlesLargeRuntimeValues(28460,&quot;28.5K&quot;)" methodname="WalletFormatting_HandlesLargeRuntimeValues" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="1447601037" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000047" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1067" name="WalletFormatting_HandlesLargeRuntimeValues(2000000,&quot;2M&quot;)" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.WalletFormatting_HandlesLargeRuntimeValues(2000000,&quot;2M&quot;)" methodname="WalletFormatting_HandlesLargeRuntimeValues" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="777835936" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000049" asserts="0">
+                <properties />
+              </test-case>
+              <test-case id="1068" name="WalletFormatting_HandlesLargeRuntimeValues(int.MaxValue,&quot;2.1B&quot;)" fullname="IndustryTycoon.EditorTests.LumberCampM20Tests.WalletFormatting_HandlesLargeRuntimeValues(int.MaxValue,&quot;2.1B&quot;)" methodname="WalletFormatting_HandlesLargeRuntimeValues" classname="IndustryTycoon.EditorTests.LumberCampM20Tests" runstate="Runnable" seed="1496658248" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:03Z" duration="0.000047" asserts="0">
+                <properties />
+              </test-case>
+            </test-suite>
+          </test-suite>
+          <test-suite type="TestFixture" id="1076" name="LumberCampM22PlayModeTests" fullname="IndustryTycoon.EditorTests.LumberCampM22PlayModeTests" classname="IndustryTycoon.EditorTests.LumberCampM22PlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-10-17 16:15:08Z" end-time="2026-10-17 16:15:09Z" duration="1.133766" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1077" name="RuntimeGraph_SoakMetricsLifecycleAndMissingScriptsPass" fullname="IndustryTycoon.EditorTests.LumberCampM22PlayModeTests.RuntimeGraph_SoakMetricsLifecycleAndMissingScriptsPass" methodname="RuntimeGraph_SoakMetricsLifecycleAndMissingScriptsPass" classname="IndustryTycoon.EditorTests.LumberCampM22PlayModeTests" runstate="Runnable" seed="279108074" result="Passed" start-time="2026-10-17 16:15:03Z" end-time="2026-10-17 16:15:09Z" duration="6.461369" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[M22_PERF editor-playmode frames=600, avg=15.38ms, max=28.33ms, max-gc-frame=136950B, managed-growth=0B, objects=2026
+]]></output>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1078" name="LumberCampM22Tests" fullname="IndustryTycoon.EditorTests.LumberCampM22Tests" classname="IndustryTycoon.EditorTests.LumberCampM22Tests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-10-17 16:15:09Z" end-time="2026-10-17 16:15:09Z" duration="0.171896" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1085" name="Analytics_ConsentPayloadAndProviderFailureStaySafe" fullname="IndustryTycoon.EditorTests.LumberCampM22Tests.Analytics_ConsentPayloadAndProviderFailureStaySafe" methodname="Analytics_ConsentPayloadAndProviderFailureStaySafe" classname="IndustryTycoon.EditorTests.LumberCampM22Tests" runstate="Runnable" seed="925065602" result="Passed" start-time="2026-10-17 16:15:09Z" end-time="2026-10-17 16:15:09Z" duration="0.003342" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1079" name="Economy_FreshToEmpire25ProfilesAreViableAndBounded" fullname="IndustryTycoon.EditorTests.LumberCampM22Tests.Economy_FreshToEmpire25ProfilesAreViableAndBounded" methodname="Economy_FreshToEmpire25ProfilesAreViableAndBounded" classname="IndustryTycoon.EditorTests.LumberCampM22Tests" runstate="Runnable" seed="1628374845" result="Passed" start-time="2026-10-17 16:15:09Z" end-time="2026-10-17 16:15:09Z" duration="0.005274" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[M22_ECONOMY Manual: Empire 25, wall=152.9m, active=152.9m, unlock-gap=30..1800s, peak-cash=$206217
+M22_ECONOMY AutomationFocused: Empire 25, wall=148.1m, active=148.1m, unlock-gap=30..1610s, peak-cash=$216203
+M22_ECONOMY NormalOffline: Empire 25, wall=696.7m, active=90.0m, unlock-gap=30..9900s, peak-cash=$253885
+M22_ECONOMY RewardedNormal: Empire 25, wall=128.0m, active=128.0m, unlock-gap=30..1500s, peak-cash=$206297
+M22_ECONOMY ZeroAds: Empire 25, wall=152.9m, active=152.9m, unlock-gap=30..1800s, peak-cash=$206217
+]]></output>
+            </test-case>
+            <test-case id="1080" name="Monetization_AcceleratesWithoutTrivializingEmpire25" fullname="IndustryTycoon.EditorTests.LumberCampM22Tests.Monetization_AcceleratesWithoutTrivializingEmpire25" methodname="Monetization_AcceleratesWithoutTrivializingEmpire25" classname="IndustryTycoon.EditorTests.LumberCampM22Tests" runstate="Runnable" seed="1853432601" result="Passed" start-time="2026-10-17 16:15:09Z" end-time="2026-10-17 16:15:09Z" duration="0.004102" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[M22_MONETIZATION GameplayGems: Empire 25, wall=147.9m, active=147.9m, unlock-gap=30..1800s, peak-cash=$206217
+M22_MONETIZATION StarterPack: Empire 25, wall=151.0m, active=151.0m, unlock-gap=30..1800s, peak-cash=$206201
+M22_MONETIZATION SmallGems: Empire 25, wall=128.0m, active=128.0m, unlock-gap=15..1800s, peak-cash=$206237
+M22_MONETIZATION MediumGems: Empire 25, wall=83.0m, active=83.0m, unlock-gap=15..900s, peak-cash=$206237
+M22_MONETIZATION LargeGems: Empire 25, wall=76.5m, active=76.5m, unlock-gap=15..900s, peak-cash=$206237
+M22_MONETIZATION RewardedMaximum: Empire 25, wall=76.5m, active=76.5m, unlock-gap=15..900s, peak-cash=$206237
+M22_MONETIZATION GemsAndAds: Empire 25, wall=75.5m, active=75.5m, unlock-gap=15..900s, peak-cash=$206201
+]]></output>
+            </test-case>
+            <test-case id="1084" name="Monetization_DuplicateHistoriesAreSanitizedAndBounded" fullname="IndustryTycoon.EditorTests.LumberCampM22Tests.Monetization_DuplicateHistoriesAreSanitizedAndBounded" methodname="Monetization_DuplicateHistoriesAreSanitizedAndBounded" classname="IndustryTycoon.EditorTests.LumberCampM22Tests" runstate="Runnable" seed="1581991821" result="Passed" start-time="2026-10-17 16:15:09Z" end-time="2026-10-17 16:15:09Z" duration="0.002742" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1083" name="Offline_MinutesDaysExtremeRollbackAndJumpAreBounded" fullname="IndustryTycoon.EditorTests.LumberCampM22Tests.Offline_MinutesDaysExtremeRollbackAndJumpAreBounded" methodname="Offline_MinutesDaysExtremeRollbackAndJumpAreBounded" classname="IndustryTycoon.EditorTests.LumberCampM22Tests" runstate="Runnable" seed="2006934005" result="Passed" start-time="2026-10-17 16:15:09Z" end-time="2026-10-17 16:15:09Z" duration="0.000891" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1086" name="ProductionWaits_AreReusedAcrossNormalGameplayCycles" fullname="IndustryTycoon.EditorTests.LumberCampM22Tests.ProductionWaits_AreReusedAcrossNormalGameplayCycles" methodname="ProductionWaits_AreReusedAcrossNormalGameplayCycles" classname="IndustryTycoon.EditorTests.LumberCampM22Tests" runstate="Runnable" seed="1561979355" result="Passed" start-time="2026-10-17 16:15:09Z" end-time="2026-10-17 16:15:09Z" duration="0.000487" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1082" name="SaveStore_RecoversAtomicBackupAfterPrimaryCorruption" fullname="IndustryTycoon.EditorTests.LumberCampM22Tests.SaveStore_RecoversAtomicBackupAfterPrimaryCorruption" methodname="SaveStore_RecoversAtomicBackupAfterPrimaryCorruption" classname="IndustryTycoon.EditorTests.LumberCampM22Tests" runstate="Runnable" seed="91654055" result="Passed" start-time="2026-10-17 16:15:09Z" end-time="2026-10-17 16:15:09Z" duration="0.045135" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1081" name="SaveValidator_RepairsRecoverableFieldsWithoutReset" fullname="IndustryTycoon.EditorTests.LumberCampM22Tests.SaveValidator_RepairsRecoverableFieldsWithoutReset" methodname="SaveValidator_RepairsRecoverableFieldsWithoutReset" classname="IndustryTycoon.EditorTests.LumberCampM22Tests" runstate="Runnable" seed="65032514" result="Passed" start-time="2026-10-17 16:15:09Z" end-time="2026-10-17 16:15:09Z" duration="0.001282" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1088" name="Soak_TenThousandRotationsAndSettlementsStayBounded" fullname="IndustryTycoon.EditorTests.LumberCampM22Tests.Soak_TenThousandRotationsAndSettlementsStayBounded" methodname="Soak_TenThousandRotationsAndSettlementsStayBounded" classname="IndustryTycoon.EditorTests.LumberCampM22Tests" runstate="Runnable" seed="1623223284" result="Passed" start-time="2026-10-17 16:15:09Z" end-time="2026-10-17 16:15:09Z" duration="0.103364" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[M22_SOAK 10000 market/offline/reward cycles PASS in 101.8ms; reward history=256
+]]></output>
+            </test-case>
+            <test-case id="1087" name="UiLifecycle_ReenableDoesNotDuplicateButtonListeners" fullname="IndustryTycoon.EditorTests.LumberCampM22Tests.UiLifecycle_ReenableDoesNotDuplicateButtonListeners" methodname="UiLifecycle_ReenableDoesNotDuplicateButtonListeners" classname="IndustryTycoon.EditorTests.LumberCampM22Tests" runstate="Runnable" seed="1115990962" result="Passed" start-time="2026-10-17 16:15:09Z" end-time="2026-10-17 16:15:09Z" duration="0.001883" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/bogda/AppData/LocalLow/Industry Tycoon/IndustryTycoon\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>
